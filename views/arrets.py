@@ -44,10 +44,10 @@ def arrets_page():
     ):
         # afficher infos réseau 
            #cherche nom réseau 
-        nom_reseau_str=nom_reseau_str(st.session_state.feed)
-        st.info(f"Le GTFS concerne le réseau {nom_reseau_str}")
+        nom_reseau_valeur = nom_reseau_str(st.session_state.feed)
+        st.info(f"Le GTFS concerne le réseau {nom_reseau_valeur}")
 
-        dates_service, date_debut , date_fin , date_JOB = dates_service(st.session_state.feed)
+        _, date_debut, date_fin, date_JOB = dates_service(st.session_state.feed)
 
         date_service_str, date_JOB_text = date_str(date_debut, date_fin, date_JOB)
 

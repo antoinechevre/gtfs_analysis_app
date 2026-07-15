@@ -17,8 +17,8 @@ def home_page():
     Ce projet a été développé lors du Hackathon TSNI 2025 du Cerema et reprise par Antoine Chevre (et claude.ai...)
     
     **Équipe CEREMA :** Patrick GENDRE, Hugo DE LUCA et Maxence LIOGIER
-    **Antoine Chevre 
-   
+
+    **Antoine Chevre**
     """
     )
 
@@ -34,8 +34,7 @@ def home_page():
     - **📓 [Notebook Google Colab](https://colab.research.google.com/github/CEREMA/hackathon-gtfs/blob/main/gtfs_notebook.ipynb)** : Prendre en main le code, exécuter les cellules et regarder les cartographies dynamiques
     
     
-    Le projet amélioré 
-        https://github.com/antoinechevre/gtfs_analysis_app 
+    - **Le projet amélioré https://github.com/antoinechevre/gtfs_analysis_app 
     """
     )
 
