@@ -83,6 +83,27 @@ def creer_troncons_uniques(feed, route_type):
 
     print(f"  → {len(troncons_uniques)} tronçons uniques identifiés")
 
+    colonnes_finales = [
+        "troncon_unique_id",
+        "stop_depart_parent_id",
+        "stop_arrivee_parent_id",
+        "stop_depart_name",
+        "stop_arrivee_name",
+        "lat_depart_parent",
+        "lon_depart_parent",
+        "lat_arrivee_parent",
+        "lon_arrivee_parent",
+        "geometry",
+    ]
+
+    if troncons_uniques.empty:
+        # Aucun trip pour ce route_type (ex : réseau sans trolleybus) : sur un
+        # DataFrame à 0 ligne, .apply(axis=1) ne produit pas de colonne
+        # exploitable, d'où le GeoDataFrame vide construit directement ici.
+        gdf = gpd.GeoDataFrame(columns=colonnes_finales, geometry="geometry", crs="EPSG:4326")
+        print(f"✓ {len(gdf)} tronçons uniques créés")
+        return gdf
+
     # 9. Enrichir avec les informations des arrêts
     print("  → Enrichissement avec coordonnées et noms...")
 
@@ -118,7 +139,7 @@ def creer_troncons_uniques(feed, route_type):
 
     # Identifiants uniques
     route_type_prefix = (
-        "TRAM" if route_type == 0 else "BUS" if route_type == 3 else f"RT{route_type}"
+        "METRP" if route_type == 1 else "TRAM" if route_type == 0 else "BUS" if route_type == 3 else f"RT{route_type}"
     )
     troncons_uniques["troncon_unique_id"] = [
         f"TU_{route_type_prefix}_{i:06d}" for i in range(len(troncons_uniques))
@@ -149,19 +170,6 @@ def creer_troncons_uniques(feed, route_type):
     )
 
     # 11. Créer le GeoDataFrame
-    colonnes_finales = [
-        "troncon_unique_id",
-        "stop_depart_parent_id",
-        "stop_arrivee_parent_id",
-        "stop_depart_name",
-        "stop_arrivee_name",
-        "lat_depart_parent",
-        "lon_depart_parent",
-        "lat_arrivee_parent",
-        "lon_arrivee_parent",
-        "geometry",
-    ]
-
     gdf = gpd.GeoDataFrame(
         troncons_uniques[colonnes_finales], geometry="geometry", crs="EPSG:4326"
     )
@@ -199,6 +207,13 @@ if __name__ == "__main__":
     troncons_tram = creer_troncons_uniques(feed, route_type=0)
     exporter_gdf_to_csv(troncons_tram, "output/troncons_uniques_tram.csv")
     # exporter_geojson(troncons_tram, 'output/troncons_uniques_tram2.geojson')
+
+    # Metro (route_type = 1)
+    troncons_metro = creer_troncons_uniques(feed, route_type=1)
+    exporter_gdf_to_csv(troncons_metro, "output/troncons_uniques_metro.csv")
+    # exporter_geojson(troncons_metro, 'output/troncons_uniques_metro2.geojson')
+
+
 
     print("\n" + "=" * 70)
     print("✓ TRAITEMENT TERMINÉ")

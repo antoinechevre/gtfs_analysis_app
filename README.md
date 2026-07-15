@@ -1,16 +1,24 @@
-# hackathon-gtfs
+# gtfs
 
-Cette librairie propose des fonctions utilitaires permettant de traiter des jeux de données GTFS au format zip afin de calculer des indicateurs à l'échelle des arrêts et des tronçons, par mode de transport (bus ou tram). Les résultats obtenus sont alors exportables au format csv ou geojson.  
+Cette librairie propose des fonctions utilitaires permettant de traiter des jeux de données GTFS au format zip afin de calculer des indicateurs à l'échelle des arrêts et des tronçons, par mode de transport (bus ou tram ou metro ou trolley). Les résultats obtenus sont alors exportables au format csv ou geojson.  
 Il est également proposé un notebook interactif pour comprendre les opérations effectuées et une application Streamlit afin d'avoir un aperçu rapide des résultats.
 
-Elle a été développée lors du Hackathon TSNI 2025 du Cerema par l'équipe composée de Patrick GENDRE, Hugo DE LUCA et Maxence LIOGIER.
+Elle a été initialement développée lors du Hackathon TSNI 2025 du Cerema par l'équipe composée de Patrick GENDRE, Hugo DE LUCA et Maxence LIOGIER.
+
+Elle a été enrichie par Antoine CHEVRE (et claude.ai...) en juillet 2026
 
 Ce projet est en version alpha et il reste des [améliorations à implémenter](#todo).
 
 ## 🔗 Liens rapides
 
 Pour voir la librairie en action, vous pouvez :
+
+_old l'application originelle 
 * consulter l'[application Streamlit](https://hackathon-gtfs-2prba9bbsr43p8k8zzcv7d.streamlit.app/) : les indicateurs sont calculs à partir d'un fichier zip GTFS pour un jour donné à sélectionner par l'utilisateur sous forme de tableau et de cartes dynamiques,
+
+* consulter l'[application Streamlit](https://hackathon-gtfs-2prba9bbsr43p8k8zzcv7d.streamlit.app/) : les indicateurs sont calculs à partir d'un fichier zip GTFS pour un jour donné à sélectionner par l'utilisateur sous forme de tableau et de cartes dynamiques,
+
+
 * consulter le [notebook interactif sur Google Colab](https://colab.research.google.com/github/CEREMA/hackathon-gtfs/blob/main/gtfs_notebook.ipynb) : prendre en main le code, exécuter les cellules et regarder les cartographies dynamiques.
 
 

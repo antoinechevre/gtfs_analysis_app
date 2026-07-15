@@ -2,6 +2,9 @@
 Page Arrêts - Analyse GTFS Indicateurs par Arrêt
 """
 
+import os
+import tempfile
+
 import streamlit as st
 import streamlit.components.v1 as components
 
@@ -24,7 +27,6 @@ def arrets_page():
                 try:
                     indicateurs = calculer_indicateurs_arrets(
                         st.session_state.feed,
-                        st.session_state.active_service_ids,
                         st.session_state.date_str,
                     )
                     st.session_state.indicateurs_arrets = indicateurs
@@ -62,7 +64,16 @@ def arrets_page():
 
             # Carte
             st.header("🗺️ Carte des Arrêts")
-            m = create_carte_arrets(indicateurs)
+            output_map = os.path.join(tempfile.gettempdir(), "stops_map_streamlit.html")
+            m = create_carte_arrets(
+                indicateurs,
+                st.session_state.nom_reseau_str,
+                f"Analyse du {st.session_state.date_str}",
+                st.session_state.date_str,
+                st.session_state.zip_path,
+                output_map,
+                chemin_logo=st.session_state.chemin_logo,
+            )
             components.html(m._repr_html_(), height=500, width=1000)
 
             # Télécharger les résultats

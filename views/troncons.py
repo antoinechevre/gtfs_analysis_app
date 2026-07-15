@@ -2,6 +2,9 @@
 Page Tronçons - Analyse GTFS Indicateurs par Tronçon
 """
 
+import os
+import tempfile
+
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
@@ -175,7 +178,14 @@ def troncons_page():
 
             # Carte interactive
             st.header("🗺️ Carte Interactive des Tronçons")
-            m = creer_carte_troncons(indicateurs_bus, indicateurs_tram)
+            output_map = os.path.join(tempfile.gettempdir(), "troncons_map_streamlit.html")
+            m = creer_carte_troncons(
+                indicateurs_bus,
+                indicateurs_tram,
+                output_map,
+                nom_reseau_str=st.session_state.nom_reseau_str,
+                chemin_logo=st.session_state.chemin_logo,
+            )
             components.html(m._repr_html_(), height=600, width=1000)
 
             # Télécharger les résultats

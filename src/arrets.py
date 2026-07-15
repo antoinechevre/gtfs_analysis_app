@@ -6,7 +6,7 @@ Calcule pour chaque arrêt : nombre de passages, premier et dernier départ
 import pandas as pd
 
 
-def calculer_indicateurs_arrets(feed, active_service_ids: list[str], date_str: str):
+def calculer_indicateurs_arrets(feed, date_str: str):
     """
     Calcule les indicateurs pour chaque arrêt :
     - Nombre de lignes desservies
@@ -21,63 +21,106 @@ def calculer_indicateurs_arrets(feed, active_service_ids: list[str], date_str: s
     """
     print(f"\nCalcul des indicateurs aux arrêts...")
 
+    active_trips = feed.get_trips(date=date_str)
+    active_service_ids = active_trips['service_id'].unique().tolist()
+
     if not active_service_ids:
         print("⚠ Aucun service actif pour cette date")
-        return None
+    
 
-    # Filtrer les trips actifs ce jour-là
+        # Filtrer les trips actifs ce jour-là
     trips_actifs = feed.trips[feed.trips["service_id"].isin(active_service_ids)]
     print(f"✓ {len(trips_actifs)} trips actifs")
+
 
     # Joindre avec stop_times
     stop_times_actifs = feed.stop_times.merge(
         trips_actifs[["trip_id", "service_id"]], on="trip_id"
     )
 
-    # Calculer les indicateurs par arrêt
+        # Rattacher chaque arrêt (quai) à sa station mère (parent_station) : les
+        # différents quais d'une même station sont ainsi regroupés ensemble.
+        # Les arrêts sans parent_station (stations autonomes) se regroupent sur
+        # eux-mêmes.
+    stops_avec_station = feed.stops[["stop_id", "parent_station"]].copy()
+
+
+    stops_avec_station["station_id"] = stops_avec_station["parent_station"].fillna(
+        stops_avec_station["stop_id"]
+    )
+
+    stop_times_actifs = stop_times_actifs.merge(
+            stops_avec_station[["stop_id", "station_id"]], on="stop_id", how="left"
+    )
+
+
+        # Calculer les indicateurs par station
     indicateurs = (
-        stop_times_actifs.groupby("stop_id")
+        stop_times_actifs.groupby("station_id")
         .agg(
             nombre_passages=("trip_id", "count"),
             premier_depart=("departure_time", "min"),
             dernier_depart=("departure_time", "max"),
         )
         .reset_index()
+        .rename(columns={"station_id": "stop_id"})
     )
 
-    # Utilisation de gtfs_kit pour calculer les stats de headway
+
+        # Utilisation de gtfs_kit pour calculer les stats de headway (par quai),
+        # puis agrégation au niveau de la station
     indic_gk = feed.compute_stop_stats([date_str])
-    indicateurs = indicateurs.merge(
-        indic_gk[["stop_id", "mean_headway", "max_headway", "num_routes"]],
-        on="stop_id",
-        how="left",
+    indic_gk = indic_gk.merge(
+        stops_avec_station[["stop_id", "station_id"]], on="stop_id", how="left"
     )
-    indicateurs.rename(
-        columns={
-            "num_routes": "nb_lignes",
-            "mean_headway": "temps_attente_moyen",
-            "max_headway": "temps_attente_max",
-        },
-        inplace=True,
+    indic_gk_station = (
+            indic_gk.groupby("station_id")
+            .agg(
+                temps_attente_moyen=("mean_headway", "mean"),
+                temps_attente_max=("max_headway", "max"),
+            )
+            .reset_index()
+            .rename(columns={"station_id": "stop_id"})
+        )
+
+
+    indicateurs = indicateurs.merge(indic_gk_station, on="stop_id", how="left")
+
+
+
+        # Nombre de lignes distinctes desservant la station (évite les doublons
+        # de comptage entre quais d'une même station)
+    stop_times_avec_route = stop_times_actifs.merge(
+        trips_actifs[["trip_id", "route_id"]], on="trip_id"
+    )
+    nb_lignes = (
+        stop_times_avec_route.groupby("station_id")["route_id"]
+        .nunique()
+        .reset_index()
+        .rename(columns={"station_id": "stop_id", "route_id": "nb_lignes"})
     )
 
-    # Joindre avec les informations des arrêts
+    indicateurs = indicateurs.merge(nb_lignes, on="stop_id", how="left")
+
+
+        # Joindre avec les informations de la station (nom, coordonnées)
     indicateurs = indicateurs.merge(
         feed.stops[["stop_id", "stop_name", "stop_lat", "stop_lon"]],
         on="stop_id",
         how="left",
     )
 
-    # Calculer l'amplitude horaire
+        # Calculer l'amplitude horaire
     indicateurs["amplitude_horaire"] = pd.to_timedelta(
         indicateurs["dernier_depart"]
     ) - pd.to_timedelta(indicateurs["premier_depart"])
-    # nettoyer pour retirer le 0 days
+        # nettoyer pour retirer le 0 days
+
     indicateurs["amplitude_horaire"] = indicateurs["amplitude_horaire"].apply(
-        lambda x: str(x).replace("0 days ", " ").strip()
+            lambda x: str(x).replace("0 days ", " ").strip()
     )
 
-    # Réorganiser les colonnes
+        # Réorganiser les colonnes
     indicateurs = indicateurs[
         [
             "stop_id",
@@ -94,10 +137,12 @@ def calculer_indicateurs_arrets(feed, active_service_ids: list[str], date_str: s
         ]
     ]
 
-    # Trier par nombre de passages décroissant
+        # Trier par nombre de passages décroissant
     indicateurs = indicateurs.sort_values("nombre_passages", ascending=False)
 
     print(f"✓ Indicateurs calculés pour {len(indicateurs)} arrêts")
+
+
 
     return indicateurs
 
@@ -114,7 +159,7 @@ def afficher_statistiques(df):
     print("STATISTIQUES GLOBALES")
     print("=" * 70)
     print(f"Nombre total d'arrêts desservis : {len(df)}")
-    print(f"Nombre total de passages : {df['nombre_passages'].sum():,}")
+    print(f"Nombre total de passages / jour : {df['nombre_passages'].sum():,}")
     print(f"Moyenne de passages par arrêt : {df['nombre_passages'].mean():.1f}")
     print(f"Médiane de passages par arrêt : {df['nombre_passages'].median():.1f}")
     print(

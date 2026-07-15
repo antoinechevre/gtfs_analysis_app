@@ -88,6 +88,28 @@ def calculer_frequentation_troncons(feed, df_troncons_uniques, service_ids, rout
     """
     print("\nCalcul de la fréquentation par tronçon unique...")
 
+    colonnes_stats = [
+        "nombre_passages",
+        "duree_moyenne_secondes",
+        "duree_min_secondes",
+        "duree_max_secondes",
+        "distance_km",
+        "vitesse_moyenne_kmh",
+        "vitesse_min_kmh",
+        "vitesse_max_kmh",
+    ]
+
+    if df_troncons_uniques.empty:
+        # Aucun tronçon de référence pour ce mode (ex : réseau sans
+        # trolleybus) : .apply(axis=1) sur un DataFrame à 0 ligne ne produit
+        # pas de colonne exploitable plus bas, d'où ce retour anticipé.
+        print("⚠ Aucun tronçon de référence pour ce mode")
+        df_resultat = df_troncons_uniques.copy()
+        for colonne in colonnes_stats:
+            df_resultat[colonne] = pd.Series(dtype="float64")
+        df_resultat["nombre_passages"] = df_resultat["nombre_passages"].astype(int)
+        return df_resultat
+
     # Créer le mapping stop_id -> parent_station
     mapping_parent = preparer_mapping_parent_stops(feed)
 
@@ -153,23 +175,36 @@ def calculer_frequentation_troncons(feed, df_troncons_uniques, service_ids, rout
     print(f"✓ {len(passages_list)} passages détectés")
 
     if not passages_list:
+        # Des tronçons de référence existent pour ce mode, mais aucun passage
+        # n'a été détecté à cette date (ex : pas de service ce jour-là) : on
+        # renvoie les tronçons avec nombre_passages=0 plutôt que None, pour
+        # rester compatible avec gpd.GeoDataFrame(..., geometry="geometry")
+        # plus bas dans le pipeline.
         print("⚠ Aucun passage détecté")
-        return None
-
-    df_passages = pd.DataFrame(passages_list)
-
-    # Agréger par paire de stops (tous sens confondus)
-    # On compte le nombre de passages et calcule la durée moyenne
-    stats_par_paire = (
-        df_passages.groupby("stop_pair")
-        .agg(
-            nombre_passages=("trip_id", "count"),
-            duree_moyenne_secondes=("duree_secondes", "mean"),
-            duree_min_secondes=("duree_secondes", "min"),
-            duree_max_secondes=("duree_secondes", "max"),
+        stats_par_paire = pd.DataFrame(
+            columns=[
+                "stop_pair",
+                "nombre_passages",
+                "duree_moyenne_secondes",
+                "duree_min_secondes",
+                "duree_max_secondes",
+            ]
         )
-        .reset_index()
-    )
+    else:
+        df_passages = pd.DataFrame(passages_list)
+
+        # Agréger par paire de stops (tous sens confondus)
+        # On compte le nombre de passages et calcule la durée moyenne
+        stats_par_paire = (
+            df_passages.groupby("stop_pair")
+            .agg(
+                nombre_passages=("trip_id", "count"),
+                duree_moyenne_secondes=("duree_secondes", "mean"),
+                duree_min_secondes=("duree_secondes", "min"),
+                duree_max_secondes=("duree_secondes", "max"),
+            )
+            .reset_index()
+        )
 
     print(f"✓ Statistiques calculées pour {len(stats_par_paire)} paires de stops")
 
@@ -235,6 +270,8 @@ def compute_indicateurs_troncons(
     active_service_ids: list[str],
     reference_troncons_uniques_bus: pd.DataFrame,
     reference_troncons_uniques_tram: pd.DataFrame,
+    reference_troncons_uniques_metro: pd.DataFrame,
+    reference_troncons_uniques_trolley: pd.DataFrame,
 ):
     """
     Réalise le calcul des indicateurs par tronçon pour une date d'analyse donnée
@@ -246,9 +283,13 @@ def compute_indicateurs_troncons(
             Table des tronçons uniques bus
         reference_troncons_uniques_tram (pd.DataFrame):
             Table des tronçons uniques tram
+        reference_troncons_uniques_metro (pd.DataFrame):
+            Table des tronçons uniques metro
+        reference_troncons_uniques_trolley (pd.DataFrame):
+            Table des tronçons uniques trolley  
 
     Returns:
-        Tuple de GeoDataFrame : (indicateurs_bus, indicateurs_tram)
+        Tuple de GeoDataFrame : (indicateurs_bus, indicateurs_tram, indicateurs_metro, indicateurs_trolley)
     """
 
     # Calculer la fréquentation
@@ -258,6 +299,14 @@ def compute_indicateurs_troncons(
 
     indicateurs_tram = calculer_frequentation_troncons(
         feed, reference_troncons_uniques_tram, active_service_ids, route_type=0  # Tram
+    )
+    
+    indicateurs_metro = calculer_frequentation_troncons( 
+        feed, reference_troncons_uniques_metro, active_service_ids, route_type=1 #Metro
+        ) 
+    
+    indicateurs_trolley = calculer_frequentation_troncons(
+        feed, reference_troncons_uniques_trolley, active_service_ids, route_type=11 #Trolley
     )
 
     # Convertir en GeoDataFrame
@@ -269,9 +318,18 @@ def compute_indicateurs_troncons(
         indicateurs_tram, geometry="geometry", crs="EPSG:4326"
     )
 
-    return indicateurs_bus_gdf, indicateurs_tram_gdf
-
-
+    indicateurs_metro_gdf = gpd.GeoDataFrame(
+        indicateurs_metro, geometry="geometry", crs="EPSG:4326"
+    )
+    indicateurs_trolley_gdf = gpd.GeoDataFrame(
+        indicateurs_trolley, geometry="geometry", crs="EPSG:4326"
+    )
+    
+    return indicateurs_bus_gdf, indicateurs_tram_gdf, indicateurs_metro_gdf, indicateurs_trolley_gdf
+ 
+ 
+"""
+ 
 # =============================================================================
 # EXEMPLE D'UTILISATION
 # =============================================================================
@@ -311,3 +369,4 @@ if __name__ == "__main__":
     exporter_geojson(
         indicateurs_tram, f"output/indicateurs_troncons_tram_{date_calcul}.geojson"
     )
+"""

@@ -9,3 +9,10 @@ wheels/
 
 # Virtual environments
 .venv
+env/
+
+# Fichiers générés (cartes HTML, CSV, logos)
+output/
+
+# macOS
+.DS_Store
