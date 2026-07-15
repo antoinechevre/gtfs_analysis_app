@@ -12,11 +12,13 @@ def home_page():
     # Section Hackathon
     st.markdown(
         """
-    ## Hackathon TSNI 2025 - Cerema
+    ## Application analyse GTFS 
 
-    Ce projet a été développé lors du Hackathon TSNI 2025 du Cerema.
+    Ce projet a été développé lors du Hackathon TSNI 2025 du Cerema et reprise par Antoine Chevre (et claude.ai...)
     
-    **Équipe :** Patrick GENDRE, Hugo DE LUCA et Maxence LIOGIER
+    **Équipe CEREMA :** Patrick GENDRE, Hugo DE LUCA et Maxence LIOGIER
+    **Antoine Chevre 
+   
     """
     )
 
@@ -27,8 +29,13 @@ def home_page():
         """
     ## 🔗 Liens rapides
 
+    Le projet originel 
     Pour aller plus loin, vous pouvez consulter le notebook disponible sur Colab :
     - **📓 [Notebook Google Colab](https://colab.research.google.com/github/CEREMA/hackathon-gtfs/blob/main/gtfs_notebook.ipynb)** : Prendre en main le code, exécuter les cellules et regarder les cartographies dynamiques
+    
+    
+    Le projet amélioré 
+        https://github.com/antoinechevre/gtfs_analysis_app 
     """
     )
 
@@ -53,8 +60,10 @@ def home_page():
     ## Bienvenue dans l'application d'analyse GTFS
 
     Cette application vous permet d'analyser les données GTFS (General Transit Feed Specification)
-    pour extraire des indicateurs clés sur les transports en commun.
+    pour extraire des indicateurs clés sur les transports en commun. 
+    Elle détermine la plage temporelle sur laquelle le GTFS est actif et identifie un JOB (jour ouvrable de base mardi ou jeudi de manière aléatoire)
 
+       
     ### Fonctionnalités disponibles :
 
     #### 📍 **Analyse par Arrêts**
@@ -63,15 +72,15 @@ def home_page():
     - Statistiques détaillées
 
     #### 🛤️ **Analyse par Tronçons**
-    - Nombre de passages par tronçon (bus, tram, métro, etc.)
+    - Nombre de passages par tronçon (bus, tram, métro, trolley; etc.)
     - Calcul des vitesses moyennes
     - Carte interactive des tronçons
-    - ⚠️ **Actuellement limité au réseau de Montpellier**
+    - app élargie à plusieurs GTFS français à retrouver sur https://transport.data.gouv.fr/
+
 
     ### Instructions :
     1. **Chargez un fichier GTFS** dans la barre latérale (format ZIP)
-    2. **Sélectionnez une date** d'analyse
-    3. **Naviguez entre les pages** pour explorer les analyses
+    2. **Naviguez entre les pages** pour explorer les analyses
 
     > **⚠️ Limitation importante :** L'analyse des tronçons est actuellement une preuve de concept
     > développée spécifiquement pour le réseau de Montpellier. L'application détecte automatiquement
@@ -87,10 +96,14 @@ def home_page():
     # Section Auteurs
     st.markdown(
         """
-    ## Contributeurs :
+    ## Contributeurs originaux  :
     - Hugo De Luca ([@hugo-deluca](https://github.com/hugo-deluca))
     - Maxence Liogier ([@maxenceLIOGIER](https://github.com/maxenceLIOGIER))
     - Patrick Gendre ([@PatGendre](https://github.com/PatGendre))
+
+    ## Contributeur amélioration 
+    - Antoine Chèvre https://github.com/antoinechevre
+
 
     ---
 

@@ -12,6 +12,17 @@ import streamlit.components.v1 as components
 from src.indicateurs_troncons import compute_indicateurs_troncons
 from src.cartographie import creer_carte_troncons
 from src.create_troncons_uniques import creer_troncons_uniques
+from src.info_reseau import dates_service
+from src.utils import km_par_ligne_plage
+from src.export_html import exporter_camembert_html, exporter_tableau_lignes_html
+
+# route_type GTFS -> (nom_mode, emoji) pour chaque mode couvert par cette page
+MODES = [
+    (3, "Bus", "🚌"),
+    (0, "Tram", "🚊"),
+    (1, "Metro", "🚇"),
+    (11, "Trolley", "🚎"),
+]
 
 
 def charger_ou_calculer_troncons(feed, route_type, nom_mode):
@@ -26,9 +37,9 @@ def charger_ou_calculer_troncons(feed, route_type, nom_mode):
     feed : gtfs_kit Feed object
         Feed GTFS chargé
     route_type : int
-        Type de route GTFS (0=tram, 3=bus, etc.)
+        Type de route GTFS (0=tram, 1=métro, 3=bus, 11=trolleybus, etc.)
     nom_mode : str
-        Nom du mode pour les messages ("Bus" ou "Tram")
+        Nom du mode pour les messages ("Bus", "Tram", "Metro" ou "Trolley")
 
     Returns:
     --------
@@ -54,10 +65,7 @@ def troncons_page():
     # Avertissement sur les limitations
     st.warning(
         """
-    ⚠️ **Limitation importante :** Cette analyse des tronçons est actuellement une preuve de concept
-    développée spécifiquement pour le réseau de Montpellier. Bien que l'application détecte automatiquement
-    les modes de transport présents dans votre GTFS, les calculs d'indicateurs pourraient nécessiter
-    des adaptations pour d'autres réseaux urbains.
+    ⚠️ Cette analyse a été debugger sur plusieurs GTFS en mentionnant les modes bus / tram / metro / trolley
     """
     )
 
@@ -73,34 +81,41 @@ def troncons_page():
         if (
             st.session_state.indicateurs_bus is None
             or st.session_state.indicateurs_tram is None
+            or st.session_state.indicateurs_metro is None
+            or st.session_state.indicateurs_trolley is None
         ):
 
             with st.spinner("Chargement/Calcul des tronçons de référence..."):
-                # Calculer automatiquement les tronçons pour bus et tram
-                # df_troncons_uniques_bus = creer_troncons_uniques(st.session_state.feed, route_type=3)
-                # df_troncons_uniques_tram = creer_troncons_uniques(st.session_state.feed, route_type=0)
-                troncons_bus = charger_ou_calculer_troncons(
-                    st.session_state.feed, route_type=3, nom_mode="Bus"
-                )
-                troncons_tram = charger_ou_calculer_troncons(
-                    st.session_state.feed, route_type=0, nom_mode="Tram"
-                )
+                troncons_par_mode = {
+                    nom_mode: charger_ou_calculer_troncons(
+                        st.session_state.feed, route_type=route_type, nom_mode=nom_mode
+                    )
+                    for route_type, nom_mode, _ in MODES
+                }
 
-                if troncons_bus is None or troncons_tram is None:
+                if any(t is None for t in troncons_par_mode.values()):
                     st.error("Impossible de calculer les tronçons de référence.")
                     return
 
             with st.spinner("Calcul des indicateurs de tronçons..."):
                 try:
-
-                    indicateurs_bus, indicateurs_tram = compute_indicateurs_troncons(
+                    (
+                        indicateurs_bus,
+                        indicateurs_tram,
+                        indicateurs_metro,
+                        indicateurs_trolley,
+                    ) = compute_indicateurs_troncons(
                         st.session_state.feed,
                         st.session_state.active_service_ids,
-                        troncons_bus,
-                        troncons_tram,
+                        troncons_par_mode["Bus"],
+                        troncons_par_mode["Tram"],
+                        troncons_par_mode["Metro"],
+                        troncons_par_mode["Trolley"],
                     )
                     st.session_state.indicateurs_bus = indicateurs_bus
                     st.session_state.indicateurs_tram = indicateurs_tram
+                    st.session_state.indicateurs_metro = indicateurs_metro
+                    st.session_state.indicateurs_trolley = indicateurs_trolley
                 except Exception as e:
                     st.error(f"Erreur lors du calcul des tronçons : {e}")
                     return
@@ -108,73 +123,88 @@ def troncons_page():
         if (
             st.session_state.indicateurs_bus is not None
             and st.session_state.indicateurs_tram is not None
+            and st.session_state.indicateurs_metro is not None
+            and st.session_state.indicateurs_trolley is not None
         ):
 
             indicateurs_bus = st.session_state.indicateurs_bus
             indicateurs_tram = st.session_state.indicateurs_tram
+            indicateurs_metro = st.session_state.indicateurs_metro
+            indicateurs_trolley = st.session_state.indicateurs_trolley
+            indicateurs_par_mode = {
+                "Bus": indicateurs_bus,
+                "Tram": indicateurs_tram,
+                "Metro": indicateurs_metro,
+                "Trolley": indicateurs_trolley,
+            }
 
             st.success("✅ Analyse des tronçons terminée !")
 
             # Statistiques globales
             st.header("📊 Statistiques Globales")
-            col1, col2, col3, col4 = st.columns(4)
-            with col1:
-                st.metric(
-                    "Tronçons Bus actifs",
-                    len(indicateurs_bus[indicateurs_bus["nombre_passages"] > 0]),
-                )
-            with col2:
-                st.metric(
-                    "Tronçons Tram actifs",
-                    len(indicateurs_tram[indicateurs_tram["nombre_passages"] > 0]),
-                )
-            with col3:
-                total_bus = int(indicateurs_bus["nombre_passages"].sum())
-                st.metric("Total passages Bus", total_bus)
-            with col4:
-                total_tram = int(indicateurs_tram["nombre_passages"].sum())
-                st.metric("Total passages Tram", total_tram)
+            colonnes_stats = st.columns(len(MODES))
+            for (_, nom_mode, emoji), colonne in zip(MODES, colonnes_stats):
+                indicateurs_mode = indicateurs_par_mode[nom_mode]
+                with colonne:
+                    st.metric(
+                        f"{emoji} Tronçons {nom_mode} actifs",
+                        len(indicateurs_mode[indicateurs_mode["nombre_passages"] > 0]),
+                    )
+                    st.metric(
+                        f"Total passages {nom_mode}",
+                        int(indicateurs_mode["nombre_passages"].sum()),
+                    )
+
+            # Répartition des véh.km par mode et tableau des lignes
+            if st.session_state.total_vk_plage is None:
+                with st.spinner("Calcul des véh.km par ligne sur la plage de service..."):
+                    liste_dates_service, _, _, _ = dates_service(st.session_state.feed)
+                    st.session_state.total_vk_plage = km_par_ligne_plage(
+                        liste_dates_service, st.session_state.feed
+                    )
+            total_vk_plage = st.session_state.total_vk_plage
+
+            date_service_str = f"Analyse du {st.session_state.date_str}"
+
+            output_camembert = os.path.join(tempfile.gettempdir(), "camembert_troncons_streamlit.html")
+            exporter_camembert_html(
+                st.session_state.nom_reseau_str,
+                date_service_str,
+                total_vk_plage,
+                output_camembert,
+            )
+            with open(output_camembert, "r", encoding="utf-8") as f:
+                components.html(f.read(), height=450, scrolling=True)
+
+            output_tableau = os.path.join(tempfile.gettempdir(), "tableau_lignes_streamlit.html")
+            exporter_tableau_lignes_html(
+                st.session_state.nom_reseau_str,
+                date_service_str,
+                st.session_state.feed,
+                output_tableau,
+                total_vk_plage=total_vk_plage,
+            )
+            with open(output_tableau, "r", encoding="utf-8") as f:
+                components.html(f.read(), height=600, scrolling=True)
 
             # Top tronçons
-            col1, col2 = st.columns(2)
-
-            with col1:
-                st.header("🚌 Top 10 Tronçons Bus")
-                bus_actifs = indicateurs_bus[
-                    indicateurs_bus["nombre_passages"] > 0
-                ].copy()
-                if not bus_actifs.empty:
-                    bus_actifs = bus_actifs.sort_values(
-                        "nombre_passages", ascending=False
-                    )
-                    cols_to_show = [
-                        "stop_depart_name",
-                        "stop_arrivee_name",
-                        "nombre_passages",
-                        "vitesse_moyenne_kmh",
-                    ]
-                    st.dataframe(bus_actifs[cols_to_show].head(10))
-                else:
-                    st.info("Aucun tronçon bus actif.")
-
-            with col2:
-                st.header("🚊 Top 10 Tronçons Tram")
-                tram_actifs = indicateurs_tram[
-                    indicateurs_tram["nombre_passages"] > 0
-                ].copy()
-                if not tram_actifs.empty:
-                    tram_actifs = tram_actifs.sort_values(
-                        "nombre_passages", ascending=False
-                    )
-                    cols_to_show = [
-                        "stop_depart_name",
-                        "stop_arrivee_name",
-                        "nombre_passages",
-                        "vitesse_moyenne_kmh",
-                    ]
-                    st.dataframe(tram_actifs[cols_to_show].head(10))
-                else:
-                    st.info("Aucun tronçon tram actif.")
+            cols_to_show = [
+                "stop_depart_name",
+                "stop_arrivee_name",
+                "nombre_passages",
+                "vitesse_moyenne_kmh",
+            ]
+            colonnes_top = st.columns(len(MODES))
+            for (_, nom_mode, emoji), colonne in zip(MODES, colonnes_top):
+                indicateurs_mode = indicateurs_par_mode[nom_mode]
+                with colonne:
+                    st.header(f"{emoji} Top 10 Tronçons {nom_mode}")
+                    actifs = indicateurs_mode[indicateurs_mode["nombre_passages"] > 0].copy()
+                    if not actifs.empty:
+                        actifs = actifs.sort_values("nombre_passages", ascending=False)
+                        st.dataframe(actifs[cols_to_show].head(10))
+                    else:
+                        st.info(f"Aucun tronçon {nom_mode.lower()} actif.")
 
             # Carte interactive
             st.header("🗺️ Carte Interactive des Tronçons")
@@ -182,7 +212,10 @@ def troncons_page():
             m = creer_carte_troncons(
                 indicateurs_bus,
                 indicateurs_tram,
+                indicateurs_metro,
+                indicateurs_trolley,
                 output_map,
+                date_service_str,
                 nom_reseau_str=st.session_state.nom_reseau_str,
                 chemin_logo=st.session_state.chemin_logo,
             )
@@ -190,23 +223,18 @@ def troncons_page():
 
             # Télécharger les résultats
             st.header("💾 Téléchargement")
-            col1, col2 = st.columns(2)
-            with col1:
-                csv_bus = indicateurs_bus.to_csv(index=False).encode("utf-8")
-                st.download_button(
-                    label="📥 Télécharger Bus CSV",
-                    data=csv_bus,
-                    file_name=f"indicateurs_troncons_bus_{st.session_state.date_str}.csv",
-                    mime="text/csv",
-                )
-            with col2:
-                csv_tram = indicateurs_tram.to_csv(index=False).encode("utf-8")
-                st.download_button(
-                    label="📥 Télécharger Tram CSV",
-                    data=csv_tram,
-                    file_name=f"indicateurs_troncons_tram_{st.session_state.date_str}.csv",
-                    mime="text/csv",
-                )
+            colonnes_telechargement = st.columns(len(MODES))
+            for (_, nom_mode, emoji), colonne in zip(MODES, colonnes_telechargement):
+                indicateurs_mode = indicateurs_par_mode[nom_mode]
+                with colonne:
+                    csv = indicateurs_mode.to_csv(index=False).encode("utf-8")
+                    st.download_button(
+                        label=f"📥 Télécharger {nom_mode} CSV",
+                        data=csv,
+                        file_name=f"indicateurs_troncons_{nom_mode.lower()}_{st.session_state.date_str}.csv",
+                        mime="text/csv",
+                        key=f"telechargement_{nom_mode.lower()}",
+                    )
         else:
             st.info("🔄 Calcul des indicateurs en cours...")
     else:

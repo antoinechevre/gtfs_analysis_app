@@ -8,8 +8,30 @@ import tempfile
 import streamlit as st
 import streamlit.components.v1 as components
 
-from src.arrets import calculer_indicateurs_arrets
 from src.cartographie import create_carte_arrets
+
+from src.utils import (
+    charger_gtfs,
+    longueur_lignes,
+    km_par_ligne_jour,
+    km_par_ligne_plage,
+    obtenir_service_ids_pour_date,
+    exporter_df_to_csv,
+    exporter_geojson,
+    exporter_gdf_to_csv,
+    
+)
+from src.info_reseau import dates_service, formater_date_fr, date_str, longueur_par_lignes, nom_reseau_str, chemin_logo, recuperer_logo_reseau, nom_reseau 
+
+from src.arrets import calculer_indicateurs_arrets, afficher_statistiques
+#from src.create_troncons_uniques import creer_troncons_uniques
+#from src.indicateurs_troncons import compute_indicateurs_troncons
+
+from src.export_html import (
+    exporter_tableau_lignes_html,
+    exporter_camembert_html,
+    exporter_statistiques_html,
+)
 
 
 def arrets_page():
@@ -20,7 +42,18 @@ def arrets_page():
         st.session_state.feed is not None
         and st.session_state.active_service_ids is not None
     ):
+        # afficher infos réseau 
+           #cherche nom réseau 
+        nom_reseau_str=nom_reseau_str(st.session_state.feed)
+        st.info(f"Le GTFS concerne le réseau {nom_reseau_str}")
 
+        dates_service, date_debut , date_fin , date_JOB = dates_service(st.session_state.feed)
+
+        date_service_str, date_JOB_text = date_str(date_debut, date_fin, date_JOB)
+
+        st.info(f"Il est valide sur la plage {date_service_str}, le JOB choisi au hasard est {date_JOB_text}")
+        
+        
         # Calculer les indicateurs automatiquement si pas déjà fait
         if st.session_state.indicateurs_arrets is None:
             with st.spinner("Calcul des indicateurs d'arrêts..."):
@@ -61,6 +94,19 @@ def arrets_page():
                 st.dataframe(actifs.drop(columns=["stop_lon", "stop_lat"]).head(10))
             else:
                 st.info("Aucun arrêt actif trouvé.")
+
+            # Fiche statistiques (export HTML)
+            st.header("📄 Fiche Statistiques")
+            output_stats = os.path.join(tempfile.gettempdir(), "statistiques_arrets_streamlit.html")
+            exporter_statistiques_html(
+                indicateurs,
+                f"Analyse du {st.session_state.date_str}",
+                st.session_state.date_str,
+                output_stats,
+                nom_reseau_str=st.session_state.nom_reseau_str,
+            )
+            with open(output_stats, "r", encoding="utf-8") as f:
+                components.html(f.read(), height=600, scrolling=True)
 
             # Carte
             st.header("🗺️ Carte des Arrêts")

@@ -1,5 +1,6 @@
 """
 Application d'analyse GTFS - Interface principale
+
 """
 
 from IPython.display import IFrame
@@ -40,7 +41,7 @@ from src.cartographie import creer_carte_troncons, create_carte_arrets
 from src.create_troncons_uniques import creer_troncons_uniques
 from src.indicateurs_troncons import compute_indicateurs_troncons
 
-from src.info_reseau import dates_service, formater_date_fr, date_str, longueur_par_lignes, nom_reseau_str, chemin_logo, recuperer_logo_reseau, nom_reseau 
+from src.info_reseau import dates_service, recuperer_logo_reseau, nom_reseau
 
 from src.export_html import (
     exporter_tableau_lignes_html,
@@ -120,6 +121,12 @@ if "indicateurs_bus" not in st.session_state:
     st.session_state.indicateurs_bus = None
 if "indicateurs_tram" not in st.session_state:
     st.session_state.indicateurs_tram = None
+if "indicateurs_metro" not in st.session_state:
+    st.session_state.indicateurs_metro = None
+if "indicateurs_trolley" not in st.session_state:
+    st.session_state.indicateurs_trolley = None
+if "total_vk_plage" not in st.session_state:
+    st.session_state.total_vk_plage = None
 if "modes_disponibles" not in st.session_state:
     st.session_state.modes_disponibles = None
 if "last_date_str" not in st.session_state:
@@ -134,109 +141,75 @@ if "last_uploaded_name" not in st.session_state:
     st.session_state.last_uploaded_name = None
 
 
-"""
-def date_selected(): 
-    
-    # La librairie gtfs_kit est utilisée pour charger le GTFS
-feed = charger_gtfs(GTFS_ZIP_PATH)
+# Fonction pour charger les données. La date d'analyse (date_JOB) n'est
+# pas choisie par l'utilisateur : elle est déterminée automatiquement à
+# partir du GTFS (un mardi ou un jeudi tiré au hasard dans la plage de
+# service fiable, voir src/info_reseau.dates_service).
+def charger_donnees_gtfs():
+    if uploaded_file is None:
+        return False
 
-print(type(feed))  # Vérification du type de l'objet feed
+    # Ne recharger le GTFS (et le logo, qui nécessite une requête réseau)
+    # que si un nouveau fichier a été uploadé, pas à chaque interaction
+    nouveau_fichier = uploaded_file.name != st.session_state.last_uploaded_name
 
-# Calcul de la longueur des shapes une seule fois, en dehors de la boucle
+    if not nouveau_fichier and st.session_state.feed is not None:
+        return True
 
-longueur_par_lignes=longueur_lignes(feed)
+    # Sauvegarder temporairement le fichier (conservé pour toute la
+    # session : create_carte_arrets recharge le feed depuis ce chemin
+    # pour tracer les lignes)
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".zip") as tmp_file:
+        tmp_file.write(uploaded_file.read())
+        zip_path = tmp_file.name
 
-print(longueur_par_lignes)
+    try:
+        # Charger le GTFS
+        with st.spinner("Chargement du fichier GTFS..."):
+            feed = charger_gtfs(zip_path)
 
-"""
+        # Plage de service fiable et jour ouvré de base (mardi/jeudi au hasard)
+        _, _, _, date_JOB = dates_service(feed)
+        date_str = date_JOB
 
+        # Obtenir les services actifs
+        active_service_ids = obtenir_service_ids_pour_date(feed, date_str)
 
-feed = charger_gtfs(uploaded_file)
+        # Nom du réseau et logo (best-effort : le logo nécessite une
+        # requête réseau vers le site de l'agence, ne doit pas bloquer
+        # l'appli en cas d'échec)
+        reseau_str = str(nom_reseau(feed))
+        try:
+            chemin_logo = recuperer_logo_reseau(feed, dossier_sortie=tempfile.gettempdir())
+        except Exception:
+            chemin_logo = None
 
-dates_service, date_debut , date_fin , date_JOB = dates_service(feed)
-
-date_service_str, date_JOB_text = date_str(date_debut, date_fin, date_JOB)
-
-   
-
-# Fonction pour vérifier si la date a changé et remettre à zéro les indicateurs
-def check_date_change(date_selected):
-    current_date_str = date_selected.strftime("%Y%m%d") if date_selected else None
-    if st.session_state.last_date_str != current_date_str:
-        # La date a changé, remettre à zéro tous les indicateurs
-        st.session_state.indicateurs_arrets = None
+        # Stocker dans session_state
+        st.session_state.feed = feed
+        st.session_state.active_service_ids = active_service_ids
+        st.session_state.date_str = date_str
+        st.session_state.zip_path = zip_path
+        st.session_state.nom_reseau_str = reseau_str
+        st.session_state.chemin_logo = chemin_logo
+        st.session_state.last_uploaded_name = uploaded_file.name
+        st.session_state.indicateurs_arrets = None  # Réinitialiser les indicateurs
         st.session_state.indicateurs_bus = None
         st.session_state.indicateurs_tram = None
+        st.session_state.indicateurs_metro = None
+        st.session_state.indicateurs_trolley = None
+        st.session_state.total_vk_plage = None
         st.session_state.modes_disponibles = None
-        st.session_state.last_date_str = current_date_str
 
+        return True
 
-
-
-# Fonction pour charger les données
-def charger_donnees_gtfs(date_selected):
-    if uploaded_file is not None :
-        date_str = date_selected.strftime("%Y%m%d")
-
-        # Ne recharger le GTFS (et le logo, qui nécessite une requête réseau)
-        # que si un nouveau fichier a été uploadé, pas à chaque interaction
-        nouveau_fichier = uploaded_file.name != st.session_state.last_uploaded_name
-
-        if not nouveau_fichier and st.session_state.feed is not None:
-            st.session_state.date_str = date_str
-            return True
-
-        # Sauvegarder temporairement le fichier (conservé pour toute la
-        # session : create_carte_arrets recharge le feed depuis ce chemin
-        # pour tracer les lignes)
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".zip") as tmp_file:
-            tmp_file.write(uploaded_file.read())
-            zip_path = tmp_file.name
-
-        try:
-            # Charger le GTFS
-            with st.spinner("Chargement du fichier GTFS..."):
-                feed = charger_gtfs(zip_path)
-
-            # Obtenir les services actifs
-            active_service_ids = obtenir_service_ids_pour_date(feed, date_str)
-
-            # Nom du réseau et logo (best-effort : le logo nécessite une
-            # requête réseau vers le site de l'agence, ne doit pas bloquer
-            # l'appli en cas d'échec)
-            reseau_str = str(nom_reseau(feed))
-            try:
-                chemin_logo = recuperer_logo_reseau(feed, dossier_sortie=tempfile.gettempdir())
-            except Exception:
-                chemin_logo = None
-
-            # Stocker dans session_state
-            st.session_state.feed = feed
-            st.session_state.active_service_ids = active_service_ids
-            st.session_state.date_str = date_str
-            st.session_state.zip_path = zip_path
-            st.session_state.nom_reseau_str = reseau_str
-            st.session_state.chemin_logo = chemin_logo
-            st.session_state.last_uploaded_name = uploaded_file.name
-            st.session_state.indicateurs_arrets = None  # Réinitialiser les indicateurs
-            st.session_state.indicateurs_bus = None
-            st.session_state.indicateurs_tram = None
-            st.session_state.modes_disponibles = None
-
-            return True
-
-        except Exception as e:
-            st.error(f"Erreur lors du chargement : {e}")
-            os.unlink(zip_path)
-            return False
-    return False
+    except Exception as e:
+        st.error(f"Erreur lors du chargement : {e}")
+        os.unlink(zip_path)
+        return False
 
 
 # Charger les données automatiquement si nécessaire
 charger_donnees_gtfs()
-
-# Vérifier si la date a changé et remettre à zéro les indicateurs si nécessaire
-check_date_change()
 
 # Navigation entre les pages
 if st.session_state.selected_page == "Accueil":
