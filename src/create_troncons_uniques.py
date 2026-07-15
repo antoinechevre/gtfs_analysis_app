@@ -29,8 +29,11 @@ def creer_troncons_uniques(feed, route_type):
 
     # 1. Préparer le mapping vers les parent_stations
     stops = feed.stops.copy()
-    stops["parent_station"] = stops["parent_station"].fillna(stops["stop_id"])
-    stops.loc[stops["parent_station"] == "", "parent_station"] = stops["stop_id"]
+    if "parent_station" not in stops.columns:
+        stops["parent_station"] = stops["stop_id"]
+    else:
+        stops["parent_station"] = stops["parent_station"].fillna(stops["stop_id"])
+        stops.loc[stops["parent_station"] == "", "parent_station"] = stops["stop_id"]
 
     # Mapping stop_id -> parent_station
     stop_to_parent = stops.set_index("stop_id")["parent_station"].to_dict()

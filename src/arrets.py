@@ -42,12 +42,14 @@ def calculer_indicateurs_arrets(feed, date_str: str):
         # différents quais d'une même station sont ainsi regroupés ensemble.
         # Les arrêts sans parent_station (stations autonomes) se regroupent sur
         # eux-mêmes.
-    stops_avec_station = feed.stops[["stop_id", "parent_station"]].copy()
-
-
-    stops_avec_station["station_id"] = stops_avec_station["parent_station"].fillna(
-        stops_avec_station["stop_id"]
-    )
+    if "parent_station" in feed.stops.columns:
+        stops_avec_station = feed.stops[["stop_id", "parent_station"]].copy()
+        stops_avec_station["station_id"] = stops_avec_station["parent_station"].fillna(
+            stops_avec_station["stop_id"]
+        )
+    else:
+        stops_avec_station = feed.stops[["stop_id"]].copy()
+        stops_avec_station["station_id"] = stops_avec_station["stop_id"]
 
     stop_times_actifs = stop_times_actifs.merge(
             stops_avec_station[["stop_id", "station_id"]], on="stop_id", how="left"
