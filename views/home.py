@@ -18,7 +18,7 @@ def home_page():
     
     **Équipe CEREMA :** Patrick GENDRE, Hugo DE LUCA et Maxence LIOGIER
 
-    **Antoine Chevre**
+    **Contributeur :** Antoine Chèvre 🐐
     """
     )
 
@@ -34,7 +34,7 @@ def home_page():
     - **📓 [Notebook Google Colab](https://colab.research.google.com/github/CEREMA/hackathon-gtfs/blob/main/gtfs_notebook.ipynb)** : Prendre en main le code, exécuter les cellules et regarder les cartographies dynamiques
     
     
-    - **Le projet amélioré https://github.com/antoinechevre/gtfs_analysis_app 
+    - Le projet amélioré https://github.com/antoinechevre/gtfs_analysis_app 
     """
     )
 
