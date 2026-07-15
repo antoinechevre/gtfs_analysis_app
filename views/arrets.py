@@ -120,7 +120,7 @@ def arrets_page():
                 output_map,
                 chemin_logo=st.session_state.chemin_logo,
             )
-            components.html(m._repr_html_(), height=500, width=1000)
+            components.html(m._repr_html_(), height=1000, width=1000)
 
             # Télécharger les résultats
             st.header("💾 Téléchargement")
