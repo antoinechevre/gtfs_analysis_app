@@ -33,8 +33,6 @@ from src.utils import (
     exporter_df_to_csv,
     exporter_geojson,
     exporter_gdf_to_csv,
-    recuperer_logo_reseau,
-    nom_reseau,
 )
 from src.arrets import calculer_indicateurs_arrets, afficher_statistiques
 from src.cartographie import creer_carte_troncons, create_carte_arrets 
