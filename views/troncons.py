@@ -65,7 +65,7 @@ def troncons_page():
     # Avertissement sur les limitations
     st.warning(
         """
-    ⚠️ Cette analyse a été debugger sur plusieurs GTFS en mentionnant les modes bus / tram / metro / trolley
+    ⚠️ Cette analyse a été debuggé sur plusieurs GTFS en mentionnant les modes bus / tram / metro / trolley
     """
     )
 
@@ -187,21 +187,25 @@ def troncons_page():
             with open(output_tableau, "r", encoding="utf-8") as f:
                 components.html(f.read(), height=600, scrolling=True)
 
-            # Top tronçons
+            # Top tronçons (uniquement les modes présents dans le GTFS)
             cols_to_show = [
                 "stop_depart_name",
                 "stop_arrivee_name",
                 "nombre_passages",
                 "vitesse_moyenne_kmh",
             ]
-            colonnes_top = st.columns(len(MODES))
-            for (_, nom_mode, emoji), colonne in zip(MODES, colonnes_top):
+            modes_presents = [
+                mode for mode in MODES if len(indicateurs_par_mode[mode[1]]) > 0
+            ]
+            colonnes_top = st.columns(len(modes_presents))
+            for (_, nom_mode, emoji), colonne in zip(modes_presents, colonnes_top):
                 indicateurs_mode = indicateurs_par_mode[nom_mode]
                 with colonne:
                     st.header(f"{emoji} Top 10 Tronçons {nom_mode}")
                     actifs = indicateurs_mode[indicateurs_mode["nombre_passages"] > 0].copy()
                     if not actifs.empty:
                         actifs = actifs.sort_values("nombre_passages", ascending=False)
+                        actifs["vitesse_moyenne_kmh"] = actifs["vitesse_moyenne_kmh"].round(1)
                         st.dataframe(actifs[cols_to_show].head(10))
                     else:
                         st.info(f"Aucun tronçon {nom_mode.lower()} actif.")
@@ -219,7 +223,7 @@ def troncons_page():
                 nom_reseau_str=st.session_state.nom_reseau_str,
                 chemin_logo=st.session_state.chemin_logo,
             )
-            components.html(m._repr_html_(), height=600, width=1000)
+            components.html(m._repr_html_(), height=1000, width=1000)
 
             # Télécharger les résultats
             st.header("💾 Téléchargement")
