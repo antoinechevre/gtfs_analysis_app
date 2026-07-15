@@ -12,9 +12,9 @@ import streamlit.components.v1 as components
 from src.indicateurs_troncons import compute_indicateurs_troncons
 from src.cartographie import creer_carte_troncons
 from src.create_troncons_uniques import creer_troncons_uniques
-from src.info_reseau import dates_service
 from src.utils import km_par_ligne_plage
 from src.export_html import exporter_camembert_html, exporter_tableau_lignes_html
+from src.info_reseau import dates_service, formater_date_fr, date_str, longueur_par_lignes, nom_reseau_str, chemin_logo, recuperer_logo_reseau, nom_reseau 
 
 # route_type GTFS -> (nom_mode, emoji) pour chaque mode couvert par cette page
 MODES = [
@@ -45,6 +45,9 @@ def charger_ou_calculer_troncons(feed, route_type, nom_mode):
     --------
     pandas.DataFrame : Tronçons avec colonnes nécessaires pour l'analyse
     """
+    
+    
+    
     st.info(f"🔄 Calcul automatique des tronçons {nom_mode} depuis le GTFS...")
 
     try:
@@ -65,10 +68,20 @@ def troncons_page():
     # Avertissement sur les limitations
     st.warning(
         """
-    ⚠️ Cette analyse a été debuggé sur plusieurs GTFS en mentionnant les modes bus / tram / metro / trolley
+    ⚠️ Cette analyse a été debuggée sur plusieurs GTFS en mentionnant les modes bus / tram / metro / trolley
     """
     )
+     # afficher infos réseau 
+           #cherche nom réseau 
+    nom_reseau_valeur = nom_reseau_str(st.session_state.feed)
+    st.info(f"Le GTFS concerne le réseau {nom_reseau_valeur}")
 
+    date_debut, date_fin, date_JOB = dates_service(st.session_state.feed)
+
+    date_service_str, date_JOB_text = date_str(date_debut, date_fin, date_JOB)
+
+    st.info(f"Il est valide sur la plage {date_service_str}, le JOB choisi au hasard est {date_JOB_text}")
+        
     st.markdown("---")
 
     # Vérifier si les données sont chargées
