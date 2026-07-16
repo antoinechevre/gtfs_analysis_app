@@ -214,5 +214,5 @@ if st.session_state.selected_page == "Accueil":
     home_page()
 elif st.session_state.selected_page == "Arrêts":
     arrets_page()
-elif st.session_state.selected_page == "Tronçons":
+elif st.session_state.selected_page == "Lignes":
     troncons_page()
