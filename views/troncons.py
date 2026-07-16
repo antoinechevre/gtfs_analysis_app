@@ -14,6 +14,7 @@ from src.create_troncons_uniques import creer_troncons_uniques
 from src.utils import km_par_ligne_plage
 from src.export_html import exporter_camembert_html, exporter_tableau_lignes_html
 from src.info_reseau import dates_service, date_str, nom_reseau_str
+from src.i18n import t
 
 # route_type GTFS -> (nom_mode, emoji) pour chaque mode couvert par cette page
 MODES = [
@@ -25,7 +26,7 @@ MODES = [
 ]
 
 
-def charger_ou_calculer_troncons(feed, route_type, nom_mode):
+def charger_ou_calculer_troncons(feed, route_type, nom_mode, lang="fr"):
     """
     Calcule automatiquement les tronçons depuis le GTFS uploadé.
 
@@ -45,50 +46,45 @@ def charger_ou_calculer_troncons(feed, route_type, nom_mode):
     --------
     pandas.DataFrame : Tronçons avec colonnes nécessaires pour l'analyse
     """
-    
-    
-    
-    st.info(f"🔄 Calcul automatique des tronçons {nom_mode} depuis le GTFS...")
+
+
+
+    st.info(t("troncons.spinner_calcul_auto", lang, mode=nom_mode))
 
     try:
         # Calculer les tronçons uniques
         troncons_gdf = creer_troncons_uniques(feed, route_type)
 
-        st.success(f"✅ {len(troncons_gdf)} tronçons {nom_mode} calculés automatiquement")
+        st.success(t("troncons.succes_calcul_auto", lang, n=len(troncons_gdf), mode=nom_mode))
         return troncons_gdf
 
     except Exception as e:
-        st.error(f"❌ Erreur lors du calcul automatique des tronçons {nom_mode}: {e}")
+        st.error(t("troncons.erreur_calcul_auto", lang, mode=nom_mode, erreur=e))
         return None
 
 
-def troncons_page():
+def troncons_page(lang="fr"):
     st.markdown("---")
 
     # Avertissement sur les limitations
-    st.warning(
-        """
-    ⚠️ Cette analyse a été debuggée sur plusieurs GTFS en mentionnant les modes bus / tram / metro / trolley / ferry
-    """
-    )
-     # afficher infos réseau 
-           #cherche nom réseau 
-    nom_reseau_valeur = nom_reseau_str(st.session_state.feed)
-    st.info(f"Le GTFS concerne le réseau {nom_reseau_valeur}")
-
-    _, date_debut, date_fin, date_JOB = dates_service(st.session_state.feed)
-
-    date_service_str, date_JOB_text = date_str(date_debut, date_fin, date_JOB)
-
-    st.info(f"Il est valide sur la plage {date_service_str}, le JOB choisi au hasard est {date_JOB_text}")
-        
-    st.markdown("---")
+    st.warning(t("troncons.warning_limitations", lang))
 
     # Vérifier si les données sont chargées
     if (
         st.session_state.feed is not None
         and st.session_state.active_service_ids is not None
     ):
+        # afficher infos réseau
+        nom_reseau_valeur = nom_reseau_str(st.session_state.feed)
+        st.info(t("commun.reseau_info", lang, reseau=nom_reseau_valeur))
+
+        _, date_debut, date_fin, date_JOB = dates_service(st.session_state.feed)
+
+        date_service_str, date_JOB_text = date_str(date_debut, date_fin, date_JOB)
+
+        st.info(t("commun.plage_info", lang, plage=date_service_str, job=date_JOB_text))
+
+        st.markdown("---")
 
         # Calculer les indicateurs automatiquement si pas déjà fait
         if (
@@ -99,19 +95,19 @@ def troncons_page():
             or st.session_state.indicateurs_ferry is None
         ):
 
-            with st.spinner("Chargement/Calcul des tronçons de référence..."):
+            with st.spinner(t("troncons.spinner_reference", lang)):
                 troncons_par_mode = {
                     nom_mode: charger_ou_calculer_troncons(
-                        st.session_state.feed, route_type=route_type, nom_mode=nom_mode
+                        st.session_state.feed, route_type=route_type, nom_mode=nom_mode, lang=lang
                     )
                     for route_type, nom_mode, _ in MODES
                 }
 
-                if any(t is None for t in troncons_par_mode.values()):
-                    st.error("Impossible de calculer les tronçons de référence.")
+                if any(t_ is None for t_ in troncons_par_mode.values()):
+                    st.error(t("troncons.erreur_reference", lang))
                     return
 
-            with st.spinner("Calcul des indicateurs de tronçons..."):
+            with st.spinner(t("troncons.spinner_indicateurs", lang)):
                 try:
                     (
                         indicateurs_bus,
@@ -134,7 +130,7 @@ def troncons_page():
                     st.session_state.indicateurs_trolley = indicateurs_trolley
                     st.session_state.indicateurs_ferry = indicateurs_ferry
                 except Exception as e:
-                    st.error(f"Erreur lors du calcul des tronçons : {e}")
+                    st.error(t("troncons.erreur_indicateurs", lang, erreur=e))
                     return
 
         if (
@@ -158,26 +154,26 @@ def troncons_page():
                 "Ferry": indicateurs_ferry,
             }
 
-            st.success("✅ Analyse des tronçons terminée !")
+            st.success(t("troncons.succes", lang))
 
             # Statistiques globales
-            st.header("📊 Statistiques Globales")
+            st.header(t("troncons.header_stats", lang))
             colonnes_stats = st.columns(len(MODES))
             for (_, nom_mode, emoji), colonne in zip(MODES, colonnes_stats):
                 indicateurs_mode = indicateurs_par_mode[nom_mode]
                 with colonne:
                     st.metric(
-                        f"{emoji} Tronçons {nom_mode} actifs",
+                        f"{emoji} " + t("troncons.metric_actifs", lang, mode=nom_mode),
                         len(indicateurs_mode[indicateurs_mode["nombre_passages"] > 0]),
                     )
                     st.metric(
-                        f"Total passages {nom_mode}",
+                        t("troncons.metric_total_passages", lang, mode=nom_mode),
                         int(indicateurs_mode["nombre_passages"].sum()),
                     )
 
             # Répartition des véh.km par mode et tableau des lignes
             if st.session_state.total_vk_plage is None:
-                with st.spinner("Calcul des véh.km par ligne sur la plage de service..."):
+                with st.spinner(t("troncons.spinner_vkm", lang)):
                     liste_dates_service, _, _, _ = dates_service(st.session_state.feed)
                     st.session_state.total_vk_plage = km_par_ligne_plage(
                         liste_dates_service, st.session_state.feed
@@ -192,6 +188,7 @@ def troncons_page():
                 date_service_str,
                 total_vk_plage,
                 output_camembert,
+                lang=lang,
             )
             with open(output_camembert, "r", encoding="utf-8") as f:
                 components.html(f.read(), height=450, scrolling=True)
@@ -203,6 +200,7 @@ def troncons_page():
                 st.session_state.feed,
                 output_tableau,
                 total_vk_plage=total_vk_plage,
+                lang=lang,
             )
             with open(output_tableau, "r", encoding="utf-8") as f:
                 components.html(f.read(), height=600, scrolling=True)
@@ -221,17 +219,17 @@ def troncons_page():
             for (_, nom_mode, emoji), colonne in zip(modes_presents, colonnes_top):
                 indicateurs_mode = indicateurs_par_mode[nom_mode]
                 with colonne:
-                    st.header(f"{emoji} Top 10 Tronçons {nom_mode}")
+                    st.header(f"{emoji} " + t("troncons.header_top", lang, mode=nom_mode))
                     actifs = indicateurs_mode[indicateurs_mode["nombre_passages"] > 0].copy()
                     if not actifs.empty:
                         actifs = actifs.sort_values("nombre_passages", ascending=False)
                         actifs["vitesse_moyenne_kmh"] = actifs["vitesse_moyenne_kmh"].round(1)
                         st.dataframe(actifs[cols_to_show].head(10))
                     else:
-                        st.info(f"Aucun tronçon {nom_mode.lower()} actif.")
+                        st.info(t("troncons.aucun_actif", lang, mode=nom_mode.lower()))
 
             # Carte interactive
-            st.header("🗺️ Carte Interactive des Tronçons")
+            st.header(t("troncons.header_carte", lang))
             output_map = os.path.join(tempfile.gettempdir(), "troncons_map_streamlit.html")
             m = creer_carte_troncons(
                 indicateurs_bus,
@@ -243,26 +241,30 @@ def troncons_page():
                 date_service_str,
                 nom_reseau_str=st.session_state.nom_reseau_str,
                 chemin_logo=st.session_state.chemin_logo,
+                lang=lang,
             )
-            components.html(m._repr_html_(), height=1000, width=1000)
+            # get_root().render() (le HTML complet, celui écrit par .save())
+            # plutôt que _repr_html_() : cette dernière enveloppe la carte
+            # dans un wrapper "responsive" (padding-bottom en %) pensé pour
+            # Jupyter, qui impose son propre ratio hauteur/largeur et ignore
+            # le height/width demandés ici.
+            components.html(m.get_root().render(), height=1000, width=1000)
 
             # Télécharger les résultats
-            st.header("💾 Téléchargement")
+            st.header(t("commun.header_telechargement", lang))
             colonnes_telechargement = st.columns(len(MODES))
             for (_, nom_mode, emoji), colonne in zip(MODES, colonnes_telechargement):
                 indicateurs_mode = indicateurs_par_mode[nom_mode]
                 with colonne:
                     csv = indicateurs_mode.to_csv(index=False).encode("utf-8")
                     st.download_button(
-                        label=f"📥 Télécharger {nom_mode} CSV",
+                        label=t("troncons.telecharger_csv", lang, mode=nom_mode),
                         data=csv,
                         file_name=f"indicateurs_troncons_{nom_mode.lower()}_{st.session_state.date_str}.csv",
                         mime="text/csv",
                         key=f"telechargement_{nom_mode.lower()}",
                     )
         else:
-            st.info("🔄 Calcul des indicateurs en cours...")
+            st.info(t("commun.calcul_en_cours", lang))
     else:
-        st.info(
-            "👆 Veuillez charger un fichier GTFS et sélectionner une date dans la barre latérale."
-        )
+        st.info(t("troncons.veuillez_charger_et_date", lang))

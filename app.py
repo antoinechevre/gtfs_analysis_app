@@ -13,6 +13,7 @@ import streamlit as st
 
 from src.utils import charger_gtfs, obtenir_service_ids_pour_date
 from src.info_reseau import dates_service, recuperer_logo_reseau, nom_reseau
+from src.i18n import t, LANGUES
 from views.home import home_page
 from views.arrets import arrets_page
 from views.troncons import troncons_page
@@ -23,8 +24,20 @@ from views.troncons import troncons_page
 # Configuration de la page
 st.set_page_config(page_title="Analyse GTFS", page_icon="🚌", layout="wide")
 
+# Langue de l'interface : initialisée avant tout texte traduit de la page
+if "lang" not in st.session_state:
+    st.session_state.lang = "fr"
+
+st.sidebar.selectbox(
+    t("app.sidebar_langue", st.session_state.lang),
+    options=list(LANGUES.keys()),
+    format_func=lambda code: LANGUES[code],
+    key="lang",
+)
+lang = st.session_state.lang
+
 # Titre principal
-st.title("🚌 Analyse GTFS - Indicateurs de Transport")
+st.title(t("app.title", lang))
 
 # Navigation horizontale en haut
 st.markdown(
@@ -43,15 +56,15 @@ st.markdown("---")
 col1, col2, col3, col4 = st.columns([1, 1, 1, 3])  # 4 colonnes pour équilibrer l'espace
 
 with col1:
-    if st.button("🏠 Accueil", use_container_width=True):
+    if st.button(t("app.nav_accueil", lang), use_container_width=True):
         st.session_state.selected_page = "Accueil"
 
 with col2:
-    if st.button("📍 Arrêts", use_container_width=True):
+    if st.button(t("app.nav_arrets", lang), use_container_width=True):
         st.session_state.selected_page = "Arrêts"
 
 with col3:
-    if st.button("🛤️ Lignes", use_container_width=True):
+    if st.button(t("app.nav_lignes", lang), use_container_width=True):
         st.session_state.selected_page = "Lignes"
 
 with col4:
@@ -63,8 +76,8 @@ if "selected_page" not in st.session_state:
     st.session_state.selected_page = "Accueil"
 
 # Barre latérale pour les paramètres uniquement
-st.sidebar.header("📁 Paramètres d'analyse")
-uploaded_file = st.sidebar.file_uploader("Uploader le fichier GTFS (zip)", type="zip")
+st.sidebar.header(t("app.sidebar_header", lang))
+uploaded_file = st.sidebar.file_uploader(t("app.sidebar_uploader", lang), type="zip")
 
 # Variables globales pour stocker les résultats
 if "feed" not in st.session_state:
@@ -125,7 +138,7 @@ def charger_donnees_gtfs():
 
     try:
         # Charger le GTFS
-        with st.spinner("Chargement du fichier GTFS..."):
+        with st.spinner(t("app.spinner_chargement", lang)):
             feed = charger_gtfs(zip_path)
 
         # Plage de service fiable et jour ouvré de base (mardi/jeudi au hasard)
@@ -164,7 +177,7 @@ def charger_donnees_gtfs():
         return True
 
     except Exception as e:
-        st.error(f"Erreur lors du chargement : {e}")
+        st.error(t("app.erreur_chargement", lang, erreur=e))
         os.unlink(zip_path)
         return False
 
@@ -174,8 +187,8 @@ charger_donnees_gtfs()
 
 # Navigation entre les pages
 if st.session_state.selected_page == "Accueil":
-    home_page()
+    home_page(lang)
 elif st.session_state.selected_page == "Arrêts":
-    arrets_page()
+    arrets_page(lang)
 elif st.session_state.selected_page == "Lignes":
-    troncons_page()
+    troncons_page(lang)

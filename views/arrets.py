@@ -12,9 +12,10 @@ from src.cartographie import create_carte_arrets
 from src.info_reseau import dates_service, date_str, nom_reseau_str
 from src.arrets import calculer_indicateurs_arrets
 from src.export_html import exporter_statistiques_html
+from src.i18n import t
 
 
-def arrets_page():
+def arrets_page(lang="fr"):
     st.markdown("---")
 
     # Vérifier si les données sont chargées
@@ -22,21 +23,21 @@ def arrets_page():
         st.session_state.feed is not None
         and st.session_state.active_service_ids is not None
     ):
-        # afficher infos réseau 
-           #cherche nom réseau 
+        # afficher infos réseau
+           #cherche nom réseau
         nom_reseau_valeur = nom_reseau_str(st.session_state.feed)
-        st.info(f"Le GTFS concerne le réseau {nom_reseau_valeur}")
+        st.info(t("commun.reseau_info", lang, reseau=nom_reseau_valeur))
 
         _, date_debut, date_fin, date_JOB = dates_service(st.session_state.feed)
 
         date_service_str, date_JOB_text = date_str(date_debut, date_fin, date_JOB)
 
-        st.info(f"Il est valide sur la plage {date_service_str}, le JOB choisi au hasard est {date_JOB_text}")
-        
-        
+        st.info(t("commun.plage_info", lang, plage=date_service_str, job=date_JOB_text))
+
+
         # Calculer les indicateurs automatiquement si pas déjà fait
         if st.session_state.indicateurs_arrets is None:
-            with st.spinner("Calcul des indicateurs d'arrêts..."):
+            with st.spinner(t("arrets.spinner_indicateurs", lang)):
                 try:
                     indicateurs = calculer_indicateurs_arrets(
                         st.session_state.feed,
@@ -44,39 +45,39 @@ def arrets_page():
                     )
                     st.session_state.indicateurs_arrets = indicateurs
                 except Exception as e:
-                    st.error(f"Erreur lors du calcul des arrêts : {e}")
+                    st.error(t("arrets.erreur_indicateurs", lang, erreur=e))
                     return
 
         if st.session_state.indicateurs_arrets is not None:
             indicateurs = st.session_state.indicateurs_arrets
 
-            st.success("✅ Analyse des arrêts terminée !")
+            st.success(t("arrets.succes", lang))
 
             # Statistiques globales
-            st.header("📊 Statistiques Globales")
+            st.header(t("arrets.header_stats", lang))
             col1, col2, col3 = st.columns(3)
             with col1:
-                st.metric("Nombre d'arrêts", len(indicateurs))
+                st.metric(t("arrets.metric_nb_arrets", lang), len(indicateurs))
             with col2:
                 st.metric(
-                    "Arrêts actifs",
+                    t("arrets.metric_arrets_actifs", lang),
                     len(indicateurs[indicateurs["nombre_passages"] > 0]),
                 )
             with col3:
                 total_passages = int(indicateurs["nombre_passages"].sum())
-                st.metric("Total passages", total_passages)
+                st.metric(t("arrets.metric_total_passages", lang), total_passages)
 
             # Top 10 arrêts
-            st.header("🏆 Top 10 Arrêts les plus fréquentés")
+            st.header(t("arrets.header_top10", lang))
             actifs = indicateurs[indicateurs["nombre_passages"] > 0].copy()
             if not actifs.empty:
                 actifs = actifs.sort_values("nombre_passages", ascending=False)
                 st.dataframe(actifs.drop(columns=["stop_lon", "stop_lat"]).head(10))
             else:
-                st.info("Aucun arrêt actif trouvé.")
+                st.info(t("arrets.aucun_actif", lang))
 
             # Fiche statistiques (export HTML)
-            st.header("📄 Fiche Statistiques")
+            st.header(t("arrets.header_fiche", lang))
             output_stats = os.path.join(tempfile.gettempdir(), "statistiques_arrets_streamlit.html")
             exporter_statistiques_html(
                 indicateurs,
@@ -84,12 +85,13 @@ def arrets_page():
                 st.session_state.date_str,
                 output_stats,
                 nom_reseau_str=st.session_state.nom_reseau_str,
+                lang=lang,
             )
             with open(output_stats, "r", encoding="utf-8") as f:
                 components.html(f.read(), height=600, scrolling=True)
 
             # Carte
-            st.header("🗺️ Carte des Arrêts")
+            st.header(t("arrets.header_carte", lang))
             output_map = os.path.join(tempfile.gettempdir(), "stops_map_streamlit.html")
             m = create_carte_arrets(
                 indicateurs,
@@ -99,21 +101,25 @@ def arrets_page():
                 st.session_state.zip_path,
                 output_map,
                 chemin_logo=st.session_state.chemin_logo,
+                lang=lang,
             )
-            components.html(m._repr_html_(), height=1000, width=1000)
+            # get_root().render() (le HTML complet, celui écrit par .save())
+            # plutôt que _repr_html_() : cette dernière enveloppe la carte
+            # dans un wrapper "responsive" (padding-bottom en %) pensé pour
+            # Jupyter, qui impose son propre ratio hauteur/largeur et ignore
+            # le height/width demandés ici.
+            components.html(m.get_root().render(), height=1000, width=1000)
 
             # Télécharger les résultats
-            st.header("💾 Téléchargement")
+            st.header(t("commun.header_telechargement", lang))
             csv = indicateurs.to_csv(index=False).encode("utf-8")
             st.download_button(
-                label="📥 Télécharger les résultats CSV",
+                label=t("arrets.telecharger_csv", lang),
                 data=csv,
                 file_name=f"indicateurs_arrets_{st.session_state.date_str}.csv",
                 mime="text/csv",
             )
         else:
-            st.info("🔄 Calcul des indicateurs en cours...")
+            st.info(t("commun.calcul_en_cours", lang))
     else:
-        st.info(
-            "👆 Veuillez charger un fichier GTFS."
-        )
+        st.info(t("commun.veuillez_charger_gtfs", lang))

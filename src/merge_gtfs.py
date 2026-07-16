@@ -44,6 +44,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Choisir le jeu de données GTFS en zip, site de référence 
 GTFS_ZIP_PATH_NYC_gtfs_busco = os.path.join(BASE_DIR,"data", "NYC_gtfs_busco.zip")
+GTFS_ZIP_PATH_NYC_gtfs_b = os.path.join(BASE_DIR,"data", "NYC_gtfs_b.zip")
 GTFS_ZIP_PATH_NYC_gtfs_subway = os.path.join(BASE_DIR,"data", "NYC_gtfs_subway.zip")
 GTFS_ZIP_PATH_NYC_gtfs_bx = os.path.join(BASE_DIR,"data", "NYC_gtfs_bx.zip")
 GTFS_ZIP_PATH_NYC_gtfs_m = os.path.join(BASE_DIR,"data", "NYC_gtfs_m.zip")
@@ -119,6 +120,7 @@ if __name__ == "__main__":
         [
             GTFS_ZIP_PATH_NYC_gtfs_busco,
             GTFS_ZIP_PATH_NYC_gtfs_subway,
+            GTFS_ZIP_PATH_NYC_gtfs_b,
             GTFS_ZIP_PATH_NYC_gtfs_bx,
             GTFS_ZIP_PATH_NYC_gtfs_m,
             GTFS_ZIP_PATH_NYC_gtfs_si,           

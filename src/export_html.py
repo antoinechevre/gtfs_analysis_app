@@ -10,6 +10,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from src.utils import km_par_ligne_plage
+from src.i18n import t
 
 
 def formater_km(valeur):
@@ -149,7 +150,7 @@ CSS_BASE = """
 """
 
 
-def construire_camembert_html(lignes):
+def construire_camembert_html(lignes, lang="fr"):
     """
     Construit un camembert (en CSS conic-gradient, sans dépendance externe)
     représentant la répartition des véhicule.km sur plage par mode de transport.
@@ -173,7 +174,7 @@ def construire_camembert_html(lignes):
     total = repartition.sum()
 
     if total == 0 or pd.isna(total):
-        return "<p>Aucune donnée de kilométrage disponible.</p>"
+        return f"<p>{t('export.aucune_donnee_km', lang)}</p>"
 
     stops = []
     legende_html = ""
@@ -198,7 +199,7 @@ def construire_camembert_html(lignes):
         </div>"""
 
 
-def exporter_camembert_html(nom_reseau_str,date_service_str,lignes, output_path) :
+def exporter_camembert_html(nom_reseau_str, date_service_str, lignes, output_path, lang="fr"):
     """
     Génère un fichier HTML autonome ne contenant que le camembert de
     répartition des véhicule.km plage par mode de transport, avec le style TBM.
@@ -211,13 +212,16 @@ def exporter_camembert_html(nom_reseau_str,date_service_str,lignes, output_path)
     output_path : str
         Chemin du fichier HTML de sortie.
     """
-    camembert_html = construire_camembert_html(lignes)
+    camembert_html = construire_camembert_html(lignes, lang=lang)
+
+    titre_page = t("export.titre_page_camembert", lang, reseau=nom_reseau_str)
+    titre = t("export.titre_camembert", lang, reseau=nom_reseau_str)
 
     html_content = f"""<!DOCTYPE html>
-<html lang="fr">
+<html lang="{lang}">
 <head>
 <meta charset="UTF-8">
-<title>Répartition des véh.km par mode {nom_reseau_str}</title>
+<title>{titre_page}</title>
 <style>
 {CSS_BASE}
 </style>
@@ -225,7 +229,7 @@ def exporter_camembert_html(nom_reseau_str,date_service_str,lignes, output_path)
 <body>
     <div class="conteneur">
         <div class="entete">
-            <h1>Répartition des véh.km sur plage par mode {nom_reseau_str}</h1>
+            <h1>{titre}</h1>
             <p>{date_service_str}</p>
         </div>
         {camembert_html}
@@ -240,7 +244,7 @@ def exporter_camembert_html(nom_reseau_str,date_service_str,lignes, output_path)
     print(f"✓ Camembert HTML exporté : {output_path}")
 
 
-def exporter_tableau_lignes_html(nom_reseau_str,date_service_str,feed,output_path, total_vk_plage=None):
+def exporter_tableau_lignes_html(nom_reseau_str, date_service_str, feed, output_path, total_vk_plage=None, lang="fr"):
     """
     Génère un fichier HTML autonome présentant la liste des lignes et les vk par an, avec un style prédéfini.
 
@@ -288,11 +292,14 @@ def exporter_tableau_lignes_html(nom_reseau_str,date_service_str,feed,output_pat
         </tr>"""
    
 
+    titre_page = t("export.titre_page_tableau", lang, reseau=nom_reseau_str)
+    titre = t("export.titre_tableau", lang, reseau=nom_reseau_str)
+
     html_content = f"""<!DOCTYPE html>
-<html lang="fr">
+<html lang="{lang}">
 <head>
 <meta charset="UTF-8">
-<title>Lignes du réseau {nom_reseau_str} - p</title>
+<title>{titre_page}</title>
 <style>
 {CSS_BASE}
 </style>
@@ -300,15 +307,15 @@ def exporter_tableau_lignes_html(nom_reseau_str,date_service_str,feed,output_pat
 <body>
     <div class="conteneur">
         <div class="entete">
-            <h1>Lignes du réseau {nom_reseau_str}</h1>
+            <h1>{titre}</h1>
             <p>{date_service_str}</p>
         </div>
         <table>
             <thead>
                 <tr>
-                    <th>Ligne</th>
-                    <th>Mode</th>
-                    <th>Total veh.km/plage</th>
+                    <th>{t("export.col_ligne", lang)}</th>
+                    <th>{t("export.col_mode", lang)}</th>
+                    <th>{t("export.col_total_vkm", lang)}</th>
                 </tr>
             </thead>
             <tbody>
@@ -326,7 +333,7 @@ def exporter_tableau_lignes_html(nom_reseau_str,date_service_str,feed,output_pat
     print(f"✓ Tableau HTML exporté : {output_path}")
     
     
-def exporter_statistiques_html(df, date_service_str, date_job_text, output_path, nom_reseau_str=None):
+def exporter_statistiques_html(df, date_service_str, date_job_text, output_path, nom_reseau_str=None, lang="fr"):
     """
     Génère un fichier HTML autonome présentant les statistiques résumées des
     arrêts (issues de calculer_indicateurs_arrets), avec le même style que
@@ -351,8 +358,12 @@ def exporter_statistiques_html(df, date_service_str, date_job_text, output_path,
     nom_reseau_str : str, optional
         Nom du réseau à afficher dans le titre (voir nom_reseau_str dans utils.py).
     """
-    titre = f"Statistiques des arrêts {nom_reseau_str}" if nom_reseau_str else "Statistiques des arrêts"
-    sous_titre = f"JOB - {date_job_text}, {date_service_str}"
+    titre = (
+        t("export.titre_stats_reseau", lang, reseau=nom_reseau_str)
+        if nom_reseau_str
+        else t("export.titre_stats", lang)
+    )
+    sous_titre = t("export.sous_titre_job", lang, date_job=date_job_text, plage=date_service_str)
 
     arret_vedette = df.iloc[0]
 
@@ -360,25 +371,25 @@ def exporter_statistiques_html(df, date_service_str, date_job_text, output_path,
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-valeur">{len(df):,}</div>
-                <div class="stat-label">Arrêts desservis</div>
+                <div class="stat-label">{t("export.stat_arrets_desservis", lang)}</div>
             </div>
             <div class="stat-card">
                 <div class="stat-valeur">{df['nombre_passages'].sum():,}</div>
-                <div class="stat-label">Passages au total</div>
+                <div class="stat-label">{t("export.stat_passages_total", lang)}</div>
             </div>
             <div class="stat-card">
                 <div class="stat-valeur">{df['nombre_passages'].mean():.1f}</div>
-                <div class="stat-label">Moyenne par arrêt</div>
+                <div class="stat-label">{t("export.stat_moyenne", lang)}</div>
             </div>
             <div class="stat-card">
                 <div class="stat-valeur">{df['nombre_passages'].median():.1f}</div>
-                <div class="stat-label">Médiane par arrêt</div>
+                <div class="stat-label">{t("export.stat_mediane", lang)}</div>
             </div>
         </div>
         <div class="arret-vedette">
-            <strong>Arrêt le plus fréquenté :</strong> {arret_vedette['stop_name']} ({arret_vedette['nombre_passages']} passages)<br>
-            <strong>Premier départ global :</strong> {df['premier_depart'].min()} —
-            <strong>Dernier départ global :</strong> {df['dernier_depart'].max()}
+            <strong>{t("export.arret_vedette_label", lang)}</strong> {arret_vedette['stop_name']} ({arret_vedette['nombre_passages']} {t("export.arret_vedette_passages", lang)})<br>
+            <strong>{t("export.premier_depart_global", lang)}</strong> {df['premier_depart'].min()} —
+            <strong>{t("export.dernier_depart_global", lang)}</strong> {df['dernier_depart'].max()}
         </div>"""
 
     lignes_top10 = ""
@@ -392,7 +403,7 @@ def exporter_statistiques_html(df, date_service_str, date_job_text, output_path,
         </tr>"""
 
     html_content = f"""<!DOCTYPE html>
-<html lang="fr">
+<html lang="{lang}">
 <head>
 <meta charset="UTF-8">
 <title>{titre}</title>
@@ -407,14 +418,14 @@ def exporter_statistiques_html(df, date_service_str, date_job_text, output_path,
             <p>{sous_titre}</p>
         </div>
         {stats_html}
-        <h2 class="section-titre">Top 10 des arrêts les plus fréquentés</h2>
+        <h2 class="section-titre">{t("export.top10_titre", lang)}</h2>
         <table>
             <thead>
                 <tr>
-                    <th>Arrêt</th>
-                    <th>Passages / jour</th>
-                    <th>Premier départ</th>
-                    <th>Dernier départ</th>
+                    <th>{t("export.col_arret", lang)}</th>
+                    <th>{t("export.col_passages_jour", lang)}</th>
+                    <th>{t("export.col_premier_depart", lang)}</th>
+                    <th>{t("export.col_dernier_depart", lang)}</th>
                 </tr>
             </thead>
             <tbody>

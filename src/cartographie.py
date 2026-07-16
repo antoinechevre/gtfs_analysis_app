@@ -7,7 +7,9 @@ import base64
 import os
 import mimetypes
 
-def create_carte_arrets(df, nom_reseau_str,date_service_str, date_analyse, zip_path, output_path, chemin_logo=None):
+from src.i18n import t
+
+def create_carte_arrets(df, nom_reseau_str,date_service_str, date_analyse, zip_path, output_path, chemin_logo=None, lang="fr"):
     # Carte des arrêts avec leur nombre de passages
 
     # Définir les seuils pour les couleurs : 5 classes de même effectif
@@ -33,7 +35,7 @@ def create_carte_arrets(df, nom_reseau_str,date_service_str, date_analyse, zip_p
         height="1000px",
         tiles="cartodbpositron",
     )
-     
+
     # --- Ajout des lignes GTFS sur la même carte ---
     feed = gk.read_feed(zip_path, dist_units="km")
     active_trips = feed.get_trips(date=date_analyse)
@@ -92,7 +94,7 @@ def create_carte_arrets(df, nom_reseau_str,date_service_str, date_analyse, zip_p
         folium.CircleMarker(
             location=[lat, lon],
             radius=2,
-            popup=f"Arrêt ID: {stop_id}\nPassages: {passages}",
+            popup=t("carto.arret_popup", lang, stop_id=stop_id, passages=passages),
             color=color,
             fill=True,
             fill_color=color,
@@ -106,15 +108,17 @@ def create_carte_arrets(df, nom_reseau_str,date_service_str, date_analyse, zip_p
         ("#e67e22", f"{int(bins[3])} – {int(bins[4])}"),
         ("#c0392b", f"{int(bins[4])} – {int(bins[5])}"),
     ]
+    suffixe_passages = t("carto.legende_passages_suffix", lang)
     items_html = "".join(
         f"""
         <div style="display:flex;align-items:center;gap:6px;margin:2px 0;">
             <span style="width:12px;height:12px;border-radius:50%;background:{couleur};display:inline-block;flex-shrink:0;"></span>
-            <span>{libelle} passages</span>
+            <span>{libelle} {suffixe_passages}</span>
         </div>"""
         for couleur, libelle in classes
     )
     # Titre de la carte, en haut au centre
+    titre_carte = t("carto.titre_reseau_job", lang, reseau=nom_reseau_str)
     titre_html = f"""
     <div style="
         position: fixed;
@@ -129,7 +133,7 @@ def create_carte_arrets(df, nom_reseau_str,date_service_str, date_analyse, zip_p
         font-family: Arial, Helvetica, sans-serif;
         white-space: nowrap;
     ">
-        <div style="font-size: 16px; font-weight: bold; color: #01B1EC;">Réseau {nom_reseau_str} en JOB</div>
+        <div style="font-size: 16px; font-weight: bold; color: #01B1EC;">{titre_carte}</div>
         <p style="margin: 4px 0 0; font-size: 12px; font-weight: normal; color: #555;">{date_service_str}</p>
     </div>
     """
@@ -150,7 +154,7 @@ def create_carte_arrets(df, nom_reseau_str,date_service_str, date_analyse, zip_p
         font-size: 12px;
         color: #333;
     ">
-        <div style="font-weight:bold;margin-bottom:6px;">Nombre de passages</div>
+        <div style="font-weight:bold;margin-bottom:6px;">{t("carto.legende_passages_titre", lang)}</div>
         {items_html}
     </div>
     """
@@ -183,7 +187,7 @@ def create_carte_arrets(df, nom_reseau_str,date_service_str, date_analyse, zip_p
 
     return m
 
-def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, output_path,date_service_str, colonne_frequence="nombre_passages", nom_reseau_str=None, chemin_logo=None):
+def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, output_path,date_service_str, colonne_frequence="nombre_passages", nom_reseau_str=None, chemin_logo=None, lang="fr"):
     """
     Crée une carte Folium interactive avec les tronçons bus et tram.
     Les tronçons sont colorés selon la fréquence et peuvent être activés/désactivés.
@@ -246,6 +250,14 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, ou
     # ci-dessous, affichée en bas de carte)
     legende_items_html = ""
 
+    suffixe_passages = t("carto.legende_passages_suffix", lang)
+    popup_id = t("carto.popup_id", lang)
+    popup_de = t("carto.popup_de", lang)
+    popup_a = t("carto.popup_a", lang)
+    popup_passages = t("carto.popup_passages", lang)
+    popup_vitesse = t("carto.popup_vitesse", lang)
+    popup_distance = t("carto.popup_distance", lang)
+
     # ===== TRONÇONS BUS =====
     if len(gdf_bus) > 0 and colonne_frequence in gdf_bus.columns:
         # Filtrer les tronçons avec passages
@@ -260,7 +272,7 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, ou
                 colors=["#fee5d9", "#fcae91", "#fb6a4a", "#de2d26", "#a50f15"],
                 vmin=vmin_bus,
                 vmax=vmax_bus,
-                caption=f"Nombre de passages Bus",
+                caption=t("carto.caption_passages_mode", lang, mode="Bus"),
             )
 
             # Créer un groupe de features pour les bus
@@ -277,15 +289,15 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, ou
                 # Créer le popup avec les informations
                 popup_html = f"""
                 <div style="font-family: Arial; font-size: 12px; width: 250px;">
-                    <b style="color: #d63447;">🚌 TRONÇON BUS</b><br>
+                    <b style="color: #d63447;">🚌 {t("carto.popup_troncon_titre", lang, mode="BUS")}</b><br>
                     <hr style="margin: 5px 0;">
-                    <b>ID:</b> {row.get('troncon_unique_id', 'N/A')}<br>
-                    <b>De:</b> {row.get('stop_depart_name', 'N/A')}<br>
-                    <b>À:</b> {row.get('stop_arrivee_name', 'N/A')}<br>
+                    <b>{popup_id}</b> {row.get('troncon_unique_id', 'N/A')}<br>
+                    <b>{popup_de}</b> {row.get('stop_depart_name', 'N/A')}<br>
+                    <b>{popup_a}</b> {row.get('stop_arrivee_name', 'N/A')}<br>
                     <hr style="margin: 5px 0;">
-                    <b>Passages:</b> {int(freq)}<br>
-                    <b>Vitesse moy.:</b> {row.get('vitesse_moyenne_kmh', 0):.1f} km/h<br>
-                    <b>Distance:</b> {row.get('distance_km', 0):.2f} km
+                    <b>{popup_passages}</b> {int(freq)}<br>
+                    <b>{popup_vitesse}</b> {row.get('vitesse_moyenne_kmh', 0):.1f} km/h<br>
+                    <b>{popup_distance}</b> {row.get('distance_km', 0):.2f} km
                 </div>
                 """
 
@@ -298,14 +310,14 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, ou
                     weight=weight,
                     opacity=0.8,
                     popup=folium.Popup(popup_html, max_width=300),
-                    tooltip=f"{row.get('stop_depart_name', '')} → {row.get('stop_arrivee_name', '')}: {int(freq)} passages",
+                    tooltip=f"{row.get('stop_depart_name', '')} → {row.get('stop_arrivee_name', '')}: {int(freq)} {suffixe_passages}",
                 ).add_to(feature_group_bus)
 
             feature_group_bus.add_to(m)
 
             legende_items_html += f"""
             <div style="margin-bottom:8px;">
-                <div style="font-size:11px;margin-bottom:2px;">🚌 Nombre de passages Bus</div>
+                <div style="font-size:11px;margin-bottom:2px;">🚌 {t("carto.legende_passages_mode", lang, mode="Bus")}</div>
                 <div style="width:180px;height:10px;border-radius:3px;background:linear-gradient(to right,#fee5d9,#fcae91,#fb6a4a,#de2d26,#a50f15);"></div>
                 <div style="display:flex;justify-content:space-between;font-size:10px;color:#555;">
                     <span>{int(vmin_bus)}</span><span>{int(vmax_bus)}</span>
@@ -326,7 +338,7 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, ou
                 colors=["#edf8e9", "#bae4b3", "#74c476", "#31a354", "#006d2c"],
                 vmin=vmin_tram,
                 vmax=vmax_tram,
-                caption=f"Nombre de passages Tram",
+                caption=t("carto.caption_passages_mode", lang, mode="Tram"),
             )
 
             # Créer un groupe de features pour les trams
@@ -343,15 +355,15 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, ou
                 # Créer le popup avec les informations
                 popup_html = f"""
                 <div style="font-family: Arial; font-size: 12px; width: 250px;">
-                    <b style="color: #28a745;">🚊 TRONÇON TRAM</b><br>
+                    <b style="color: #28a745;">🚊 {t("carto.popup_troncon_titre", lang, mode="TRAM")}</b><br>
                     <hr style="margin: 5px 0;">
-                    <b>ID:</b> {row.get('troncon_unique_id', 'N/A')}<br>
-                    <b>De:</b> {row.get('stop_depart_name', 'N/A')}<br>
-                    <b>À:</b> {row.get('stop_arrivee_name', 'N/A')}<br>
+                    <b>{popup_id}</b> {row.get('troncon_unique_id', 'N/A')}<br>
+                    <b>{popup_de}</b> {row.get('stop_depart_name', 'N/A')}<br>
+                    <b>{popup_a}</b> {row.get('stop_arrivee_name', 'N/A')}<br>
                     <hr style="margin: 5px 0;">
-                    <b>Passages:</b> {int(freq)}<br>
-                    <b>Vitesse moy.:</b> {row.get('vitesse_moyenne_kmh', 0):.1f} km/h<br>
-                    <b>Distance:</b> {row.get('distance_km', 0):.2f} km
+                    <b>{popup_passages}</b> {int(freq)}<br>
+                    <b>{popup_vitesse}</b> {row.get('vitesse_moyenne_kmh', 0):.1f} km/h<br>
+                    <b>{popup_distance}</b> {row.get('distance_km', 0):.2f} km
                 </div>
                 """
 
@@ -364,14 +376,14 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, ou
                     weight=weight,
                     opacity=0.8,
                     popup=folium.Popup(popup_html, max_width=300),
-                    tooltip=f"{row.get('stop_depart_name', '')} → {row.get('stop_arrivee_name', '')}: {int(freq)} passages",
+                    tooltip=f"{row.get('stop_depart_name', '')} → {row.get('stop_arrivee_name', '')}: {int(freq)} {suffixe_passages}",
                 ).add_to(feature_group_tram)
 
             feature_group_tram.add_to(m)
 
             legende_items_html += f"""
             <div style="margin-bottom:8px;">
-                <div style="font-size:11px;margin-bottom:2px;">🚊 Nombre de passages Tram</div>
+                <div style="font-size:11px;margin-bottom:2px;">🚊 {t("carto.legende_passages_mode", lang, mode="Tram")}</div>
                 <div style="width:180px;height:10px;border-radius:3px;background:linear-gradient(to right,#edf8e9,#bae4b3,#74c476,#31a354,#006d2c);"></div>
                 <div style="display:flex;justify-content:space-between;font-size:10px;color:#555;">
                     <span>{int(vmin_tram)}</span><span>{int(vmax_tram)}</span>
@@ -394,7 +406,7 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, ou
                 colors=["#9ecae1", "#6baed6", "#4292c6", "#2171b5", "#08306b"],
                 vmin=vmin_metro,
                 vmax=vmax_metro,
-                caption=f"Nombre de passages Metro",
+                caption=t("carto.caption_passages_mode", lang, mode="Metro"),
             )
 
             # Créer un groupe de features pour les trams
@@ -411,15 +423,15 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, ou
                 # Créer le popup avec les informations
                 popup_html = f"""
                 <div style="font-family: Arial; font-size: 12px; width: 250px;">
-                    <b style="color: #28a745;">🚇  TRONÇON METR</b><br>
+                    <b style="color: #28a745;">🚇 {t("carto.popup_troncon_titre", lang, mode="METRO")}</b><br>
                     <hr style="margin: 5px 0;">
-                    <b>ID:</b> {row.get('troncon_unique_id', 'N/A')}<br>
-                    <b>De:</b> {row.get('stop_depart_name', 'N/A')}<br>
-                    <b>À:</b> {row.get('stop_arrivee_name', 'N/A')}<br>
+                    <b>{popup_id}</b> {row.get('troncon_unique_id', 'N/A')}<br>
+                    <b>{popup_de}</b> {row.get('stop_depart_name', 'N/A')}<br>
+                    <b>{popup_a}</b> {row.get('stop_arrivee_name', 'N/A')}<br>
                     <hr style="margin: 5px 0;">
-                    <b>Passages:</b> {int(freq)}<br>
-                    <b>Vitesse moy.:</b> {row.get('vitesse_moyenne_kmh', 0):.1f} km/h<br>
-                    <b>Distance:</b> {row.get('distance_km', 0):.2f} km
+                    <b>{popup_passages}</b> {int(freq)}<br>
+                    <b>{popup_vitesse}</b> {row.get('vitesse_moyenne_kmh', 0):.1f} km/h<br>
+                    <b>{popup_distance}</b> {row.get('distance_km', 0):.2f} km
                 </div>
                 """
 
@@ -435,14 +447,14 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, ou
                     weight=weight,
                     opacity=0.8,
                     popup=folium.Popup(popup_html, max_width=300),
-                    tooltip=f"{row.get('stop_depart_name', '')} → {row.get('stop_arrivee_name', '')}: {int(freq)} passages",
+                    tooltip=f"{row.get('stop_depart_name', '')} → {row.get('stop_arrivee_name', '')}: {int(freq)} {suffixe_passages}",
                 ).add_to(feature_group_metro)
 
             feature_group_metro.add_to(m)
 
             legende_items_html += f"""
             <div style="margin-bottom:8px;">
-                <div style="font-size:11px;margin-bottom:2px;">🚇 Nombre de passages Metro</div>
+                <div style="font-size:11px;margin-bottom:2px;">🚇 {t("carto.legende_passages_mode", lang, mode="Metro")}</div>
                 <div style="width:180px;height:10px;border-radius:3px;background:linear-gradient(to right,#9ecae1,#6baed6,#4292c6,#2171b5,#08306b);"></div>
                 <div style="display:flex;justify-content:space-between;font-size:10px;color:#555;">
                     <span>{int(vmin_metro)}</span><span>{int(vmax_metro)}</span>
@@ -465,7 +477,7 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, ou
                 colors=["#9ecae1", "#6baed6", "#4292c6", "#2171b5", "#08306b"],
                 vmin=vmin_trolley,
                 vmax=vmax_trolley,
-                caption=f"Nombre de passages Trolley",
+                caption=t("carto.caption_passages_mode", lang, mode="Trolley"),
             )
 
             # Créer un groupe de features pour les trams
@@ -482,15 +494,15 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, ou
                 # Créer le popup avec les informations
                 popup_html = f"""
                 <div style="font-family: Arial; font-size: 12px; width: 250px;">
-                    <b style="color: #28a745;">🚎 TRONÇON TROLLEY</b><br>
+                    <b style="color: #28a745;">🚎 {t("carto.popup_troncon_titre", lang, mode="TROLLEY")}</b><br>
                     <hr style="margin: 5px 0;">
-                    <b>ID:</b> {row.get('troncon_unique_id', 'N/A')}<br>
-                    <b>De:</b> {row.get('stop_depart_name', 'N/A')}<br>
-                    <b>À:</b> {row.get('stop_arrivee_name', 'N/A')}<br>
+                    <b>{popup_id}</b> {row.get('troncon_unique_id', 'N/A')}<br>
+                    <b>{popup_de}</b> {row.get('stop_depart_name', 'N/A')}<br>
+                    <b>{popup_a}</b> {row.get('stop_arrivee_name', 'N/A')}<br>
                     <hr style="margin: 5px 0;">
-                    <b>Passages:</b> {int(freq)}<br>
-                    <b>Vitesse moy.:</b> {row.get('vitesse_moyenne_kmh', 0):.1f} km/h<br>
-                    <b>Distance:</b> {row.get('distance_km', 0):.2f} km
+                    <b>{popup_passages}</b> {int(freq)}<br>
+                    <b>{popup_vitesse}</b> {row.get('vitesse_moyenne_kmh', 0):.1f} km/h<br>
+                    <b>{popup_distance}</b> {row.get('distance_km', 0):.2f} km
                 </div>
                 """
 
@@ -506,14 +518,14 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, ou
                     weight=weight,
                     opacity=0.8,
                     popup=folium.Popup(popup_html, max_width=300),
-                    tooltip=f"{row.get('stop_depart_name', '')} → {row.get('stop_arrivee_name', '')}: {int(freq)} passages",
+                    tooltip=f"{row.get('stop_depart_name', '')} → {row.get('stop_arrivee_name', '')}: {int(freq)} {suffixe_passages}",
                 ).add_to(feature_group_trolley)
 
             feature_group_trolley.add_to(m)
 
             legende_items_html += f"""
             <div style="margin-bottom:8px;">
-                <div style="font-size:11px;margin-bottom:2px;">🚎 Nombre de passages Trolley</div>
+                <div style="font-size:11px;margin-bottom:2px;">🚎 {t("carto.legende_passages_mode", lang, mode="Trolley")}</div>
                 <div style="width:180px;height:10px;border-radius:3px;background:linear-gradient(to right,#9ecae1,#6baed6,#4292c6,#2171b5,#08306b);"></div>
                 <div style="display:flex;justify-content:space-between;font-size:10px;color:#555;">
                     <span>{int(vmin_trolley)}</span><span>{int(vmax_trolley)}</span>
@@ -535,7 +547,7 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, ou
                 colors=["#eff3ff", "#c6dbef", "#9ecae1", "#6baed6", "#2171b5"],
                 vmin=vmin_ferry,
                 vmax=vmax_ferry,
-                caption=f"Nombre de passages Ferry",
+                caption=t("carto.caption_passages_mode", lang, mode="Ferry"),
             )
 
             # Créer un groupe de features pour les ferry
@@ -552,15 +564,15 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, ou
                 # Créer le popup avec les informations
                 popup_html = f"""
                 <div style="font-family: Arial; font-size: 12px; width: 250px;">
-                    <b style="color: #d63447;">⛴️  TRONÇON FERRY</b><br>
+                    <b style="color: #d63447;">⛴️ {t("carto.popup_troncon_titre", lang, mode="FERRY")}</b><br>
                     <hr style="margin: 5px 0;">
-                    <b>ID:</b> {row.get('troncon_unique_id', 'N/A')}<br>
-                    <b>De:</b> {row.get('stop_depart_name', 'N/A')}<br>
-                    <b>À:</b> {row.get('stop_arrivee_name', 'N/A')}<br>
+                    <b>{popup_id}</b> {row.get('troncon_unique_id', 'N/A')}<br>
+                    <b>{popup_de}</b> {row.get('stop_depart_name', 'N/A')}<br>
+                    <b>{popup_a}</b> {row.get('stop_arrivee_name', 'N/A')}<br>
                     <hr style="margin: 5px 0;">
-                    <b>Passages:</b> {int(freq)}<br>
-                    <b>Vitesse moy.:</b> {row.get('vitesse_moyenne_kmh', 0):.1f} km/h<br>
-                    <b>Distance:</b> {row.get('distance_km', 0):.2f} km
+                    <b>{popup_passages}</b> {int(freq)}<br>
+                    <b>{popup_vitesse}</b> {row.get('vitesse_moyenne_kmh', 0):.1f} km/h<br>
+                    <b>{popup_distance}</b> {row.get('distance_km', 0):.2f} km
                 </div>
                 """
 
@@ -573,14 +585,14 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, ou
                     weight=weight,
                     opacity=0.8,
                     popup=folium.Popup(popup_html, max_width=300),
-                    tooltip=f"{row.get('stop_depart_name', '')} → {row.get('stop_arrivee_name', '')}: {int(freq)} passages",
+                    tooltip=f"{row.get('stop_depart_name', '')} → {row.get('stop_arrivee_name', '')}: {int(freq)} {suffixe_passages}",
                 ).add_to(feature_group_ferry)
 
             feature_group_ferry.add_to(m)
 
             legende_items_html += f"""
             <div style="margin-bottom:8px;">
-                <div style="font-size:11px;margin-bottom:2px;">⛴️  Nombre de passages Ferry</div>
+                <div style="font-size:11px;margin-bottom:2px;">⛴️ {t("carto.legende_passages_mode", lang, mode="Ferry")}</div>
                 <div style="width:180px;height:10px;border-radius:3px;background:linear-gradient(to right,#eff3ff, #c6dbef, #9ecae1, #6baed6, #2171b5);"></div>
                 <div style="display:flex;justify-content:space-between;font-size:10px;color:#555;">
                     <span>{int(vmin_ferry)}</span><span>{int(vmax_ferry)}</span>
@@ -593,8 +605,8 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, ou
     # Ajouter un bouton plein écran
     plugins.Fullscreen(
         position="topright",
-        title="Plein écran",
-        title_cancel="Quitter le plein écran",
+        title=t("carto.plein_ecran", lang),
+        title_cancel=t("carto.quitter_plein_ecran", lang),
         force_separate_button=True,
     ).add_to(m)
 
@@ -607,6 +619,7 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, ou
 
     # Titre de la carte, en haut au centre
     if nom_reseau_str:
+        titre_carte = t("carto.titre_reseau_troncons", lang, reseau=nom_reseau_str)
         titre_html = f"""
         <div style="
             position: fixed;
@@ -621,7 +634,7 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, ou
             font-family: Arial, Helvetica, sans-serif;
             white-space: nowrap;
         ">
-            <div style="font-size: 16px; font-weight: bold; color: #01B1EC;">Réseau {nom_reseau_str} - nombre de passages par tronçon et par mode en JOB</div>
+            <div style="font-size: 16px; font-weight: bold; color: #01B1EC;">{titre_carte}</div>
             <p style="margin: 4px 0 0; font-size: 12px; font-weight: normal; color: #555;">{date_service_str}</p>
         </div>
         """
