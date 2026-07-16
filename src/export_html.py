@@ -290,7 +290,7 @@ def exporter_tableau_lignes_html(nom_reseau_str,date_service_str,feed,output_pat
     # Tri : d'abord par mode (Métro, puis Tram, puis Bus, puis les autres modes),
     # puis au sein d'un même mode par numéro de ligne (valeur numérique
     # d'abord, puis les lignes non-numériques par ordre alphabétique)
-    ORDRE_MODE = {"Métro": 0, "Tram": 1, "Trolley": 9, "Bus": 2}
+    ORDRE_MODE = {"Métro": 0, "Tram": 1, "Trolley": 11, "Ferry": 4, "Bus": 2}
 
     def cle_tri(row):
         nom = str(row["route_short_name"])

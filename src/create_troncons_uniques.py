@@ -216,6 +216,15 @@ if __name__ == "__main__":
     exporter_gdf_to_csv(troncons_metro, "output/troncons_uniques_metro.csv")
     # exporter_geojson(troncons_metro, 'output/troncons_uniques_metro2.geojson')
 
+    # Trolley (route_type = 11)
+    troncons_trolley = creer_troncons_uniques(feed, route_type=11)
+    exporter_gdf_to_csv(troncons_trolley, "output/troncons_uniques_trolley.csv")
+    # exporter_geojson(troncons_trolley, 'output/troncons_uniques_trolley2.geojson')
+
+    # Ferry (route_type = 4)
+    troncons_ferry = creer_troncons_uniques(feed, route_type=4)
+    exporter_gdf_to_csv(troncons_ferry, "output/troncons_uniques_ferry.csv")
+    # exporter_geojson(troncons_trolley, 'output/troncons_uniques_ferry2.geojson')
 
 
     print("\n" + "=" * 70)

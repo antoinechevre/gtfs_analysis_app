@@ -183,7 +183,7 @@ def create_carte_arrets(df, nom_reseau_str,date_service_str, date_analyse, zip_p
 
     return m
 
-def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, output_path,date_service_str, colonne_frequence="nombre_passages", nom_reseau_str=None, chemin_logo=None):
+def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, output_path,date_service_str, colonne_frequence="nombre_passages", nom_reseau_str=None, chemin_logo=None):
     """
     Crée une carte Folium interactive avec les tronçons bus et tram.
     Les tronçons sont colorés selon la fréquence et peuvent être activés/désactivés.
@@ -194,9 +194,13 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, output_path,d
         GeoDataFrame des tronçons bus avec indicateurs
     gdf_tram : GeoDataFrame
         GeoDataFrame des tronçons tram avec indicateurs
-    gdf_metro : GeoDataFrame 
+    gdf_metro : GeoDataFrame
         GeoDataFrame des tronçons metro avec indicateurs
-    chemin output lien html 
+    gdf_trolley : GeoDataFrame
+        GeoDataFrame des tronçons trolley avec indicateurs
+    gdf_ferry : GeoDataFrame
+        GeoDataFrame des tronçons ferry avec indicateurs
+    chemin output lien html
     date_service str
         colonne_frequence : str
         Nom de la colonne contenant la fréquence (défaut: 'nombre_passages')
@@ -214,7 +218,7 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, output_path,d
 
     # Déterminer le centre de la carte (moyenne des coordonnées)
     all_coords = []
-    for gdf in [gdf_bus, gdf_tram, gdf_metro, gdf_trolley]:
+    for gdf in [gdf_bus, gdf_tram, gdf_metro, gdf_trolley, gdf_ferry]:
         if len(gdf) > 0:
             all_coords.extend(gdf["lat_depart_parent"].dropna().tolist())
             all_coords.extend(gdf["lat_arrivee_parent"].dropna().tolist())
@@ -224,7 +228,7 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, output_path,d
     else:
         center_lat = np.mean(all_coords)
         all_lons = []
-        for gdf in [gdf_bus, gdf_tram, gdf_metro, gdf_trolley]:
+        for gdf in [gdf_bus, gdf_tram, gdf_metro, gdf_trolley, gdf_ferry]:
             if len(gdf) > 0:
                 all_lons.extend(gdf["lon_depart_parent"].dropna().tolist())
                 all_lons.extend(gdf["lon_arrivee_parent"].dropna().tolist())
@@ -517,6 +521,71 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, output_path,d
             </div>"""
 
 
+    # ===== TRONÇONS FERRY =====
+    if len(gdf_ferry) > 0 and colonne_frequence in gdf_ferry.columns:
+        # Filtrer les tronçons avec passages
+        gdf_ferry_actif = gdf_ferry[gdf_ferry[colonne_frequence] > 0].copy()
+
+        if len(gdf_ferry_actif) > 0:
+            # Créer la palette de couleurs pour les ferry
+            vmin_ferry = gdf_ferry_actif[colonne_frequence].min()
+            vmax_ferry = gdf_ferry_actif[colonne_frequence].max()
+
+            colormap_ferry = cm.LinearColormap(
+                colors=["#eff3ff", "#c6dbef", "#9ecae1", "#6baed6", "#2171b5"],
+                vmin=vmin_ferry,
+                vmax=vmax_ferry,
+                caption=f"Nombre de passages Ferry",
+            )
+
+            # Créer un groupe de features pour les ferry
+            feature_group_ferry = folium.FeatureGroup(name="⛴️ Ferry", show=True)
+
+            # Ajouter chaque tronçon ferry
+            for idx, row in gdf_ferry_actif.iterrows():
+                freq = row[colonne_frequence]
+                color = colormap_ferry(freq)
+
+                # Extraire les coordonnées de la géométrie
+                coords = [(coord[1], coord[0]) for coord in row["geometry"].coords]
+
+                # Créer le popup avec les informations
+                popup_html = f"""
+                <div style="font-family: Arial; font-size: 12px; width: 250px;">
+                    <b style="color: #d63447;">⛴️  TRONÇON FERRY</b><br>
+                    <hr style="margin: 5px 0;">
+                    <b>ID:</b> {row.get('troncon_unique_id', 'N/A')}<br>
+                    <b>De:</b> {row.get('stop_depart_name', 'N/A')}<br>
+                    <b>À:</b> {row.get('stop_arrivee_name', 'N/A')}<br>
+                    <hr style="margin: 5px 0;">
+                    <b>Passages:</b> {int(freq)}<br>
+                    <b>Vitesse moy.:</b> {row.get('vitesse_moyenne_kmh', 0):.1f} km/h<br>
+                    <b>Distance:</b> {row.get('distance_km', 0):.2f} km
+                </div>
+                """
+
+                # Épaisseur proportionnelle à la fréquence
+                weight = 2 + (freq - vmin_ferry) / (vmax_ferry - vmin_ferry) * 6
+
+                folium.PolyLine(
+                    coords,
+                    color=color,
+                    weight=weight,
+                    opacity=0.8,
+                    popup=folium.Popup(popup_html, max_width=300),
+                    tooltip=f"{row.get('stop_depart_name', '')} → {row.get('stop_arrivee_name', '')}: {int(freq)} passages",
+                ).add_to(feature_group_ferry)
+
+            feature_group_ferry.add_to(m)
+
+            legende_items_html += f"""
+            <div style="margin-bottom:8px;">
+                <div style="font-size:11px;margin-bottom:2px;">⛴️  Nombre de passages Ferry</div>
+                <div style="width:180px;height:10px;border-radius:3px;background:linear-gradient(to right,#eff3ff, #c6dbef, #9ecae1, #6baed6, #2171b5);"></div>
+                <div style="display:flex;justify-content:space-between;font-size:10px;color:#555;">
+                    <span>{int(vmin_ferry)}</span><span>{int(vmax_ferry)}</span>
+                </div>
+            </div>"""
 
     # Ajouter le contrôle des couches (cases à cocher)
     folium.LayerControl(collapsed=False).add_to(m)

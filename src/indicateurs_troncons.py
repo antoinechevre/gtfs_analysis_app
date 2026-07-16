@@ -272,6 +272,7 @@ def compute_indicateurs_troncons(
     reference_troncons_uniques_tram: pd.DataFrame,
     reference_troncons_uniques_metro: pd.DataFrame,
     reference_troncons_uniques_trolley: pd.DataFrame,
+    reference_troncons_uniques_ferry: pd.DataFrame
 ):
     """
     Réalise le calcul des indicateurs par tronçon pour une date d'analyse donnée
@@ -286,10 +287,12 @@ def compute_indicateurs_troncons(
         reference_troncons_uniques_metro (pd.DataFrame):
             Table des tronçons uniques metro
         reference_troncons_uniques_trolley (pd.DataFrame):
-            Table des tronçons uniques trolley  
+            Table des tronçons uniques trolley 
+        reference_troncons_uniques_ferry (pd.DataFrame):
+            Table des tronçons uniques ferry   
 
     Returns:
-        Tuple de GeoDataFrame : (indicateurs_bus, indicateurs_tram, indicateurs_metro, indicateurs_trolley)
+        Tuple de GeoDataFrame : (indicateurs_bus, indicateurs_tram, indicateurs_metro, indicateurs_trolley, indicateurs_ferry)
     """
 
     # Calculer la fréquentation
@@ -308,6 +311,10 @@ def compute_indicateurs_troncons(
     indicateurs_trolley = calculer_frequentation_troncons(
         feed, reference_troncons_uniques_trolley, active_service_ids, route_type=11 #Trolley
     )
+    
+    indicateurs_ferry = calculer_frequentation_troncons(
+        feed, reference_troncons_uniques_ferry, active_service_ids, route_type=4 #Ferry
+    )
 
     # Convertir en GeoDataFrame
     indicateurs_bus_gdf = gpd.GeoDataFrame(
@@ -324,8 +331,11 @@ def compute_indicateurs_troncons(
     indicateurs_trolley_gdf = gpd.GeoDataFrame(
         indicateurs_trolley, geometry="geometry", crs="EPSG:4326"
     )
+    indicateurs_ferry_gdf = gpd.GeoDataFrame(
+        indicateurs_ferry, geometry="geometry", crs="EPSG:4326"
+    )
     
-    return indicateurs_bus_gdf, indicateurs_tram_gdf, indicateurs_metro_gdf, indicateurs_trolley_gdf
+    return indicateurs_bus_gdf, indicateurs_tram_gdf, indicateurs_metro_gdf, indicateurs_trolley_gdf, indicateurs_ferry_gdf
  
  
 """

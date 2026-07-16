@@ -290,21 +290,5 @@ def charger_csv_avec_geometrie(chemin_fichier):
 
 
 
-# Correspondance des codes route_type du GTFS vers un libellé lisible
-# https://gtfs.org/schedule/reference/#routestxt
-LIBELLES_MODE = {
-    0: "Tram",
-    1: "Métro",
-    2: "Train",
-    3: "Bus",
-    4: "Ferry",
-    5: "Tram (câble)",
-    6: "Téléphérique",
-    7: "Funiculaire",
-    11: "Trolleybus",
-    12: "Monorail",
-}
-
-
 
 
