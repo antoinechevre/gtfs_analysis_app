@@ -5,7 +5,6 @@ Page Tronçons - Analyse GTFS Indicateurs par Tronçon
 import os
 import tempfile
 
-import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 
@@ -14,7 +13,7 @@ from src.cartographie import creer_carte_troncons
 from src.create_troncons_uniques import creer_troncons_uniques
 from src.utils import km_par_ligne_plage
 from src.export_html import exporter_camembert_html, exporter_tableau_lignes_html
-from src.info_reseau import dates_service, formater_date_fr, date_str, longueur_par_lignes, nom_reseau_str, chemin_logo, recuperer_logo_reseau, nom_reseau 
+from src.info_reseau import dates_service, date_str, nom_reseau_str
 
 # route_type GTFS -> (nom_mode, emoji) pour chaque mode couvert par cette page
 MODES = [
@@ -22,6 +21,7 @@ MODES = [
     (0, "Tram", "🚊"),
     (1, "Metro", "🚇"),
     (11, "Trolley", "🚎"),
+    (4, "Ferry", "⛴️"),
 ]
 
 
@@ -39,7 +39,7 @@ def charger_ou_calculer_troncons(feed, route_type, nom_mode):
     route_type : int
         Type de route GTFS (0=tram, 1=métro, 3=bus, 11=trolleybus, etc.)
     nom_mode : str
-        Nom du mode pour les messages ("Bus", "Tram", "Metro" ou "Trolley")
+        Nom du mode pour les messages ("Bus", "Tram", "Metro", "Trolley" ou "Ferry")
 
     Returns:
     --------
@@ -68,7 +68,7 @@ def troncons_page():
     # Avertissement sur les limitations
     st.warning(
         """
-    ⚠️ Cette analyse a été debuggée sur plusieurs GTFS en mentionnant les modes bus / tram / metro / trolley
+    ⚠️ Cette analyse a été debuggée sur plusieurs GTFS en mentionnant les modes bus / tram / metro / trolley / ferry
     """
     )
      # afficher infos réseau 
@@ -96,6 +96,7 @@ def troncons_page():
             or st.session_state.indicateurs_tram is None
             or st.session_state.indicateurs_metro is None
             or st.session_state.indicateurs_trolley is None
+            or st.session_state.indicateurs_ferry is None
         ):
 
             with st.spinner("Chargement/Calcul des tronçons de référence..."):
@@ -117,6 +118,7 @@ def troncons_page():
                         indicateurs_tram,
                         indicateurs_metro,
                         indicateurs_trolley,
+                        indicateurs_ferry,
                     ) = compute_indicateurs_troncons(
                         st.session_state.feed,
                         st.session_state.active_service_ids,
@@ -124,11 +126,13 @@ def troncons_page():
                         troncons_par_mode["Tram"],
                         troncons_par_mode["Metro"],
                         troncons_par_mode["Trolley"],
+                        troncons_par_mode["Ferry"],
                     )
                     st.session_state.indicateurs_bus = indicateurs_bus
                     st.session_state.indicateurs_tram = indicateurs_tram
                     st.session_state.indicateurs_metro = indicateurs_metro
                     st.session_state.indicateurs_trolley = indicateurs_trolley
+                    st.session_state.indicateurs_ferry = indicateurs_ferry
                 except Exception as e:
                     st.error(f"Erreur lors du calcul des tronçons : {e}")
                     return
@@ -138,17 +142,20 @@ def troncons_page():
             and st.session_state.indicateurs_tram is not None
             and st.session_state.indicateurs_metro is not None
             and st.session_state.indicateurs_trolley is not None
+            and st.session_state.indicateurs_ferry is not None
         ):
 
             indicateurs_bus = st.session_state.indicateurs_bus
             indicateurs_tram = st.session_state.indicateurs_tram
             indicateurs_metro = st.session_state.indicateurs_metro
             indicateurs_trolley = st.session_state.indicateurs_trolley
+            indicateurs_ferry = st.session_state.indicateurs_ferry
             indicateurs_par_mode = {
                 "Bus": indicateurs_bus,
                 "Tram": indicateurs_tram,
                 "Metro": indicateurs_metro,
                 "Trolley": indicateurs_trolley,
+                "Ferry": indicateurs_ferry,
             }
 
             st.success("✅ Analyse des tronçons terminée !")
@@ -231,6 +238,7 @@ def troncons_page():
                 indicateurs_tram,
                 indicateurs_metro,
                 indicateurs_trolley,
+                indicateurs_ferry,
                 output_map,
                 date_service_str,
                 nom_reseau_str=st.session_state.nom_reseau_str,

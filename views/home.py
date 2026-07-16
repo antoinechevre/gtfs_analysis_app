@@ -3,7 +3,6 @@ Page d'accueil - Application d'analyse GTFS
 """
 
 import streamlit as st
-import pandas as pd
 
 
 def home_page():

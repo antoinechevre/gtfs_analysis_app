@@ -9,29 +9,9 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 from src.cartographie import create_carte_arrets
-
-from src.utils import (
-    charger_gtfs,
-    longueur_lignes,
-    km_par_ligne_jour,
-    km_par_ligne_plage,
-    obtenir_service_ids_pour_date,
-    exporter_df_to_csv,
-    exporter_geojson,
-    exporter_gdf_to_csv,
-    
-)
-from src.info_reseau import dates_service, formater_date_fr, date_str, longueur_par_lignes, nom_reseau_str, chemin_logo, recuperer_logo_reseau, nom_reseau 
-
-from src.arrets import calculer_indicateurs_arrets, afficher_statistiques
-#from src.create_troncons_uniques import creer_troncons_uniques
-#from src.indicateurs_troncons import compute_indicateurs_troncons
-
-from src.export_html import (
-    exporter_tableau_lignes_html,
-    exporter_camembert_html,
-    exporter_statistiques_html,
-)
+from src.info_reseau import dates_service, date_str, nom_reseau_str
+from src.arrets import calculer_indicateurs_arrets
+from src.export_html import exporter_statistiques_html
 
 
 def arrets_page():

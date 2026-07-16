@@ -1,10 +1,3 @@
-import gtfs_kit as gk
-import pandas as pd
-import numpy as np
-from shapely import wkt
-import geopandas as gpd
-import gtfs_kit as gk
-import pandas as pd
 import os
 import re
 import requests
@@ -13,34 +6,9 @@ from urllib.parse import urljoin, urlparse
 from datetime import datetime
 import sys
 sys.path.append('..')
-import bs4
-import gtfs_kit as gk
-from shapely.geometry import LineString
-import folium
-from folium import plugins
 import random
-import branca.colormap as cm
 
-from src.utils import (
-    charger_gtfs,
-    longueur_lignes,
-    km_par_ligne_jour,
-    km_par_ligne_plage,
-    obtenir_service_ids_pour_date,
-    exporter_df_to_csv,
-    exporter_geojson,
-    exporter_gdf_to_csv,
-)
-from src.arrets import calculer_indicateurs_arrets, afficher_statistiques
-from src.cartographie import creer_carte_troncons, create_carte_arrets 
-from src.create_troncons_uniques import creer_troncons_uniques
-from src.indicateurs_troncons import compute_indicateurs_troncons
-
-from src.export_html import (
-    exporter_tableau_lignes_html,
-    exporter_camembert_html,
-    exporter_statistiques_html,
-)
+from src.utils import longueur_lignes
 
 # fonction pour charger les données du GTFS 
 
@@ -126,7 +94,7 @@ def date_str(date_debut, date_fin, date_JOB):
 def longueur_par_lignes(feed):
 
     # Calcul de la longueur des shapes une seule fois, en dehors de la boucle
-    longueur_par_lignes=longueur_lignes(feed)
+    return longueur_lignes(feed)
 
 def nom_fichier_valide(texte):
     """

@@ -3,56 +3,16 @@ Application d'analyse GTFS - Interface principale
 
 """
 
-from IPython.display import IFrame
-
-import random
-from datetime import datetime
-
+import os
 import sys
+import tempfile
 
 sys.path.append('..')
-import bs4
-import gtfs_kit as gk
-import os
-import pandas as pd
-import geopandas as gpd
-import numpy as np
-from shapely.geometry import LineString
-from IPython.display import HTML
-import folium
-from folium import plugins
-import numpy as np
-import branca.colormap as cm
 
-from src.utils import (
-    charger_gtfs,
-    longueur_lignes,
-    km_par_ligne_jour,
-    km_par_ligne_plage,
-    obtenir_service_ids_pour_date,
-    exporter_df_to_csv,
-    exporter_geojson,
-    exporter_gdf_to_csv,
-)
-from src.arrets import calculer_indicateurs_arrets, afficher_statistiques
-from src.cartographie import creer_carte_troncons, create_carte_arrets 
-from src.create_troncons_uniques import creer_troncons_uniques
-from src.indicateurs_troncons import compute_indicateurs_troncons
-
-from src.info_reseau import dates_service, recuperer_logo_reseau, nom_reseau
-
-from src.export_html import (
-    exporter_tableau_lignes_html,
-    exporter_camembert_html,
-    exporter_statistiques_html,
-)
-import streamlit as st
-
-import tempfile
-import pandas as pd
 import streamlit as st
 
 from src.utils import charger_gtfs, obtenir_service_ids_pour_date
+from src.info_reseau import dates_service, recuperer_logo_reseau, nom_reseau
 from views.home import home_page
 from views.arrets import arrets_page
 from views.troncons import troncons_page
@@ -123,6 +83,8 @@ if "indicateurs_metro" not in st.session_state:
     st.session_state.indicateurs_metro = None
 if "indicateurs_trolley" not in st.session_state:
     st.session_state.indicateurs_trolley = None
+if "indicateurs_ferry" not in st.session_state:
+    st.session_state.indicateurs_ferry = None
 if "total_vk_plage" not in st.session_state:
     st.session_state.total_vk_plage = None
 if "modes_disponibles" not in st.session_state:
@@ -195,6 +157,7 @@ def charger_donnees_gtfs():
         st.session_state.indicateurs_tram = None
         st.session_state.indicateurs_metro = None
         st.session_state.indicateurs_trolley = None
+        st.session_state.indicateurs_ferry = None
         st.session_state.total_vk_plage = None
         st.session_state.modes_disponibles = None
 

@@ -191,7 +191,7 @@ def creer_troncons_uniques(feed, route_type):
 # =============================================================================
 
 if __name__ == "__main__":
-    from utils import charger_gtfs, exporter_gdf_to_csv, exporter_geojson
+    from utils import charger_gtfs, exporter_gdf_to_csv
 
     # Charger le feed GTFS
     feed = charger_gtfs()

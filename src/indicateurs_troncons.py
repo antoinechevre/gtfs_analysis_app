@@ -3,12 +3,9 @@ Calcul de la fréquentation et vitesse moyenne par tronçon unique
 Basé sur stop_parent_id, tous sens confondus
 """
 
-from shapely import wkt
 import pandas as pd
 import numpy as np
 import geopandas as gpd
-
-from src.utils import charger_gtfs, obtenir_service_ids_pour_date
 
 
 def calculer_distance_haversine(lat1, lon1, lat2, lon2):

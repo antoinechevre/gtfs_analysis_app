@@ -9,32 +9,7 @@ from pathlib import Path
 # d'où le script est lancé (notebook ou ligne de commande).
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-from src.utils import (
-    charger_gtfs,
-    longueur_lignes,
-    km_par_ligne_jour,
-    km_par_ligne_plage,
-    obtenir_service_ids_pour_date,
-    exporter_df_to_csv,
-    exporter_geojson,
-    exporter_gdf_to_csv,
-)
-
-
-# Correspondance des codes route_type du GTFS vers un libellé lisible
-# https://gtfs.org/schedule/reference/#routestxt
-LIBELLES_MODE = {
-    0: "Tram",
-    1: "Métro",
-    2: "Train",
-    3: "Bus",
-    4: "Ferry",
-    5: "Tram (câble)",
-    6: "Téléphérique",
-    7: "Funiculaire",
-    11: "Trolleybus",
-    12: "Monorail",
-}
+from src.utils import km_par_ligne_plage
 
 
 def formater_km(valeur):
@@ -290,7 +265,7 @@ def exporter_tableau_lignes_html(nom_reseau_str,date_service_str,feed,output_pat
     # Tri : d'abord par mode (Métro, puis Tram, puis Bus, puis les autres modes),
     # puis au sein d'un même mode par numéro de ligne (valeur numérique
     # d'abord, puis les lignes non-numériques par ordre alphabétique)
-    ORDRE_MODE = {"Métro": 0, "Tram": 1, "Trolley": 11, "Ferry": 4, "Bus": 2}
+    ORDRE_MODE = {"Métro": 0, "Tram": 1, "Trolley": 2, "Ferry": 3, "Bus": 4}
 
     def cle_tri(row):
         nom = str(row["route_short_name"])

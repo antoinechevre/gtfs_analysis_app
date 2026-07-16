@@ -3,17 +3,26 @@ import pandas as pd
 import numpy as np
 from shapely import wkt
 import geopandas as gpd
-import gtfs_kit as gk
-import pandas as pd
-import os
-import requests
-from bs4 import BeautifulSoup
-from urllib.parse import urljoin, urlparse
 
 
 ########################################################################
 # HELPERS GTFS
 ########################################################################
+
+# Correspondance des codes route_type du GTFS vers un libellé lisible
+# https://gtfs.org/schedule/reference/#routestxt
+LIBELLES_MODE = {
+    0: "Tram",
+    1: "Métro",
+    2: "Train",
+    3: "Bus",
+    4: "Ferry",
+    5: "Tram (câble)",
+    6: "Téléphérique",
+    7: "Funiculaire",
+    11: "Trolleybus",
+    12: "Monorail",
+}
 
 
 def charger_gtfs(zip_path):
