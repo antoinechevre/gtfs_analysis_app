@@ -180,7 +180,7 @@ def troncons_page(lang="fr"):
                     )
             total_vk_plage = st.session_state.total_vk_plage
 
-            date_service_str = f"Analyse du {st.session_state.date_str}"
+            date_service_str = t("commun.analyse_du", lang, date=st.session_state.date_str)
 
             output_camembert = os.path.join(tempfile.gettempdir(), "camembert_troncons_streamlit.html")
             exporter_camembert_html(

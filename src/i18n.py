@@ -25,6 +25,7 @@ TRANSLATIONS = {
 
         # --- infos réseau, communes à Arrêts et Lignes ---
         "commun.reseau_info": "Le GTFS concerne le réseau {reseau}",
+        "commun.analyse_du": "Analyse du {date}",
         "commun.periode_service": "Période de service du {debut} au {fin}",
         "commun.plage_info": "Il est valide sur la plage {plage}, le JOB choisi au hasard est {job}",
         "commun.veuillez_charger_gtfs": "👆 Veuillez charger un fichier GTFS.",
@@ -197,6 +198,7 @@ TRANSLATIONS = {
         "app.erreur_chargement": "Error while loading: {erreur}",
 
         "commun.reseau_info": "This GTFS covers the {reseau} network",
+        "commun.analyse_du": "Analysis of {date}",
         "commun.periode_service": "Service period from {debut} to {fin}",
         "commun.plage_info": "It is valid over the {plage} range, the randomly chosen Base Weekday (tuesday or thursday) is {job}",
         "commun.veuillez_charger_gtfs": "👆 Please upload a GTFS file.",

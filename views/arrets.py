@@ -81,7 +81,7 @@ def arrets_page(lang="fr"):
             output_stats = os.path.join(tempfile.gettempdir(), "statistiques_arrets_streamlit.html")
             exporter_statistiques_html(
                 indicateurs,
-                f"Analyse du {st.session_state.date_str}",
+                t("commun.analyse_du", lang, date=st.session_state.date_str),
                 st.session_state.date_str,
                 output_stats,
                 nom_reseau_str=st.session_state.nom_reseau_str,
@@ -96,7 +96,7 @@ def arrets_page(lang="fr"):
             m = create_carte_arrets(
                 indicateurs,
                 st.session_state.nom_reseau_str,
-                f"Analyse du {st.session_state.date_str}",
+                t("commun.analyse_du", lang, date=st.session_state.date_str),
                 st.session_state.date_str,
                 st.session_state.zip_path,
                 output_map,
