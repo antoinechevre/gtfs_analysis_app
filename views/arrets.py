@@ -135,5 +135,5 @@ def arrets_page():
             st.info("🔄 Calcul des indicateurs en cours...")
     else:
         st.info(
-            "👆 Veuillez charger un fichier GTFS et sélectionner une date dans la barre latérale."
+            "👆 Veuillez charger un fichier GTFS."
         )

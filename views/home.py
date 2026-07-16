@@ -18,7 +18,7 @@ def home_page():
     
     **Équipe CEREMA :** Patrick GENDRE, Hugo DE LUCA et Maxence LIOGIER
 
-    **Contributeur :** Antoine Chèvre 🐐
+    **Contributeur :** Antoine Chèvre 🐐 (et claude.ai....)
     """
     )
 
@@ -81,12 +81,10 @@ def home_page():
     1. **Chargez un fichier GTFS** dans la barre latérale (format ZIP)
     2. **Naviguez entre les pages** pour explorer les analyses
 
-    > **⚠️ Limitation importante :** L'analyse des tronçons est actuellement une preuve de concept
-    > développée spécifiquement pour le réseau de Montpellier. L'application détecte automatiquement
-    > les modes de transport présents dans n'importe quel GTFS, mais le calcul des indicateurs
-    > de tronçons pourrait nécessiter des adaptations pour d'autres réseaux urbains.
     >
     > L'analyse par arrêts fonctionne quant à elle avec n'importe quel GTFS.
+    
+    pour aller chercher des jeu de données GTFS https://transport.data.gouv.fr/
     """
     )
 
@@ -101,7 +99,7 @@ def home_page():
     - Patrick Gendre ([@PatGendre](https://github.com/PatGendre))
 
     ## Contributeur amélioration 
-    - Antoine Chèvre https://github.com/antoinechevre
+    - Antoine Chèvre https://github.com/antoinechevre 🐐
 
 
     ---

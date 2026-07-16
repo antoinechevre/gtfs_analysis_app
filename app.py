@@ -91,8 +91,8 @@ with col2:
         st.session_state.selected_page = "Arrêts"
 
 with col3:
-    if st.button("🛤️ Tronçons", use_container_width=True):
-        st.session_state.selected_page = "Tronçons"
+    if st.button("🛤️ Lignes", use_container_width=True):
+        st.session_state.selected_page = "Lignes"
 
 with col4:
     st.write("")  # Espace vide pour équilibrer

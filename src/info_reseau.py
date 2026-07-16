@@ -6,6 +6,7 @@ import geopandas as gpd
 import gtfs_kit as gk
 import pandas as pd
 import os
+import re
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
@@ -127,9 +128,19 @@ def longueur_par_lignes(feed):
     # Calcul de la longueur des shapes une seule fois, en dehors de la boucle
     longueur_par_lignes=longueur_lignes(feed)
 
+def nom_fichier_valide(texte):
+    """
+    Remplace les caractères invalides dans un nom de fichier/dossier
+    (/, \\, :, *, ?, ", <, >, |) par des tirets, pour que le nom du
+    réseau (qui peut contenir des "/" quand plusieurs agences sont
+    concaténées) puisse être utilisé sans risque dans un chemin.
+    """
+    return re.sub(r'[\\/:*?"<>|]', '-', texte).strip()
+
+
 def nom_reseau_str(feed):
-    #cherche nom réseau 
-    nom_reseau_str=str(nom_reseau(feed))
+    #cherche nom réseau
+    nom_reseau_str = nom_fichier_valide(str(nom_reseau(feed)))
     return nom_reseau_str
 
 
@@ -158,61 +169,72 @@ def recuperer_logo_reseau(feed, dossier_sortie="output"):
         Chemin local du fichier logo téléchargé, ou None si aucun
         logo n'a pu être trouvé/téléchargé.
     """
-    urls_agence = feed.agency["agency_url"].dropna().unique()
-    if len(urls_agence) == 0:
-        print("⚠ Pas d'agency_url dans le GTFS, impossible de chercher un logo")
-        return None
-
-    url_site = urls_agence[0]
-    entetes = {"User-Agent": "Mozilla/5.0 (compatible; gtfs-analysis-bot/1.0)"}
-
     try:
-        reponse = requests.get(url_site, headers=entetes, timeout=10)
-        reponse.raise_for_status()
-    except requests.RequestException as e:
-        print(f"⚠ Impossible de charger {url_site} : {e}")
+        if "agency_url" not in feed.agency.columns:
+            print("⚠ Pas d'agency_url dans le GTFS, impossible de chercher un logo")
+            return None
+
+        urls_agence = feed.agency["agency_url"].dropna().unique()
+        if len(urls_agence) == 0:
+            print("⚠ Pas d'agency_url dans le GTFS, impossible de chercher un logo")
+            return None
+
+        url_site = urls_agence[0]
+        entetes = {"User-Agent": "Mozilla/5.0 (compatible; gtfs-analysis-bot/1.0)"}
+
+        try:
+            reponse = requests.get(url_site, headers=entetes, timeout=10)
+            reponse.raise_for_status()
+        except requests.RequestException as e:
+            print(f"⚠ Impossible de charger {url_site} : {e}")
+            return None
+
+        soup = BeautifulSoup(reponse.text, "html.parser")
+
+        url_logo = None
+        balise_og = soup.find("meta", property="og:image")
+        if balise_og and balise_og.get("content"):
+            url_logo = balise_og["content"]
+        else:
+            icone = soup.find("link", rel=lambda v: v and "apple-touch-icon" in v)
+            if not icone:
+                icone = soup.find("link", rel=lambda v: v and "icon" in v)
+            if icone and icone.get("href"):
+                url_logo = icone["href"]
+
+        if url_logo is None:
+            # Dernier recours : favicon.ico à la racine du site
+            racine = f"{urlparse(url_site).scheme}://{urlparse(url_site).netloc}"
+            url_logo = urljoin(racine, "/favicon.ico")
+        else:
+            url_logo = urljoin(url_site, url_logo)
+
+        try:
+            reponse_logo = requests.get(url_logo, headers=entetes, timeout=10)
+            reponse_logo.raise_for_status()
+        except requests.RequestException as e:
+            print(f"⚠ Impossible de télécharger le logo ({url_logo}) : {e}")
+            return None
+
+        os.makedirs(dossier_sortie, exist_ok=True)
+        extension = os.path.splitext(urlparse(url_logo).path)[1] or ".png"
+        nom_fichier = f"logo_{nom_fichier_valide(nom_reseau(feed)).replace(' ', '_')}{extension}"
+        chemin_logo = os.path.join(dossier_sortie, nom_fichier)
+
+        with open(chemin_logo, "wb") as f:
+            f.write(reponse_logo.content)
+
+        print(f"✓ Logo téléchargé : {chemin_logo}")
+        return chemin_logo
+    except Exception as e:
+        print(f"⚠ Impossible de récupérer le logo du réseau : {e}")
         return None
-
-    soup = BeautifulSoup(reponse.text, "html.parser")
-
-    url_logo = None
-    balise_og = soup.find("meta", property="og:image")
-    if balise_og and balise_og.get("content"):
-        url_logo = balise_og["content"]
-    else:
-        icone = soup.find("link", rel=lambda v: v and "apple-touch-icon" in v)
-        if not icone:
-            icone = soup.find("link", rel=lambda v: v and "icon" in v)
-        if icone and icone.get("href"):
-            url_logo = icone["href"]
-
-    if url_logo is None:
-        # Dernier recours : favicon.ico à la racine du site
-        racine = f"{urlparse(url_site).scheme}://{urlparse(url_site).netloc}"
-        url_logo = urljoin(racine, "/favicon.ico")
-    else:
-        url_logo = urljoin(url_site, url_logo)
-
-    try:
-        reponse_logo = requests.get(url_logo, headers=entetes, timeout=10)
-        reponse_logo.raise_for_status()
-    except requests.RequestException as e:
-        print(f"⚠ Impossible de télécharger le logo ({url_logo}) : {e}")
-        return None
-
-    os.makedirs(dossier_sortie, exist_ok=True)
-    extension = os.path.splitext(urlparse(url_logo).path)[1] or ".png"
-    nom_fichier = f"logo_{nom_reseau(feed).replace(' ', '_')}{extension}"
-    chemin_logo = os.path.join(dossier_sortie, nom_fichier)
-
-    with open(chemin_logo, "wb") as f:
-        f.write(reponse_logo.content)
-
-    print(f"✓ Logo téléchargé : {chemin_logo}")
-    return chemin_logo
 
 
 def chemin_logo(feed):
-    #cherche nom réseau 
-    chemin_logo=recuperer_logo_reseau(feed, dossier_sortie="output")
-    return chemin_logo
+    #cherche nom réseau
+    try:
+        return recuperer_logo_reseau(feed, dossier_sortie="output")
+    except Exception as e:
+        print(f"⚠ Impossible de récupérer le chemin du logo : {e}")
+        return None

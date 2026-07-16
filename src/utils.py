@@ -127,19 +127,13 @@ def km_par_ligne_jour(feed, longueur_par_ligne,date):
     return km_par_ligne_jour
 
 def km_par_ligne_plage(dates_service,feed):
-    # Calcul jour par jour sur toute l'année
-    total_vkm_per_plage = pd.DataFrame()
+    # Calcul jour par jour sur toute la plage
     longueur_par_ligne=longueur_lignes(feed)
     resultats_journaliers = []
     for date in dates_service:
         resultats_journaliers.append(km_par_ligne_jour(feed, longueur_par_ligne, date))
 
     total_vkm_par_jour = pd.concat(resultats_journaliers, ignore_index=True)
-
-    # calcul somme sur une année entière
-
-    for date in dates_service:
-        total_vkm_per_plage = pd.concat([total_vkm_per_plage, km_par_ligne_jour(feed, longueur_par_ligne, date)], ignore_index=True)
 
     # Agrégation finale : somme des km par ligne sur l'année entière
     total_vkm_per_plage = (
