@@ -25,6 +25,7 @@ TRANSLATIONS = {
 
         # --- infos réseau, communes à Arrêts et Lignes ---
         "commun.reseau_info": "Le GTFS concerne le réseau {reseau}",
+        "commun.periode_service": "Période de service du {debut} au {fin}",
         "commun.plage_info": "Il est valide sur la plage {plage}, le JOB choisi au hasard est {job}",
         "commun.veuillez_charger_gtfs": "👆 Veuillez charger un fichier GTFS.",
         "commun.calcul_en_cours": "🔄 Calcul des indicateurs en cours...",
@@ -76,7 +77,7 @@ TRANSLATIONS = {
     - Nombre de passages par tronçon (bus, tram, métro, trolley, etc.)
     - Calcul des vitesses moyennes
     - Carte interactive des tronçons
-    - app élargie à plusieurs GTFS français à retrouver sur https://transport.data.gouv.fr/
+    - app élargie à plusieurs GTFS français à retrouver sur https://transport.data.gouv.fr/ ou à l'international https://www.transit.land/ 
 
 
     ### Instructions :
@@ -86,7 +87,7 @@ TRANSLATIONS = {
     >
     > L'analyse par arrêts fonctionne quant à elle avec n'importe quel GTFS.
 
-    pour aller chercher des jeux de données GTFS https://transport.data.gouv.fr/
+    pour aller chercher des jeux de données GTFS https://transport.data.gouv.fr/ pi à l'international https://www.transit.land/ 
     """,
         "home.contributeurs_md": """
     ## Contributeurs originaux  :
@@ -196,7 +197,8 @@ TRANSLATIONS = {
         "app.erreur_chargement": "Error while loading: {erreur}",
 
         "commun.reseau_info": "This GTFS covers the {reseau} network",
-        "commun.plage_info": "It is valid over the {plage} range, the randomly chosen JOB (baseline weekday) is {job}",
+        "commun.periode_service": "Service period from {debut} to {fin}",
+        "commun.plage_info": "It is valid over the {plage} range, the randomly chosen Base Weekday (tuesday or thursday) is {job}",
         "commun.veuillez_charger_gtfs": "👆 Please upload a GTFS file.",
         "commun.calcul_en_cours": "🔄 Computing indicators...",
         "commun.header_telechargement": "💾 Download",
@@ -247,7 +249,7 @@ TRANSLATIONS = {
     - Number of passages per segment (bus, tram, metro, trolley, etc.)
     - Average speed calculation
     - Interactive segment map
-    - App extended to several French GTFS feeds, available on https://transport.data.gouv.fr/
+    - App extended to several French GTFS feeds, available on https://transport.data.gouv.fr/ or https://www.transit.land/ for worldwide 
 
 
     ### Instructions:

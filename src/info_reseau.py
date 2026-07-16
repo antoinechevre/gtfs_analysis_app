@@ -9,6 +9,7 @@ sys.path.append('..')
 import random
 
 from src.utils import longueur_lignes
+from src.i18n import t
 
 # fonction pour charger les données du GTFS 
 
@@ -72,22 +73,34 @@ def dates_service (feed):
     return dates_service, date_debut, date_fin, date_JOB
 
 
-MOIS_FR = {
-    1: "janvier", 2: "février", 3: "mars", 4: "avril", 5: "mai", 6: "juin",
-    7: "juillet", 8: "août", 9: "septembre", 10: "octobre", 11: "novembre", 12: "décembre",
+MOIS = {
+    "fr": {
+        1: "janvier", 2: "février", 3: "mars", 4: "avril", 5: "mai", 6: "juin",
+        7: "juillet", 8: "août", 9: "septembre", 10: "octobre", 11: "novembre", 12: "décembre",
+    },
+    "en": {
+        1: "January", 2: "February", 3: "March", 4: "April", 5: "May", 6: "June",
+        7: "July", 8: "August", 9: "September", 10: "October", 11: "November", 12: "December",
+    },
 }
- 
 
-def formater_date_fr(date_str):
+
+def formater_date_fr(date_str, lang="fr"):
     d = datetime.strptime(date_str, "%Y%m%d")
-    return f"{d.day} {MOIS_FR[d.month]} {d.year}"
+    mois = MOIS.get(lang, MOIS["fr"])
+    return f"{d.day} {mois[d.month]} {d.year}"
 
 
-def date_str(date_debut, date_fin, date_JOB):
-    date_service_str = f"Période de service du {formater_date_fr(date_debut)} au {formater_date_fr(date_fin)}"
-    date_JOB_text=formater_date_fr(date_JOB) 
-    
-    return date_service_str, date_JOB_text 
+def date_str(date_debut, date_fin, date_JOB, lang="fr"):
+    date_service_str = t(
+        "commun.periode_service",
+        lang,
+        debut=formater_date_fr(date_debut, lang),
+        fin=formater_date_fr(date_fin, lang),
+    )
+    date_JOB_text = formater_date_fr(date_JOB, lang)
+
+    return date_service_str, date_JOB_text
 
     #charge GTFS en feed, longueurs lignes et nom du réseau  
 

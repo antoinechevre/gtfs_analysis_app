@@ -30,7 +30,7 @@ def arrets_page(lang="fr"):
 
         _, date_debut, date_fin, date_JOB = dates_service(st.session_state.feed)
 
-        date_service_str, date_JOB_text = date_str(date_debut, date_fin, date_JOB)
+        date_service_str, date_JOB_text = date_str(date_debut, date_fin, date_JOB, lang=lang)
 
         st.info(t("commun.plage_info", lang, plage=date_service_str, job=date_JOB_text))
 
