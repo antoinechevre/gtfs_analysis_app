@@ -22,6 +22,7 @@ TRANSLATIONS = {
         "app.sidebar_langue": "🌐 Langue",
         "app.spinner_chargement": "Chargement du fichier GTFS...",
         "app.erreur_chargement": "Erreur lors du chargement : {erreur}",
+        "app.erreur_trop_agences": "⚠ Ce GTFS regroupe {n} agences : ce que l'app ne peut pas gérer. Charger un GTFS urbain uniquement.",
 
         # --- infos réseau, communes à Arrêts et Lignes ---
         "commun.reseau_info": "Le GTFS concerne le réseau {reseau}",
@@ -196,6 +197,7 @@ TRANSLATIONS = {
         "app.sidebar_langue": "🌐 Language",
         "app.spinner_chargement": "Loading GTFS file...",
         "app.erreur_chargement": "Error while loading: {erreur}",
+        "app.erreur_trop_agences": "⚠ This GTFS covers {n} agencies, which the app cannot handle. Please load an urban GTFS only.",
 
         "commun.reseau_info": "This GTFS covers the {reseau} network",
         "commun.analyse_du": "Analysis of {date}",

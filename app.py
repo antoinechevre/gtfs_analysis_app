@@ -19,6 +19,8 @@ from views.arrets import arrets_page
 from views.troncons import troncons_page
 
 
+class TropAgencesError(Exception):
+    """Levée quand le GTFS regroupe trop d'agences pour être traité par l'app."""
 
 
 # Configuration de la page
@@ -141,6 +143,13 @@ def charger_donnees_gtfs():
         with st.spinner(t("app.spinner_chargement", lang)):
             feed = charger_gtfs(zip_path)
 
+        # L'app ne sait traiter que des GTFS urbains (un GTFS national/régional
+        # regroupant de nombreuses agences ferait exploser les temps de calcul
+        # et n'a pas de sens pour les indicateurs arrêts/tronçons proposés ici)
+        nb_agences = len(feed.agency)
+        if nb_agences > 3:
+            raise TropAgencesError(nb_agences)
+
         # Plage de service fiable et jour ouvré de base (mardi/jeudi au hasard)
         _, _, _, date_JOB = dates_service(feed)
         date_str = date_JOB
@@ -175,6 +184,11 @@ def charger_donnees_gtfs():
         st.session_state.modes_disponibles = None
 
         return True
+
+    except TropAgencesError as e:
+        st.error(t("app.erreur_trop_agences", lang, n=e.args[0]))
+        os.unlink(zip_path)
+        st.stop()
 
     except Exception as e:
         st.error(t("app.erreur_chargement", lang, erreur=e))
