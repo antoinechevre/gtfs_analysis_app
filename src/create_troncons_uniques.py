@@ -65,7 +65,7 @@ def _geometries_reelles_par_troncon(feed, paires):
     if shapes_utiles.empty:
         return {}
 
-    lignes_par_shape = gk.geometrize_shapes(feed, shape_ids=shape_ids_utiles).set_index("shape_id")["geometry"]
+    lignes_par_shape = gk.geometrize_shapes(shapes_utiles).set_index("shape_id")["geometry"]
     coords_arrets = feed.stops.set_index("stop_id")[["stop_lat", "stop_lon"]]
 
     geometries = {}
