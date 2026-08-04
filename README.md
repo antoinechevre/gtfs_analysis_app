@@ -1,5 +1,5 @@
 ---
-title: Analyse GTFS
+title: GTFS Analysis Universal
 emoji: 🚌
 colorFrom: blue
 colorTo: green
