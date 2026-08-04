@@ -38,6 +38,9 @@ class TropAgencesError(Exception):
 # porterait le même nom.
 GTFS_NOM_RESEAU_FORCE = {
     "IDFM-gtfs.zip": "IDFM",
+    # NYC_gtfs_merge.zip regroupe 6 agences (une par feed d'origine, cf.
+    # src/merge_gtfs.py) mais reste un unique réseau urbain (MTA).
+    "NYC_gtfs_merge.zip": "NYC",
 }
 
 # Logo forcé pour les mêmes réseaux que GTFS_NOM_RESEAU_FORCE : le fetch

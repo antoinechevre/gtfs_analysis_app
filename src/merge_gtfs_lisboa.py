@@ -42,14 +42,11 @@ TABLES_GTFS = [
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Choisir le jeu de données GTFS en zip, site de référence 
-GTFS_ZIP_PATH_NYC_gtfs_busco = os.path.join(BASE_DIR,"data","GTFS","NYC_gtfs_busco.zip")
-GTFS_ZIP_PATH_NYC_gtfs_b = os.path.join(BASE_DIR,"data","GTFS","NYC_gtfs_b.zip")
-GTFS_ZIP_PATH_NYC_gtfs_subway = os.path.join(BASE_DIR,"data","GTFS","NYC_gtfs_subway.zip")
-GTFS_ZIP_PATH_NYC_gtfs_bx = os.path.join(BASE_DIR,"data","GTFS","NYC_gtfs_bx.zip")
-GTFS_ZIP_PATH_NYC_gtfs_m = os.path.join(BASE_DIR,"data","GTFS","NYC_gtfs_m.zip")
-GTFS_ZIP_PATH_NYC_gtfs_si = os.path.join(BASE_DIR,"data","GTFS","NYC_gtfs_si.zip")
-OUTPUT_HTML_PATH_NYC_merge = os.path.join(BASE_DIR, "data","GTFS","NYC_gtfs_merge.zip")
+# Choisir le jeu de données GTFS en zip, site de référence
+GTFS_ZIP_PATH_LISBOA_carris = os.path.join(BASE_DIR, "data", "GTFS", "Lisboa_gtfs_2026-07-27.zip")
+GTFS_ZIP_PATH_LISBOA_metro = os.path.join(BASE_DIR, "data", "GTFS", "Lisboa_metro_tld-716-202605010025.zip")
+OUTPUT_PATH_LISBOA_merge = os.path.join(BASE_DIR, "data", "GTFS", "Lisboa_gtfs_merge.zip")
+
 
 
 
@@ -127,13 +124,9 @@ def fusionner_gtfs(chemins_zip, chemin_sortie, dist_units="km", nom_agence=None)
 if __name__ == "__main__":
     fusionner_gtfs(
         [
-            GTFS_ZIP_PATH_NYC_gtfs_busco,
-            GTFS_ZIP_PATH_NYC_gtfs_subway,
-            GTFS_ZIP_PATH_NYC_gtfs_b,
-            GTFS_ZIP_PATH_NYC_gtfs_bx,
-            GTFS_ZIP_PATH_NYC_gtfs_m,
-            GTFS_ZIP_PATH_NYC_gtfs_si,
+            GTFS_ZIP_PATH_LISBOA_carris,
+            GTFS_ZIP_PATH_LISBOA_metro,
         ],
-        OUTPUT_HTML_PATH_NYC_merge,
-        nom_agence="MTA",
+        OUTPUT_PATH_LISBOA_merge,
+        nom_agence="Lisboa Public Transport",
     )
