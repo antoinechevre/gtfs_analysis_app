@@ -12,6 +12,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Configure l'identité git (requise par commit-tree)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
       - name: Configure le remote Hugging Face
         env:
           HF_TOKEN: ${{ secrets.HF_TOKET_GTFS_UNIVERSAL }}
