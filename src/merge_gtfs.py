@@ -43,17 +43,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # Choisir le jeu de données GTFS en zip, site de référence 
-GTFS_ZIP_PATH_NYC_gtfs_busco = os.path.join(BASE_DIR,"data", "NYC_gtfs_busco.zip")
-GTFS_ZIP_PATH_NYC_gtfs_b = os.path.join(BASE_DIR,"data", "NYC_gtfs_b.zip")
-GTFS_ZIP_PATH_NYC_gtfs_subway = os.path.join(BASE_DIR,"data", "NYC_gtfs_subway.zip")
-GTFS_ZIP_PATH_NYC_gtfs_bx = os.path.join(BASE_DIR,"data", "NYC_gtfs_bx.zip")
-GTFS_ZIP_PATH_NYC_gtfs_m = os.path.join(BASE_DIR,"data", "NYC_gtfs_m.zip")
-GTFS_ZIP_PATH_NYC_gtfs_si = os.path.join(BASE_DIR,"data", "NYC_gtfs_si.zip")
-OUTPUT_HTML_PATH_NYC_merge = os.path.join(BASE_DIR, "data","NYC_gtfs_merge.zip")
+GTFS_ZIP_PATH_NYC_gtfs_busco = os.path.join(BASE_DIR,"data","GTFS","NYC_gtfs_busco.zip")
+GTFS_ZIP_PATH_NYC_gtfs_b = os.path.join(BASE_DIR,"data","GTFS","NYC_gtfs_b.zip")
+GTFS_ZIP_PATH_NYC_gtfs_subway = os.path.join(BASE_DIR,"data","GTFS","NYC_gtfs_subway.zip")
+GTFS_ZIP_PATH_NYC_gtfs_bx = os.path.join(BASE_DIR,"data","GTFS","NYC_gtfs_bx.zip")
+GTFS_ZIP_PATH_NYC_gtfs_m = os.path.join(BASE_DIR,"data","GTFS","NYC_gtfs_m.zip")
+GTFS_ZIP_PATH_NYC_gtfs_si = os.path.join(BASE_DIR,"data","GTFS","NYC_gtfs_si.zip")
+OUTPUT_HTML_PATH_NYC_merge = os.path.join(BASE_DIR, "data","GTFS","NYC_gtfs_merge.zip")
 
 
 
-def fusionner_gtfs(chemins_zip, chemin_sortie, dist_units="km"):
+def fusionner_gtfs(chemins_zip, chemin_sortie, dist_units="km", nom_agence=None):
     """
     Fusionne plusieurs GTFS (fichiers zip) en un seul GTFS.
 
@@ -71,6 +71,11 @@ def fusionner_gtfs(chemins_zip, chemin_sortie, dist_units="km"):
     dist_units : str
         Unité de distance à utiliser pour le feed fusionné (défaut: 'km').
         Les feeds dans une autre unité sont convertis avant fusion.
+    nom_agence : str, optional
+        Si fourni, force ce nom pour toutes les agences du GTFS fusionné.
+        Utile quand les feeds fusionnés appartiennent en réalité à une même
+        agence (ex: plusieurs GTFS MTA) mais portent des agency_name
+        différents ou incohérents d'un feed à l'autre.
 
     Returns:
     --------
@@ -103,6 +108,10 @@ def fusionner_gtfs(chemins_zip, chemin_sortie, dist_units="km"):
         if dfs:
             tables_fusionnees[table] = pd.concat(dfs, ignore_index=True, sort=False)
 
+    if nom_agence is not None and "agency" in tables_fusionnees:
+        print(f"\nForçage du nom d'agence : '{nom_agence}'")
+        tables_fusionnees["agency"]["agency_name"] = nom_agence
+
     feed_fusionne = gk.Feed(dist_units=dist_units, **tables_fusionnees)
 
     feed_fusionne.to_file(chemin_sortie)
@@ -123,7 +132,8 @@ if __name__ == "__main__":
             GTFS_ZIP_PATH_NYC_gtfs_b,
             GTFS_ZIP_PATH_NYC_gtfs_bx,
             GTFS_ZIP_PATH_NYC_gtfs_m,
-            GTFS_ZIP_PATH_NYC_gtfs_si,           
+            GTFS_ZIP_PATH_NYC_gtfs_si,
         ],
         OUTPUT_HTML_PATH_NYC_merge,
+        nom_agence="MTA",
     )

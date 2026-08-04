@@ -137,11 +137,18 @@ gtfs_options = [AUCUN_GTFS_LOCAL] + gtfs_locaux
 gtfs_query_param = st.query_params.get("gtfs")
 index_gtfs_defaut = gtfs_options.index(gtfs_query_param) if gtfs_query_param in gtfs_locaux else 0
 
-gtfs_local_choisi = st.sidebar.selectbox(
-    t("app.sidebar_gtfs_existant", lang),
-    options=gtfs_options,
-    index=index_gtfs_defaut,
-)
+# Sur l'image Docker (déploiement Hugging Face), ce sélecteur est masqué :
+# seul l'upload manuel reste disponible pour choisir un GTFS.
+disable_gtfs_catalog = os.environ.get("GTFS_DISABLE_CATALOG_SELECT", "0") == "1"
+
+if disable_gtfs_catalog:
+    gtfs_local_choisi = AUCUN_GTFS_LOCAL
+else:
+    gtfs_local_choisi = st.sidebar.selectbox(
+        t("app.sidebar_gtfs_existant", lang),
+        options=gtfs_options,
+        index=index_gtfs_defaut,
+    )
 
 # Variables globales pour stocker les résultats
 if "feed" not in st.session_state:
