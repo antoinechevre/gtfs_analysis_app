@@ -114,7 +114,6 @@ TRANSLATIONS = {
         # --- views/arrets.py ---
         "arrets.spinner_indicateurs": "Calcul des indicateurs d'arrêts...",
         "arrets.erreur_indicateurs": "Erreur lors du calcul des arrêts : {erreur}",
-        "arrets.succes": "✅ Analyse des arrêts terminée !",
         "arrets.header_stats": "📊 Statistiques Globales",
         "arrets.metric_nb_arrets": "Nombre d'arrêts",
         "arrets.metric_arrets_actifs": "Arrêts actifs",
@@ -129,14 +128,11 @@ TRANSLATIONS = {
         "troncons.warning_limitations": """
     ⚠️ Cette analyse a été debuggée sur plusieurs GTFS en mentionnant les modes bus / tram / metro / trolley / ferry / train (RER, Transilien, TER...)
     """,
-        "troncons.spinner_calcul_auto": "🔄 Calcul automatique des tronçons {mode} depuis le GTFS...",
-        "troncons.succes_calcul_auto": "✅ {n} tronçons {mode} calculés automatiquement",
         "troncons.erreur_calcul_auto": "❌ Erreur lors du calcul automatique des tronçons {mode}: {erreur}",
         "troncons.spinner_reference": "Chargement/Calcul des tronçons de référence...",
         "troncons.erreur_reference": "Impossible de calculer les tronçons de référence.",
         "troncons.spinner_indicateurs": "Calcul des indicateurs de tronçons...",
         "troncons.erreur_indicateurs": "Erreur lors du calcul des tronçons : {erreur}",
-        "troncons.succes": "✅ Analyse des tronçons terminée !",
         "troncons.header_stats": "📊 Statistiques Globales",
         "troncons.metric_actifs": "Tronçons {mode} actifs",
         "troncons.metric_total_passages": "Total passages {mode}",
@@ -293,7 +289,6 @@ TRANSLATIONS = {
         # --- views/arrets.py ---
         "arrets.spinner_indicateurs": "Computing stop indicators...",
         "arrets.erreur_indicateurs": "Error while computing stops: {erreur}",
-        "arrets.succes": "✅ Stop analysis complete!",
         "arrets.header_stats": "📊 Overall statistics",
         "arrets.metric_nb_arrets": "Number of stops",
         "arrets.metric_arrets_actifs": "Active stops",
@@ -308,14 +303,11 @@ TRANSLATIONS = {
         "troncons.warning_limitations": """
     ⚠️ This analysis has been debugged on several GTFS feeds covering the bus / tram / metro / trolley / ferry / train (RER, Transilien, TER...) modes
     """,
-        "troncons.spinner_calcul_auto": "🔄 Automatically computing {mode} segments from the GTFS...",
-        "troncons.succes_calcul_auto": "✅ {n} {mode} segments computed automatically",
         "troncons.erreur_calcul_auto": "❌ Error while automatically computing {mode} segments: {erreur}",
         "troncons.spinner_reference": "Loading/computing reference segments...",
         "troncons.erreur_reference": "Unable to compute reference segments.",
         "troncons.spinner_indicateurs": "Computing segment indicators...",
         "troncons.erreur_indicateurs": "Error while computing segments: {erreur}",
-        "troncons.succes": "✅ Segment analysis complete!",
         "troncons.header_stats": "📊 Overall statistics",
         "troncons.metric_actifs": "Active {mode} segments",
         "troncons.metric_total_passages": "Total {mode} passages",

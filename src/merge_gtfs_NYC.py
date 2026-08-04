@@ -71,10 +71,13 @@ def fusionner_gtfs(chemins_zip, chemin_sortie, dist_units="km", nom_agence=None)
         Unité de distance à utiliser pour le feed fusionné (défaut: 'km').
         Les feeds dans une autre unité sont convertis avant fusion.
     nom_agence : str, optional
-        Si fourni, force ce nom pour toutes les agences du GTFS fusionné.
-        Utile quand les feeds fusionnés appartiennent en réalité à une même
-        agence (ex: plusieurs GTFS MTA) mais portent des agency_name
-        différents ou incohérents d'un feed à l'autre.
+        Si fourni, fusionne toutes les agences du GTFS fusionné en une
+        agence unique portant ce nom (agency_id conservé de la première,
+        agency_id des autres remappés vers celui-ci dans routes et
+        fare_attributes). Utile quand les feeds fusionnés appartiennent en
+        réalité à une même agence (ex: plusieurs GTFS MTA) mais portent des
+        agency_id/agency_name différents d'un feed à l'autre — sans ça,
+        l'agence unique se retrouverait comptée plusieurs fois.
 
     Returns:
     --------
@@ -108,8 +111,19 @@ def fusionner_gtfs(chemins_zip, chemin_sortie, dist_units="km", nom_agence=None)
             tables_fusionnees[table] = pd.concat(dfs, ignore_index=True, sort=False)
 
     if nom_agence is not None and "agency" in tables_fusionnees:
-        print(f"\nForçage du nom d'agence : '{nom_agence}'")
-        tables_fusionnees["agency"]["agency_name"] = nom_agence
+        agency_df = tables_fusionnees["agency"]
+        anciens_agency_ids = agency_df["agency_id"].tolist()
+        agency_id_unique = anciens_agency_ids[0]
+
+        print(f"\nFusion de {len(anciens_agency_ids)} agence(s) en une seule : '{nom_agence}'")
+        agence_unique = agency_df.iloc[[0]].copy()
+        agence_unique["agency_name"] = nom_agence
+        tables_fusionnees["agency"] = agence_unique.reset_index(drop=True)
+
+        for table in ("routes", "fare_attributes"):
+            df = tables_fusionnees.get(table)
+            if df is not None and "agency_id" in df.columns:
+                df["agency_id"] = agency_id_unique
 
     feed_fusionne = gk.Feed(dist_units=dist_units, **tables_fusionnees)
 

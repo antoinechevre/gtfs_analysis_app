@@ -144,20 +144,12 @@ def charger_ou_calculer_troncons(feed, route_type, nom_mode, nom_reseau_str, age
     nom_fichier = f"troncons_{nom_mode.lower()}.csv"
     chemin_cache = os.path.join("data", "memory_troncons", nom_reseau_str, nom_fichier)
     nom_fichier_hf = f"memory_troncons/{nom_reseau_str}/{nom_fichier}"
-    deja_en_cache = os.path.exists(chemin_cache)
-
-    if not deja_en_cache:
-        st.info(t("troncons.spinner_calcul_auto", lang, mode=nom_mode))
-
     try:
         troncons_gdf = charger_ou_calculer_avec_cache_hf(
             chemin_cache,
             nom_fichier_hf,
             lambda: creer_troncons_uniques(feed, route_type, agency_ids=agency_ids, prefixe=nom_mode.upper()),
         )
-
-        if not deja_en_cache:
-            st.success(t("troncons.succes_calcul_auto", lang, n=len(troncons_gdf), mode=nom_mode))
         return troncons_gdf
 
     except Exception as e:
@@ -254,8 +246,6 @@ def troncons_page(lang="fr"):
         if st.session_state.indicateurs_par_mode is not None:
 
             indicateurs_par_mode = st.session_state.indicateurs_par_mode
-
-            st.success(t("troncons.succes", lang))
 
             # Statistiques globales
             st.header(t("troncons.header_stats", lang))
