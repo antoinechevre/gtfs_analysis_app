@@ -1,27 +1,37 @@
 """
-Catalogue partagé de GTFS sur Hugging Face : le dataset antoinechevre/
-ww_GTFS (dossier GTFS/) sert de bibliothèque commune entre les
-différents Spaces de l'auteur. Cette app y lit les GTFS déjà déposés (par
-elle-même ou par un autre Space) pour les proposer sans réupload, et y
-renvoie les nouveaux GTFS uploadés pour que les prochains déploiements /
-visiteurs en profitent aussi.
+Catalogue partagé de GTFS sur Hugging Face, sur deux datasets :
+- antoinechevre/accessibility-data : dataset historique de l'app sœur
+  "accessibility", en lecture seule ici. Contient déjà un catalogue GTFS et
+  un cache memory_troncons/ conséquents (dont IDFM en entier) — on les
+  réutilise pour cette app plutôt que tout recalculer, mais on n'y écrit
+  jamais depuis ici (pas notre dataset).
+- antoinechevre/ww_GTFS : dataset dédié à cette app, en lecture+écriture.
+  Toute donnée nouvelle (GTFS uploadé, résultat de calcul) y est déposée.
 
-Le dataset étant privé, un token HF (variable d'environnement HF_TOKEN,
-droits lecture pour consulter le catalogue, écriture pour y contribuer)
-doit être configuré dans les secrets du déploiement.
+Lecture (recuperer_depuis_hf, lister_fichiers_hf) : accessibility-data
+d'abord, ww_GTFS ensuite si absent du premier — les deux catalogues/caches
+apparaissent donc réunis côté app. Écriture (envoyer_vers_hf) : toujours
+vers ww_GTFS uniquement.
+
+Les deux datasets étant privés, un token HF (variable d'environnement
+HF_TOKEN, droits lecture pour les consulter, écriture pour contribuer à
+ww_GTFS) doit être configuré dans les secrets du déploiement.
 """
 
 import os
 import shutil
 
 HF_DATA_REPO_ID = "antoinechevre/ww_GTFS"
+HF_DATA_REPO_ID_LEGACY = "antoinechevre/accessibility-data"
 
 
 def recuperer_depuis_hf(nom_fichier_hf, destination_locale):
     """Télécharge nom_fichier_hf (chemin relatif dans le dataset HF, ex.
     "GTFS/reseau.zip") vers destination_locale s'il n'existe pas déjà en
-    local. Retourne True si destination_locale est disponible après l'appel
-    (déjà présent ou téléchargé avec succès), False sinon."""
+    local — cherché d'abord dans HF_DATA_REPO_ID_LEGACY (cache existant),
+    puis dans HF_DATA_REPO_ID si absent du premier. Retourne True si
+    destination_locale est disponible après l'appel (déjà présent ou
+    téléchargé avec succès), False sinon."""
     if os.path.exists(destination_locale):
         return True
 
@@ -30,15 +40,20 @@ def recuperer_depuis_hf(nom_fichier_hf, destination_locale):
     except ImportError:
         return False
 
-    try:
-        chemin_telecharge = hf_hub_download(
-            repo_id=HF_DATA_REPO_ID,
-            repo_type="dataset",
-            filename=nom_fichier_hf,
-            token=os.environ.get("HF_TOKEN"),
-        )
-    except Exception as e:
-        print(f"[hf_cache] recuperer_depuis_hf({nom_fichier_hf!r}) a échoué : {e!r}")
+    chemin_telecharge = None
+    for repo_id in (HF_DATA_REPO_ID_LEGACY, HF_DATA_REPO_ID):
+        try:
+            chemin_telecharge = hf_hub_download(
+                repo_id=repo_id,
+                repo_type="dataset",
+                filename=nom_fichier_hf,
+                token=os.environ.get("HF_TOKEN"),
+            )
+            break
+        except Exception as e:
+            print(f"[hf_cache] recuperer_depuis_hf({nom_fichier_hf!r}) absent de {repo_id} : {e!r}")
+
+    if chemin_telecharge is None:
         return False
 
     os.makedirs(os.path.dirname(destination_locale), exist_ok=True)
@@ -72,29 +87,34 @@ def envoyer_vers_hf(chemin_local, nom_fichier_hf):
 
 
 def lister_fichiers_hf(sous_dossier):
-    """Liste les fichiers du dataset HF sous sous_dossier/ (ex: "GTFS"),
-    noms de fichiers (basename, sans le préfixe de dossier) triés.
+    """Liste les fichiers sous sous_dossier/ (ex: "GTFS") réunis des deux
+    datasets (HF_DATA_REPO_ID_LEGACY et HF_DATA_REPO_ID), noms de fichiers
+    (basename, sans le préfixe de dossier) triés, sans doublons.
 
-    Liste vide si le dataset est inaccessible (token absent, hors ligne,
-    huggingface_hub non installé...) — l'appelant doit alors se rabattre sur
-    sa source habituelle plutôt que planter."""
+    Un dataset inaccessible (token absent, hors ligne, huggingface_hub non
+    installé...) est ignoré plutôt que de faire planter l'appelant ; liste
+    vide si aucun des deux n'est accessible."""
     try:
         from huggingface_hub import HfApi
     except ImportError:
         return []
 
-    try:
-        fichiers = HfApi().list_repo_files(
-            repo_id=HF_DATA_REPO_ID,
-            repo_type="dataset",
-            token=os.environ.get("HF_TOKEN"),
-        )
-    except Exception as e:
-        print(f"[hf_cache] lister_fichiers_hf({sous_dossier!r}) a échoué : {e!r}")
-        return []
-
     prefixe = f"{sous_dossier}/"
-    return sorted(f[len(prefixe):] for f in fichiers if f.startswith(prefixe) and f != prefixe)
+    api = HfApi()
+    noms = set()
+    for repo_id in (HF_DATA_REPO_ID_LEGACY, HF_DATA_REPO_ID):
+        try:
+            fichiers = api.list_repo_files(
+                repo_id=repo_id,
+                repo_type="dataset",
+                token=os.environ.get("HF_TOKEN"),
+            )
+        except Exception as e:
+            print(f"[hf_cache] lister_fichiers_hf({sous_dossier!r}) a échoué sur {repo_id} : {e!r}")
+            continue
+        noms.update(f[len(prefixe):] for f in fichiers if f.startswith(prefixe) and f != prefixe)
+
+    return sorted(noms)
 
 
 def charger_ou_calculer_avec_cache_hf(chemin_cache_local, nom_fichier_hf, fonction_calcul):
