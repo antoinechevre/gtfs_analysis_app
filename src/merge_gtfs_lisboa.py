@@ -16,6 +16,8 @@ from pathlib import Path
 import gtfs_kit as gk
 import pandas as pd
 
+from src.hf_cache import envoyer_vers_hf
+
 # Tables GTFS gérées par gtfs_kit.Feed
 TABLES_GTFS = [
     "agency",
@@ -127,6 +129,14 @@ def fusionner_gtfs(chemins_zip, chemin_sortie, dist_units="km", nom_agence=None)
 
     feed_fusionne.to_file(chemin_sortie)
     print(f"\n✓ GTFS fusionné enregistré dans : {chemin_sortie}")
+
+    # Renvoyé vers le dataset HF partagé (best-effort) uniquement une fois
+    # arrivé ici sans erreur : la fusion et l'écriture locale ont réussi.
+    nom_fichier_hf = f"GTFS/{os.path.basename(chemin_sortie)}"
+    if envoyer_vers_hf(chemin_sortie, nom_fichier_hf):
+        print(f"✓ Envoyé vers le dataset HF : {nom_fichier_hf}")
+    else:
+        print(f"⚠ Envoi vers le dataset HF échoué (ou HF_TOKEN absent) : {nom_fichier_hf}")
 
     print("\n" + "=" * 70)
     print("✓ FUSION TERMINÉE")

@@ -20,6 +20,8 @@ from pathlib import Path
 
 import gtfs_kit as gk
 
+from src.hf_cache import envoyer_vers_hf
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 GTFS_ZIP_PATH_IDFM = os.path.join(BASE_DIR, "data", "GTFS", "IDFM-gtfs.zip")
@@ -62,6 +64,14 @@ def forcer_nom_agence(chemin_zip, chemin_sortie, nom_agence, dist_units="km"):
 
     feed.to_file(chemin_sortie)
     print(f"\n✓ GTFS enregistré dans : {chemin_sortie}")
+
+    # Renvoyé vers le dataset HF partagé (best-effort) uniquement une fois
+    # arrivé ici sans erreur : le chargement et l'écriture locale ont réussi.
+    nom_fichier_hf = f"GTFS/{os.path.basename(chemin_sortie)}"
+    if envoyer_vers_hf(chemin_sortie, nom_fichier_hf):
+        print(f"✓ Envoyé vers le dataset HF : {nom_fichier_hf}")
+    else:
+        print(f"⚠ Envoi vers le dataset HF échoué (ou HF_TOKEN absent) : {nom_fichier_hf}")
 
     print("\n" + "=" * 70)
     print("✓ TERMINÉ")
