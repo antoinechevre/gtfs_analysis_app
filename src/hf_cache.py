@@ -1,17 +1,19 @@
 """
-Catalogue partagé de GTFS sur Hugging Face, sur deux datasets :
+Catalogue GTFS + cache de calculs sur Hugging Face, sur deux datasets :
 - antoinechevre/accessibility-data : dataset historique de l'app sœur
-  "accessibility", en lecture seule ici. Contient déjà un catalogue GTFS et
-  un cache memory_troncons/ conséquents (dont IDFM en entier) — on les
-  réutilise pour cette app plutôt que tout recalculer, mais on n'y écrit
-  jamais depuis ici (pas notre dataset).
+  "accessibility", en lecture seule ici. Contient déjà un cache
+  memory_troncons/ conséquent (dont IDFM en entier) — on le réutilise pour
+  cette app plutôt que tout recalculer, mais on n'y écrit jamais depuis ici
+  (pas notre dataset), et on n'y pioche PAS le catalogue GTFS/ : cette app
+  ne doit proposer que les GTFS déposés sur son propre dataset.
 - antoinechevre/ww_GTFS : dataset dédié à cette app, en lecture+écriture.
-  Toute donnée nouvelle (GTFS uploadé, résultat de calcul) y est déposée.
+  Toute donnée nouvelle (GTFS uploadé, résultat de calcul) y est déposée,
+  et c'est l'unique source du catalogue GTFS/ proposé dans l'app.
 
-Lecture (recuperer_depuis_hf, lister_fichiers_hf) : accessibility-data
-d'abord, ww_GTFS ensuite si absent du premier — les deux catalogues/caches
-apparaissent donc réunis côté app. Écriture (envoyer_vers_hf) : toujours
-vers ww_GTFS uniquement.
+Le repli sur accessibility-data (recuperer_depuis_hf, lister_fichiers_hf)
+ne s'applique donc qu'aux chemins memory_troncons/ (résultats de calcul),
+jamais à GTFS/ (catalogue de fichiers zip). Écriture (envoyer_vers_hf) :
+toujours vers ww_GTFS uniquement.
 
 Les deux datasets étant privés, un token HF (variable d'environnement
 HF_TOKEN, droits lecture pour les consulter, écriture pour contribuer à
@@ -24,14 +26,28 @@ import shutil
 HF_DATA_REPO_ID = "antoinechevre/ww_GTFS"
 HF_DATA_REPO_ID_LEGACY = "antoinechevre/accessibility-data"
 
+# Seuls ces sous-dossiers bénéficient du repli en lecture sur
+# HF_DATA_REPO_ID_LEGACY : le catalogue GTFS/ ne doit provenir que de
+# HF_DATA_REPO_ID (cf. docstring du module).
+SOUS_DOSSIERS_AVEC_REPLI_LEGACY = ("memory_troncons",)
+
+
+def _repos_pour_chemin(chemin_hf):
+    """Datasets à essayer, dans l'ordre, pour lire chemin_hf (repli sur
+    HF_DATA_REPO_ID_LEGACY uniquement pour les sous-dossiers listés dans
+    SOUS_DOSSIERS_AVEC_REPLI_LEGACY, ex: memory_troncons/...)."""
+    sous_dossier = chemin_hf.split("/", 1)[0]
+    if sous_dossier in SOUS_DOSSIERS_AVEC_REPLI_LEGACY:
+        return (HF_DATA_REPO_ID_LEGACY, HF_DATA_REPO_ID)
+    return (HF_DATA_REPO_ID,)
+
 
 def recuperer_depuis_hf(nom_fichier_hf, destination_locale):
     """Télécharge nom_fichier_hf (chemin relatif dans le dataset HF, ex.
     "GTFS/reseau.zip") vers destination_locale s'il n'existe pas déjà en
-    local — cherché d'abord dans HF_DATA_REPO_ID_LEGACY (cache existant),
-    puis dans HF_DATA_REPO_ID si absent du premier. Retourne True si
-    destination_locale est disponible après l'appel (déjà présent ou
-    téléchargé avec succès), False sinon."""
+    local — cf. _repos_pour_chemin pour l'ordre des datasets essayés.
+    Retourne True si destination_locale est disponible après l'appel (déjà
+    présent ou téléchargé avec succès), False sinon."""
     if os.path.exists(destination_locale):
         return True
 
@@ -41,7 +57,7 @@ def recuperer_depuis_hf(nom_fichier_hf, destination_locale):
         return False
 
     chemin_telecharge = None
-    for repo_id in (HF_DATA_REPO_ID_LEGACY, HF_DATA_REPO_ID):
+    for repo_id in _repos_pour_chemin(nom_fichier_hf):
         try:
             chemin_telecharge = hf_hub_download(
                 repo_id=repo_id,
@@ -86,14 +102,81 @@ def envoyer_vers_hf(chemin_local, nom_fichier_hf):
     return True
 
 
+def _telecharger_dernier_csv(nom_fichier_hf, chemin_local):
+    """Lit un CSV partagé entre plusieurs machines/déploiements via les
+    datasets HF (ex: index de benchmark inter-réseaux) : contrairement à
+    recuperer_depuis_hf (qui garde la copie locale si déjà présente), on
+    retélécharge ici TOUJOURS la version la plus récente — ce fichier est
+    modifié depuis plusieurs sources, la copie locale peut être en retard
+    sur des lignes ajoutées ailleurs. Retombe sur la copie locale si HF est
+    inaccessible, puis sur None si aucune des deux n'existe."""
+    import pandas as pd
+
+    try:
+        from huggingface_hub import hf_hub_download
+
+        for repo_id in _repos_pour_chemin(nom_fichier_hf):
+            try:
+                chemin_distant = hf_hub_download(
+                    repo_id=repo_id,
+                    repo_type="dataset",
+                    filename=nom_fichier_hf,
+                    token=os.environ.get("HF_TOKEN"),
+                    force_download=True,
+                )
+                return pd.read_csv(chemin_distant)
+            except Exception:
+                continue
+    except ImportError:
+        pass
+
+    if os.path.exists(chemin_local):
+        return pd.read_csv(chemin_local)
+    return None
+
+
+def lire_csv_partage(nom_fichier_hf, chemin_local):
+    """Version lecture seule de _telecharger_dernier_csv, pour un affichage
+    sans vouloir y fusionner de nouvelles lignes. Retourne None si
+    introuvable sur HF et en local."""
+    return _telecharger_dernier_csv(nom_fichier_hf, chemin_local)
+
+
+def fusionner_et_envoyer_csv(nouvelles_lignes, nom_fichier_hf, chemin_local, colonne_cle, valeur_cle):
+    """Fusionne nouvelles_lignes (DataFrame) dans un CSV partagé entre
+    plusieurs machines/déploiements via les datasets HF (cf.
+    _telecharger_dernier_csv).
+
+    Les lignes existantes où colonne_cle == valeur_cle sont retirées avant
+    d'ajouter nouvelles_lignes (une relance remplace plutôt que duplique).
+    Sauvegarde en local puis renvoie vers HF_DATA_REPO_ID (best-effort, cf.
+    envoyer_vers_hf — un échec d'envoi n'empêche pas la sauvegarde locale).
+
+    Retourne le DataFrame fusionné (celui effectivement écrit en local)."""
+    import pandas as pd
+
+    index_existant = _telecharger_dernier_csv(nom_fichier_hf, chemin_local)
+    if index_existant is not None:
+        index_existant = index_existant[index_existant[colonne_cle] != valeur_cle]
+        tableau_final = pd.concat([index_existant, nouvelles_lignes], ignore_index=True)
+    else:
+        tableau_final = nouvelles_lignes
+
+    os.makedirs(os.path.dirname(chemin_local), exist_ok=True)
+    tableau_final.to_csv(chemin_local, index=False)
+    envoyer_vers_hf(chemin_local, nom_fichier_hf)
+    return tableau_final
+
+
 def lister_fichiers_hf(sous_dossier):
-    """Liste les fichiers sous sous_dossier/ (ex: "GTFS") réunis des deux
-    datasets (HF_DATA_REPO_ID_LEGACY et HF_DATA_REPO_ID), noms de fichiers
-    (basename, sans le préfixe de dossier) triés, sans doublons.
+    """Liste les fichiers sous sous_dossier/ (ex: "GTFS"), noms de fichiers
+    (basename, sans le préfixe de dossier) triés — cf. _repos_pour_chemin
+    pour l'ordre/l'ensemble des datasets consultés (GTFS/ : uniquement
+    HF_DATA_REPO_ID ; memory_troncons/ : les deux, réunis).
 
     Un dataset inaccessible (token absent, hors ligne, huggingface_hub non
     installé...) est ignoré plutôt que de faire planter l'appelant ; liste
-    vide si aucun des deux n'est accessible."""
+    vide si aucun des datasets consultés n'est accessible."""
     try:
         from huggingface_hub import HfApi
     except ImportError:
@@ -102,7 +185,7 @@ def lister_fichiers_hf(sous_dossier):
     prefixe = f"{sous_dossier}/"
     api = HfApi()
     noms = set()
-    for repo_id in (HF_DATA_REPO_ID_LEGACY, HF_DATA_REPO_ID):
+    for repo_id in _repos_pour_chemin(prefixe):
         try:
             fichiers = api.list_repo_files(
                 repo_id=repo_id,
