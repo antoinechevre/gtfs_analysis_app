@@ -18,6 +18,7 @@ from src.utils import (
     fusionner_agences_en_une,
 )
 from src.info_reseau import charger_ou_calculer_dates_service, recuperer_logo_reseau, nom_reseau
+from src.population import population_agglomeration
 from src.hf_cache import envoyer_vers_hf, lister_fichiers_hf, recuperer_depuis_hf
 from src.i18n import t, LANGUES
 from views.home import home_page
@@ -195,6 +196,10 @@ if "chemin_logo" not in st.session_state:
     st.session_state.chemin_logo = None
 if "last_uploaded_name" not in st.session_state:
     st.session_state.last_uploaded_name = None
+if "population_agglo" not in st.session_state:
+    st.session_state.population_agglo = None
+if "annee_population" not in st.session_state:
+    st.session_state.annee_population = None
 
 
 # Fonction pour charger les données. La date d'analyse (date_JOB) n'est
@@ -287,6 +292,14 @@ def charger_donnees_gtfs():
             except Exception:
                 chemin_logo = None
 
+        # Population de la ville (best-effort, via Wikidata cf.
+        # src/population.py) : ne résout que si reseau_str ressemble à un
+        # nom de ville (échoue silencieusement pour un acronyme comme MTA,
+        # TBM...). Population de la ville-centre, pas de l'agglomération
+        # complète (rarement une entité Wikidata fiable selon les pays) —
+        # approximation à affiner si besoin.
+        population_agglo, annee_population = population_agglomeration(reseau_str)
+
         # Stocker dans session_state
         st.session_state.feed = feed
         st.session_state.active_service_ids = active_service_ids
@@ -294,6 +307,8 @@ def charger_donnees_gtfs():
         st.session_state.zip_path = zip_path
         st.session_state.nom_reseau_str = reseau_str
         st.session_state.chemin_logo = chemin_logo
+        st.session_state.population_agglo = population_agglo
+        st.session_state.annee_population = annee_population
         st.session_state.last_uploaded_name = nom_gtfs
         st.session_state.indicateurs_arrets = None  # Réinitialiser les indicateurs
         st.session_state.indicateurs_par_mode = None

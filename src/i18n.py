@@ -31,6 +31,7 @@ TRANSLATIONS = {
 
         # --- infos réseau, communes à Arrêts et Lignes ---
         "commun.reseau_info": "Le GTFS concerne le réseau {reseau}",
+        "commun.population_info": "Ce GTFS concerne la ville de {ville}, avec une agglomération de {population} k habitants ({annee})",
         "commun.analyse_du": "Analyse du {date}",
         "commun.periode_service": "Période de service du {debut} au {fin}",
         "commun.plage_info": "Il est valide sur la plage {plage}, le JOB (mardi/jeudi le plus tardif de cette plage) est {job}",
@@ -205,6 +206,7 @@ TRANSLATIONS = {
         "app.erreur_trop_agences": "⚠ This GTFS covers {n} agencies over a wide area (~{etendue} km): regional network, several distant cities. Please load an urban GTFS only.",
 
         "commun.reseau_info": "This GTFS covers the {reseau} network",
+        "commun.population_info": "This GTFS covers the city of {ville}, with an urban area of {population}k inhabitants ({annee})",
         "commun.analyse_du": "Analysis of {date}",
         "commun.periode_service": "Service period from {debut} to {fin}",
         "commun.plage_info": "It is valid over the {plage} range, the Base Weekday (the latest Tuesday or Thursday in this range) is {job}",

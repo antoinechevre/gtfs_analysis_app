@@ -29,6 +29,14 @@ def arrets_page(lang="fr"):
         nom_reseau_valeur = nom_reseau_str(st.session_state.feed)
         st.info(t("commun.reseau_info", lang, reseau=nom_reseau_valeur))
 
+        if st.session_state.population_agglo:
+            st.info(t(
+                "commun.population_info", lang,
+                ville=nom_reseau_valeur,
+                population=round(st.session_state.population_agglo / 1000),
+                annee=st.session_state.annee_population,
+            ))
+
         _, date_debut, date_fin, date_JOB = charger_ou_calculer_dates_service(
             st.session_state.feed, st.session_state.nom_reseau_str
         )
