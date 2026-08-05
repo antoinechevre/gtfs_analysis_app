@@ -11,10 +11,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Sur cette image, seul l'upload manuel de GTFS est proposé (pas de
-# sélection dans le catalogue existant)
-ENV GTFS_DISABLE_CATALOG_SELECT=1
-
 # Hugging Face Spaces runs containers as a non-root user (uid 1000)
 RUN useradd -m -u 1000 appuser \
     && chown -R appuser:appuser /app

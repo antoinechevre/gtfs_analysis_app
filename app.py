@@ -38,8 +38,11 @@ class TropAgencesError(Exception):
 # porterait le même nom.
 GTFS_NOM_RESEAU_FORCE = {
     "IDFM-gtfs.zip": "IDFM",
+    # IDFM-gtfs_merge.zip : même GTFS, juste agency_name uniformisé à
+    # "IDFM" (cf. src/merge_gtfs_IDFM.py) — toujours 64 agency_id d'origine.
+    "IDFM-gtfs_merge.zip": "IDFM",
     # NYC_gtfs_merge.zip regroupe 6 agences (une par feed d'origine, cf.
-    # src/merge_gtfs.py) mais reste un unique réseau urbain (MTA).
+    # src/merge_gtfs_NYC.py) mais reste un unique réseau urbain (MTA).
     "NYC_gtfs_merge.zip": "NYC",
 }
 
@@ -49,6 +52,7 @@ GTFS_NOM_RESEAU_FORCE = {
 # l'app sans logo.
 GTFS_LOGO_FORCE = {
     "IDFM-gtfs.zip": os.path.join("data", "logos", "Logo_IDFM.png"),
+    "IDFM-gtfs_merge.zip": os.path.join("data", "logos", "Logo_IDFM.png"),
 }
 
 
@@ -118,7 +122,7 @@ st.sidebar.header(t("app.sidebar_header", lang))
 uploaded_file = st.sidebar.file_uploader(t("app.sidebar_uploader", lang), type="zip")
 
 # Alternative à l'upload : choisir un GTFS déjà présent dans data/GTFS ou
-# dans le catalogue du dataset HF antoinechevre/accessibility-data (mêmes
+# dans le catalogue du dataset HF antoinechevre/ww_GTFS (mêmes
 # fichiers, téléversés une fois pour toutes, cf. src/hf_cache.py). Union des
 # deux plutôt que l'un OU l'autre : data/GTFS n'est pas versionné par git
 # donc vide sur un déploiement fraîchement démarré sans stockage persistant,

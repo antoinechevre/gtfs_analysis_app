@@ -1,6 +1,6 @@
 """
 Catalogue partagé de GTFS sur Hugging Face : le dataset antoinechevre/
-accessibility-data (dossier GTFS/) sert de bibliothèque commune entre les
+ww_GTFS (dossier GTFS/) sert de bibliothèque commune entre les
 différents Spaces de l'auteur. Cette app y lit les GTFS déjà déposés (par
 elle-même ou par un autre Space) pour les proposer sans réupload, et y
 renvoie les nouveaux GTFS uploadés pour que les prochains déploiements /
@@ -14,7 +14,7 @@ doit être configuré dans les secrets du déploiement.
 import os
 import shutil
 
-HF_DATA_REPO_ID = "antoinechevre/accessibility-data"
+HF_DATA_REPO_ID = "antoinechevre/ww_GTFS"
 
 
 def recuperer_depuis_hf(nom_fichier_hf, destination_locale):
