@@ -27,6 +27,33 @@ LIBELLES_MODE = {
 }
 
 
+# Vocabulaire GTFS étendu (https://developers.google.com/transit/gtfs/reference/extended-route-types)
+# vers les codes de base (0-12) que le reste de l'app connaît : plusieurs
+# réseaux européens (ex: VBB à Berlin) publient leurs route_type en
+# centaines (700=bus, 900=tram...) plutôt qu'en codes de base, ce que
+# gtfs_kit/l'app ne reconnaissent pas tel quel (aucun tronçon détecté).
+# Bornes de plage -> code de base ; toute valeur déjà dans 0-12 ou hors de
+# ces plages n'est pas modifiée.
+PLAGES_ROUTE_TYPE_ETENDU = [
+    (100, 200, 2),   # Railway Service (dont S-Bahn, RER régional...) -> Train
+    (400, 405, 1),   # Urban Railway Service (U-Bahn...) -> Métro
+    (700, 717, 3),   # Bus Service -> Bus
+    (800, 801, 11),  # Trolleybus Service -> Trolleybus
+    (900, 907, 0),   # Tram Service -> Tram
+    (1000, 1001, 4),  # Water Transport Service -> Ferry
+]
+
+
+def normaliser_route_type_etendu(route_type):
+    """Convertit un route_type GTFS étendu (centaines) vers son équivalent
+    en code de base, cf. PLAGES_ROUTE_TYPE_ETENDU. Renvoie route_type
+    inchangé s'il est déjà un code de base ou hors des plages connues."""
+    for debut, fin, code_base in PLAGES_ROUTE_TYPE_ETENDU:
+        if debut <= route_type < fin:
+            return code_base
+    return route_type
+
+
 def charger_gtfs(zip_path):
     """
     Charge le fichier GTFS à l'aide de gtfs_kit.
@@ -35,6 +62,14 @@ def charger_gtfs(zip_path):
     """
     print(f"Chargement du fichier GTFS : {zip_path}")
     feed = gk.read_feed(zip_path, dist_units='km')
+
+    if feed.routes is not None and not feed.routes.empty:
+        route_types_origine = feed.routes["route_type"]
+        feed.routes["route_type"] = route_types_origine.apply(normaliser_route_type_etendu)
+        nb_convertis = (feed.routes["route_type"] != route_types_origine).sum()
+        if nb_convertis:
+            print(f"  → {nb_convertis} route(s) avec un route_type étendu normalisé vers un code de base")
+
     print(f"✓ GTFS chargé avec succès")
     return feed
 
