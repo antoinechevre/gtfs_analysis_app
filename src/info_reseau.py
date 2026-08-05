@@ -153,14 +153,23 @@ def longueur_par_lignes(feed):
     # Calcul de la longueur des shapes une seule fois, en dehors de la boucle
     return longueur_lignes(feed)
 
-def nom_fichier_valide(texte):
+def nom_fichier_valide(texte, longueur_max=80):
     """
     Remplace les caractères invalides dans un nom de fichier/dossier
     (/, \\, :, *, ?, ", <, >, |) par des tirets, pour que le nom du
     réseau (qui peut contenir des "/" quand plusieurs agences sont
     concaténées) puisse être utilisé sans risque dans un chemin.
+
+    Tronque aussi à longueur_max caractères : un GTFS régional regroupant
+    des dizaines d'agences (ex: VBB à Berlin) produit sinon un nom de
+    plusieurs centaines de caractères — largement au-delà de la limite de
+    l'OS pour un composant de chemin (255 octets, moins ce qu'ajoutent les
+    appelants en préfixe/suffixe : "tableau_ligne_plage_", ".html"...).
     """
-    return re.sub(r'[\\/:*?"<>|]', '-', texte).strip()
+    texte = re.sub(r'[\\/:*?"<>|]', '-', texte).strip()
+    if len(texte) > longueur_max:
+        texte = texte[:longueur_max].rstrip() + "…"
+    return texte
 
 
 def nom_reseau_str(feed):
