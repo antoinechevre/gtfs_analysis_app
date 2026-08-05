@@ -16,13 +16,18 @@ le nom d'agence est montré, sans toucher aux identifiants.
 """
 
 import os
+import sys
 from pathlib import Path
 
 import gtfs_kit as gk
 
-from src.hf_cache import envoyer_vers_hf
-
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Rend "src" importable que le script soit lancé en module (python -m
+# src.merge_gtfs_IDFM, depuis la racine du repo) ou en fichier direct
+# (bouton "Run" de l'IDE, où sys.path[0] est le dossier src/ lui-même).
+sys.path.insert(0, str(BASE_DIR))
+from src.hf_cache import envoyer_vers_hf
 
 GTFS_ZIP_PATH_IDFM = os.path.join(BASE_DIR, "data", "GTFS", "IDFM-gtfs.zip")
 OUTPUT_PATH_IDFM_merge = os.path.join(BASE_DIR, "data", "GTFS", "IDFM-gtfs_merge.zip")

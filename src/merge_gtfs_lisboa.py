@@ -11,11 +11,16 @@ réseau.
 """
 
 import os
+import sys
 from pathlib import Path
 
 import gtfs_kit as gk
 import pandas as pd
 
+# Rend "src" importable que le script soit lancé en module (python -m
+# src.merge_gtfs_lisboa, depuis la racine du repo) ou en fichier direct
+# (bouton "Run" de l'IDE, où sys.path[0] est le dossier src/ lui-même).
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from src.hf_cache import envoyer_vers_hf
 
 # Tables GTFS gérées par gtfs_kit.Feed
