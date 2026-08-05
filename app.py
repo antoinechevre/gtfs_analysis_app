@@ -70,6 +70,15 @@ GTFS_LOGO_FORCE = {
     "IDFM-gtfs_merge.zip": os.path.join("data", "logos", "Logo_IDFM.png"),
 }
 
+# Population forcée (habitants, année) pour un reseau_str donné : Wikidata
+# (cf. src/population.py) ne résout que des noms de ville, pas des
+# acronymes de réseau (IDFM, MTA...) — sans cette table, ces réseaux
+# n'auraient jamais de population dans le résumé ni le benchmark.
+POPULATION_FORCE = {
+    # Île-de-France (desservie par IDFM), recensement INSEE 2021.
+    "IDFM": (11_500_000, "2021"),
+}
+
 
 # Configuration de la page
 st.set_page_config(page_title="Analyse GTFS", page_icon="🚌", layout="wide")
@@ -302,8 +311,12 @@ def charger_donnees_gtfs():
         # nom de ville (échoue silencieusement pour un acronyme comme MTA,
         # TBM...). Population de la ville-centre, pas de l'agglomération
         # complète (rarement une entité Wikidata fiable selon les pays) —
-        # approximation à affiner si besoin.
-        population_agglo, annee_population = population_agglomeration(reseau_str)
+        # approximation à affiner si besoin. POPULATION_FORCE prime sur
+        # Wikidata pour les réseaux dont le nom n'est pas une ville.
+        if reseau_str in POPULATION_FORCE:
+            population_agglo, annee_population = POPULATION_FORCE[reseau_str]
+        else:
+            population_agglo, annee_population = population_agglomeration(reseau_str)
 
         # Stocker dans session_state
         st.session_state.feed = feed
