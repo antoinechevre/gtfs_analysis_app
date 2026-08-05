@@ -17,6 +17,7 @@ TRANSLATIONS = {
         "app.nav_accueil": "🏠 Accueil",
         "app.nav_arrets": "📍 Arrêts",
         "app.nav_lignes": "🛤️ Lignes",
+        "app.nav_benchmark": "📊 Benchmark",
         "app.sidebar_header": "📁 Paramètres d'analyse",
         "app.sidebar_uploader": "Uploader le fichier GTFS (zip)",
         "app.sidebar_gtfs_existant": "...ou choisir un GTFS déjà présent",
@@ -143,6 +144,16 @@ TRANSLATIONS = {
         "troncons.telecharger_csv": "📥 Télécharger {mode} CSV",
         "troncons.veuillez_charger_et_date": "👆 Veuillez charger un fichier GTFS et sélectionner une date dans la barre latérale.",
 
+        # --- views/benchmark.py ---
+        "benchmark.header": "📊 Benchmark inter-réseaux",
+        "benchmark.caption": "Population de la ville en abscisse, indicateur transit au choix en ordonnée — un point par réseau déjà enregistré.",
+        "benchmark.aucun_gtfs": "Charge un GTFS pour pouvoir enregistrer ce réseau dans le benchmark (facultatif : le graphique ci-dessous reste consultable sans GTFS chargé).",
+        "benchmark.prerequis_manquant": "Calcule d'abord les indicateurs (page Arrêts et page Lignes) pour pouvoir enregistrer ce réseau dans le benchmark.",
+        "benchmark.population_inconnue": "Population de la ville introuvable (nom de réseau non reconnu par Wikidata) : ce réseau sera enregistré sans population.",
+        "benchmark.bouton_enregistrer": "Enregistrer {reseau} dans le benchmark",
+        "benchmark.succes_enregistrement": "✓ {reseau} enregistré dans le benchmark",
+        "benchmark.index_vide": "Aucun réseau n'a encore été enregistré dans l'index de benchmark.",
+
         # --- src/export_html.py ---
         "export.aucune_donnee_km": "Aucune donnée de kilométrage disponible.",
         "export.titre_page_camembert": "Répartition des véh.km par mode {reseau}",
@@ -193,6 +204,7 @@ TRANSLATIONS = {
         "app.nav_accueil": "🏠 Home",
         "app.nav_arrets": "📍 Stops",
         "app.nav_lignes": "🛤️ Lines",
+        "app.nav_benchmark": "📊 Benchmark",
         "app.sidebar_header": "📁 Analysis settings",
         "app.sidebar_uploader": "Upload the GTFS file (zip)",
         "app.sidebar_gtfs_existant": "...or pick an existing GTFS",
@@ -317,6 +329,16 @@ TRANSLATIONS = {
         "troncons.header_carte": "🗺️ Interactive segment map",
         "troncons.telecharger_csv": "📥 Download {mode} CSV",
         "troncons.veuillez_charger_et_date": "👆 Please upload a GTFS file and select a date in the sidebar.",
+
+        # --- views/benchmark.py ---
+        "benchmark.header": "📊 Cross-network benchmark",
+        "benchmark.caption": "City population on the X axis, choice of transit indicator on the Y axis — one point per already-registered network.",
+        "benchmark.aucun_gtfs": "Load a GTFS to register this network in the benchmark (optional: the chart below stays available without a loaded GTFS).",
+        "benchmark.prerequis_manquant": "Compute the indicators first (Stops page and Lines page) to register this network in the benchmark.",
+        "benchmark.population_inconnue": "City population not found (network name not recognized by Wikidata): this network will be registered without population.",
+        "benchmark.bouton_enregistrer": "Register {reseau} in the benchmark",
+        "benchmark.succes_enregistrement": "✓ {reseau} registered in the benchmark",
+        "benchmark.index_vide": "No network has been registered in the benchmark index yet.",
 
         # --- src/export_html.py ---
         "export.aucune_donnee_km": "No mileage data available.",

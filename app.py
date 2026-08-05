@@ -24,6 +24,7 @@ from src.i18n import t, LANGUES
 from views.home import home_page
 from views.arrets import arrets_page
 from views.troncons import troncons_page
+from views.benchmark import benchmark_page
 
 
 class TropAgencesError(Exception):
@@ -109,7 +110,7 @@ st.markdown(
 )
 
 st.markdown("---")
-col1, col2, col3, col4 = st.columns([1, 1, 1, 3])  # 4 colonnes pour équilibrer l'espace
+col1, col2, col3, col4, col5 = st.columns([1, 1, 1, 1, 2])  # 5 colonnes pour équilibrer l'espace
 
 with col1:
     if st.button(t("app.nav_accueil", lang), use_container_width=True):
@@ -124,6 +125,10 @@ with col3:
         st.session_state.selected_page = "Lignes"
 
 with col4:
+    if st.button(t("app.nav_benchmark", lang), use_container_width=True):
+        st.session_state.selected_page = "Benchmark"
+
+with col5:
     st.write("")  # Espace vide pour équilibrer
 
 
@@ -348,3 +353,5 @@ elif st.session_state.selected_page == "Arrêts":
     arrets_page(lang)
 elif st.session_state.selected_page == "Lignes":
     troncons_page(lang)
+elif st.session_state.selected_page == "Benchmark":
+    benchmark_page(lang)

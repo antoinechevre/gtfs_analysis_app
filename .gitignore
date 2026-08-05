@@ -24,6 +24,10 @@ data/GTFS/
 # views/troncons.py et gtfs_notebook_idf.ipynb
 data/memory_troncons/
 
+# Cache local de l'index de benchmark inter-réseaux partagé — repeuplé au
+# besoin par src/hf_cache.lire_csv_partage, cf. views/benchmark.py
+data/benchmark/
+
 # macOS
 .DS_Store
 
