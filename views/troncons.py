@@ -115,7 +115,7 @@ def relabelliser_modes_route(total_vk_plage, feed, nom_reseau_str):
     return total_vk_plage
 
 
-def charger_ou_calculer_troncons(feed, route_type, nom_mode, nom_reseau_str, agency_ids=None, lang="fr"):
+def charger_ou_calculer_troncons(feed, route_type, nom_mode, nom_reseau_str, agency_ids=None, lang="fr", placeholder=None):
     """
     Calcule les tronçons uniques depuis le GTFS uploadé, ou les recharge
     depuis le cache (disque local puis, à défaut, dataset Hugging Face —
@@ -136,6 +136,11 @@ def charger_ou_calculer_troncons(feed, route_type, nom_mode, nom_reseau_str, age
         Nom du réseau, utilisé comme clé de cache
     agency_ids : list[str], optional
         Restreint en plus aux routes de ces agency_id (cf. MODES_IDFM)
+    placeholder : DeltaGenerator, optional
+        Emplacement où afficher la progression du calcul (info puis
+        succès) pour ce mode. Laissé à None si déjà en cache : rien à
+        signaler pour un résultat instantané. Le contenu écrit ici est
+        transitoire — vidé par l'appelant une fois tous les modes traités.
 
     Returns:
     --------
@@ -144,12 +149,20 @@ def charger_ou_calculer_troncons(feed, route_type, nom_mode, nom_reseau_str, age
     nom_fichier = f"troncons_{nom_mode.lower()}.csv"
     chemin_cache = os.path.join("data", "memory_troncons", nom_reseau_str, nom_fichier)
     nom_fichier_hf = f"memory_troncons/{nom_reseau_str}/{nom_fichier}"
+    deja_en_cache = os.path.exists(chemin_cache)
+
+    if not deja_en_cache and placeholder is not None:
+        placeholder.info(t("troncons.spinner_calcul_auto", lang, mode=nom_mode))
+
     try:
         troncons_gdf = charger_ou_calculer_avec_cache_hf(
             chemin_cache,
             nom_fichier_hf,
             lambda: creer_troncons_uniques(feed, route_type, agency_ids=agency_ids, prefixe=nom_mode.upper()),
         )
+
+        if not deja_en_cache and placeholder is not None:
+            placeholder.success(t("troncons.succes_calcul_auto", lang, n=len(troncons_gdf), mode=nom_mode))
         return troncons_gdf
 
     except Exception as e:
@@ -205,6 +218,14 @@ def troncons_page(lang="fr"):
         # Calculer les indicateurs automatiquement si pas déjà fait
         if st.session_state.indicateurs_par_mode is None:
 
+            # Progression par mode (info puis succès) : affichée pendant le
+            # calcul, effacée d'un coup une fois les indicateurs prêts —
+            # pas d'intérêt à la garder une fois les résultats affichés.
+            zone_progression = st.container()
+            placeholders_progression = {
+                nom_mode: zone_progression.empty() for _, nom_mode, _, _ in MODES
+            }
+
             with st.spinner(t("troncons.spinner_reference", lang)):
                 troncons_par_mode = {
                     nom_mode: charger_ou_calculer_troncons(
@@ -214,6 +235,7 @@ def troncons_page(lang="fr"):
                         nom_reseau_str=st.session_state.nom_reseau_str,
                         agency_ids=agency_ids,
                         lang=lang,
+                        placeholder=placeholders_progression[nom_mode],
                     )
                     for route_type, nom_mode, _, agency_ids in MODES
                 }
@@ -239,6 +261,8 @@ def troncons_page(lang="fr"):
                 except Exception as e:
                     st.error(t("troncons.erreur_indicateurs", lang, erreur=e))
                     return
+
+            zone_progression.empty()
 
         if st.session_state.indicateurs_par_mode is not None:
 

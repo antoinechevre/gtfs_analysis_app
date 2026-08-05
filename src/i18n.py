@@ -125,6 +125,8 @@ TRANSLATIONS = {
         "arrets.telecharger_csv": "📥 Télécharger les résultats CSV",
 
         # --- views/troncons.py ---
+        "troncons.spinner_calcul_auto": "🔄 Calcul automatique des tronçons {mode} depuis le GTFS...",
+        "troncons.succes_calcul_auto": "✅ {n} tronçons {mode} calculés automatiquement",
         "troncons.erreur_calcul_auto": "❌ Erreur lors du calcul automatique des tronçons {mode}: {erreur}",
         "troncons.spinner_reference": "Chargement/Calcul des tronçons de référence...",
         "troncons.erreur_reference": "Impossible de calculer les tronçons de référence.",
@@ -297,6 +299,8 @@ TRANSLATIONS = {
         "arrets.telecharger_csv": "📥 Download CSV results",
 
         # --- views/troncons.py ---
+        "troncons.spinner_calcul_auto": "🔄 Automatically computing {mode} segments from the GTFS...",
+        "troncons.succes_calcul_auto": "✅ {n} {mode} segments computed automatically",
         "troncons.erreur_calcul_auto": "❌ Error while automatically computing {mode} segments: {erreur}",
         "troncons.spinner_reference": "Loading/computing reference segments...",
         "troncons.erreur_reference": "Unable to compute reference segments.",
