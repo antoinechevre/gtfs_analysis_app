@@ -11,7 +11,12 @@ sys.path.append('..')
 
 import streamlit as st
 
-from src.utils import charger_gtfs, obtenir_service_ids_pour_date
+from src.utils import (
+    charger_gtfs,
+    obtenir_service_ids_pour_date,
+    etendue_geographique_km,
+    fusionner_agences_en_une,
+)
 from src.info_reseau import charger_ou_calculer_dates_service, recuperer_logo_reseau, nom_reseau
 from src.hf_cache import envoyer_vers_hf, lister_fichiers_hf, recuperer_depuis_hf
 from src.i18n import t, LANGUES
@@ -21,7 +26,15 @@ from views.troncons import troncons_page
 
 
 class TropAgencesError(Exception):
-    """Levée quand le GTFS regroupe trop d'agences pour être traité par l'app."""
+    """Levée quand le GTFS regroupe trop d'agences ET est géographiquement
+    trop étendu (plusieurs villes distantes) pour être traité par l'app."""
+
+
+# Au-delà de cette diagonale de bounding box (km), un GTFS à plus de 3
+# agences est considéré régional (plusieurs villes distantes) et rejeté
+# plutôt que fusionné en une seule agence. Calibré entre IDFM (~240 km,
+# accepté via GTFS_NOM_RESEAU_FORCE) et VBB/Berlin (~584 km, rejeté).
+SEUIL_ETENDUE_REGIONALE_KM = 300
 
 
 # Exception au garde-fou "max 3 agences" (cf. TropAgencesError ci-dessous),
@@ -228,14 +241,29 @@ def charger_donnees_gtfs():
         with st.spinner(t("app.spinner_chargement", lang)):
             feed = charger_gtfs(zip_path)
 
-        # L'app ne sait traiter que des GTFS urbains (un GTFS national/régional
-        # regroupant de nombreuses agences ferait exploser les temps de calcul
-        # et n'a pas de sens pour les indicateurs arrêts/tronçons proposés ici)
-        # — sauf exception nommée explicitement (cf. GTFS_NOM_RESEAU_FORCE).
+        # L'app ne sait traiter que des GTFS urbains (un GTFS régional
+        # regroupant plusieurs villes distantes ferait exploser les temps de
+        # calcul et n'a pas de sens pour les indicateurs arrêts/tronçons
+        # proposés ici) — sauf exception nommée explicitement (cf.
+        # GTFS_NOM_RESEAU_FORCE). Un GTFS avec plus de 3 agences mais
+        # géographiquement compact (plusieurs opérateurs administratifs
+        # d'une même zone urbaine, ex: Berlin/VBB) est fusionné en une seule
+        # agence plutôt que rejeté ; seul un GTFS réellement étendu
+        # (plusieurs villes distantes) est refusé.
         nb_agences = len(feed.agency)
         exception_valide = uploaded_file is None and nom_gtfs in GTFS_NOM_RESEAU_FORCE
+
         if nb_agences > 3 and not exception_valide:
-            raise TropAgencesError(nb_agences)
+            etendue_km = etendue_geographique_km(feed)
+            if etendue_km > SEUIL_ETENDUE_REGIONALE_KM:
+                raise TropAgencesError(nb_agences, etendue_km)
+
+            nom_agence_fusion = str(feed.agency["agency_name"].iloc[0])
+            fusionner_agences_en_une(feed, nom_agence_fusion)
+            print(
+                f"✓ {nb_agences} agences fusionnées en une seule "
+                f"('{nom_agence_fusion}', étendue {etendue_km:.0f} km)"
+            )
 
         # Nom du réseau, calculé avant dates_service() : sert de clé de
         # cache disque+HF pour son résultat (cf.
@@ -284,7 +312,8 @@ def charger_donnees_gtfs():
         return True
 
     except TropAgencesError as e:
-        st.error(t("app.erreur_trop_agences", lang, n=e.args[0]))
+        nb_agences_err, etendue_km_err = e.args
+        st.error(t("app.erreur_trop_agences", lang, n=nb_agences_err, etendue=round(etendue_km_err)))
         os.unlink(zip_path)
         st.stop()
 

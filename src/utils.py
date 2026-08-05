@@ -54,6 +54,54 @@ def normaliser_route_type_etendu(route_type):
     return route_type
 
 
+def etendue_geographique_km(feed):
+    """
+    Diagonale (km) de la zone couverte par les arrêts du feed (bounding
+    box sur stops.txt), pour distinguer un réseau urbain compact (même
+    regroupant plusieurs agences administratives) d'un réseau régional
+    couvrant plusieurs villes distantes.
+    """
+    from math import radians, sin, cos, sqrt, atan2
+
+    lat = feed.stops["stop_lat"].astype(float)
+    lon = feed.stops["stop_lon"].astype(float)
+    lat_min, lat_max = lat.min(), lat.max()
+    lon_min, lon_max = lon.min(), lon.max()
+
+    rayon_terre_km = 6371
+    p1, p2 = radians(lat_min), radians(lat_max)
+    dphi = radians(lat_max - lat_min)
+    dlambda = radians(lon_max - lon_min)
+    a = sin(dphi / 2) ** 2 + cos(p1) * cos(p2) * sin(dlambda / 2) ** 2
+    return 2 * rayon_terre_km * atan2(sqrt(a), sqrt(1 - a))
+
+
+def fusionner_agences_en_une(feed, nom_agence):
+    """
+    Fusionne toutes les lignes de feed.agency en une seule agence nommée
+    nom_agence (agency_id conservé de la première, propagé aux autres
+    tables qui y font référence : routes, fare_attributes). Modifie feed
+    en place et le renvoie.
+
+    Utile pour un GTFS urbain compact regroupant administrativement
+    plusieurs agences (ex: Berlin/VBB, IDFM) que l'app ne saurait traiter
+    telles quelles (garde-fou "max 3 agences", cf. app.py) — à ne pas
+    utiliser sur un GTFS où les agency_id d'origine doivent rester
+    distinguables (ex: RER pour IDFM, cf. MODES_IDFM dans views/troncons.py).
+    """
+    agency_id_unique = feed.agency["agency_id"].iloc[0]
+    agence_unique = feed.agency.iloc[[0]].copy()
+    agence_unique["agency_name"] = nom_agence
+    feed.agency = agence_unique.reset_index(drop=True)
+
+    for table_nom in ("routes", "fare_attributes"):
+        table = getattr(feed, table_nom)
+        if table is not None and "agency_id" in table.columns:
+            table["agency_id"] = agency_id_unique
+
+    return feed
+
+
 def charger_gtfs(zip_path):
     """
     Charge le fichier GTFS à l'aide de gtfs_kit.
