@@ -125,9 +125,6 @@ TRANSLATIONS = {
         "arrets.telecharger_csv": "📥 Télécharger les résultats CSV",
 
         # --- views/troncons.py ---
-        "troncons.warning_limitations": """
-    ⚠️ Cette analyse a été debuggée sur plusieurs GTFS en mentionnant les modes bus / tram / metro / trolley / ferry / train (RER, Transilien, TER...)
-    """,
         "troncons.erreur_calcul_auto": "❌ Erreur lors du calcul automatique des tronçons {mode}: {erreur}",
         "troncons.spinner_reference": "Chargement/Calcul des tronçons de référence...",
         "troncons.erreur_reference": "Impossible de calculer les tronçons de référence.",
@@ -300,9 +297,6 @@ TRANSLATIONS = {
         "arrets.telecharger_csv": "📥 Download CSV results",
 
         # --- views/troncons.py ---
-        "troncons.warning_limitations": """
-    ⚠️ This analysis has been debugged on several GTFS feeds covering the bus / tram / metro / trolley / ferry / train (RER, Transilien, TER...) modes
-    """,
         "troncons.erreur_calcul_auto": "❌ Error while automatically computing {mode} segments: {erreur}",
         "troncons.spinner_reference": "Loading/computing reference segments...",
         "troncons.erreur_reference": "Unable to compute reference segments.",
