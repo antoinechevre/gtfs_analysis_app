@@ -7,6 +7,11 @@
 # Pour revenir au thème Streamlit par défaut : supprimer ou renommer ce
 # fichier.
 
+[server]
+# Défaut Streamlit : 200 Mo, trop juste pour certains GTFS volumineux
+# (ex: fusions multi-agences comme Chicago/IDFM). 2 Go de marge.
+maxUploadSize = 2048
+
 [theme]
 base = "light"
 primaryColor = "#0E7C7B"
