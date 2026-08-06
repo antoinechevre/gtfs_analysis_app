@@ -89,11 +89,12 @@ def telecharger_feed(feed_onestop_id, destination, apikey=None):
 
 
 if __name__ == "__main__":
-    # Exemple d'usage : python -m src.telecharger_transitland "Chicago"
-    # (TRANSITLAND_API_KEY doit être exportée avant de lancer)
+    # Usage : python -m src.telecharger_transitland "Chicago" (argument en
+    # ligne de commande), ou sans argument pour se voir demander le nom de
+    # la ville. TRANSITLAND_API_KEY doit être exportée avant de lancer.
     import sys
 
-    recherche = sys.argv[1] if len(sys.argv) > 1 else "Chicago"
+    recherche = sys.argv[1] if len(sys.argv) > 1 else input("Ville à rechercher : ").strip()
     print(f"Recherche de feeds GTFS pour {recherche!r}...")
     for feed in rechercher_feeds(recherche):
         print(f"  {feed.get('onestop_id')} — {feed.get('name') or '(sans nom)'} — licence: {(feed.get('license') or {}).get('spdx_identifier')}")
