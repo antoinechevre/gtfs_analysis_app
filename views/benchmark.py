@@ -17,6 +17,7 @@ import streamlit as st
 
 from src.hf_cache import lire_csv_partage, fusionner_et_envoyer_csv
 from src.nuage_points_benchmark import generer_html_str
+from src.population import deviner_ville_principale
 from src.i18n import t
 
 NOM_FICHIER_HF = "benchmark/index_benchmark_reseaux.csv"
@@ -40,7 +41,9 @@ def construire_ligne_benchmark():
 
     return {
         "reseau": st.session_state.nom_reseau_str,
-        "ville_principale": st.session_state.nom_reseau_str,
+        "ville_principale": deviner_ville_principale(
+            st.session_state.nom_reseau_str, st.session_state.last_uploaded_name or ""
+        ),
         "date_JOB": st.session_state.date_str,
         "population_totale": st.session_state.population_agglo,
         "nombre_arrets": len(st.session_state.indicateurs_arrets),

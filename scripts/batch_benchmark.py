@@ -38,7 +38,7 @@ from src.arrets import calculer_indicateurs_arrets
 from src.create_troncons_uniques import creer_troncons_uniques
 from src.indicateurs_troncons import calculer_frequentation_troncons
 from src.hf_cache import charger_ou_calculer_avec_cache_hf, envoyer_vers_hf, fusionner_et_envoyer_csv
-from src.population import population_agglomeration, deviner_ville_depuis_nom_fichier
+from src.population import population_agglomeration, deviner_ville_depuis_nom_fichier, deviner_ville_principale
 
 # Doit rester identique au seuil de app.py (SEUIL_ETENDUE_REGIONALE_KM) :
 # au-delà, un GTFS à plus de 3 agences est considéré régional et ignoré
@@ -59,6 +59,11 @@ def traiter_gtfs(chemin_zip):
     print("=" * 70)
 
     feed = charger_gtfs(str(chemin_zip))
+
+    if feed.agency is None or feed.agency.empty:
+        print(f"⚠ {nom_fichier} ignoré : pas d'agency.txt exploitable (GTFS incomplet/corrompu ?)")
+        return
+
     nb_agences = len(feed.agency)
 
     if nb_agences > 3:
@@ -133,7 +138,7 @@ def traiter_gtfs(chemin_zip):
         [
             {
                 "reseau": reseau_str,
-                "ville_principale": reseau_str,
+                "ville_principale": deviner_ville_principale(reseau_str, nom_fichier),
                 "date_JOB": date_str,
                 "population_totale": population,
                 "nombre_arrets": len(indicateurs_arrets),

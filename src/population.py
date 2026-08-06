@@ -70,9 +70,18 @@ def _rechercher_qid(nom_ville):
 
 
 def _dernier_claim_population(qid):
-    """Renvoie (population, annee) depuis le claim P1082 le plus récent (par
-    sa qualification P585, date du recensement/estimation), ou (None, None)
-    si absent/erreur."""
+    """Renvoie (population, annee) pour le claim P1082 le plus pertinent, ou
+    (None, None) si absent/erreur.
+
+    Une ville ancienne (Rome...) peut avoir des dizaines de claims P1082
+    historiques (population en -550, en 1871, ...) en plus de la valeur
+    actuelle : on privilégie donc le claim marqué rank="preferred" par
+    Wikidata (sa valeur "actuelle" curatée) plutôt qu'un tri par date. À
+    défaut de claim préféré, on prend la date la plus récente — comparée
+    numériquement (signe av./apr. J.-C. + année), pas en triant les
+    chaînes brutes : "-0550-..." (avant J.-C.) est lexicographiquement
+    après "+2023-...", ce qui triait à tort une valeur antique comme "la
+    plus récente"."""
     try:
         r = requests.get(
             WIKIDATA_API,
@@ -90,18 +99,22 @@ def _dernier_claim_population(qid):
         if not claims:
             return None, None
 
-        def date_du_claim(claim):
+        def annee_numerique(claim):
             quals = claim.get("qualifiers", {}).get(DATE_PROPERTY)
             if not quals:
-                return ""
-            # Format Wikidata: "+2023-01-01T00:00:00Z"
-            return quals[0]["datavalue"]["value"]["time"]
+                return None
+            # Format Wikidata: "+2023-01-01T00:00:00Z" ou "-0550-..." (av. J.-C.)
+            time_str = quals[0]["datavalue"]["value"]["time"]
+            signe = -1 if time_str.startswith("-") else 1
+            return signe * int(time_str[1:5])
 
-        meilleur = sorted(claims, key=date_du_claim, reverse=True)[0]
+        candidats = [c for c in claims if c.get("rank") == "preferred"] or claims
+        candidats_dates = [c for c in candidats if annee_numerique(c) is not None]
+        meilleur = max(candidats_dates, key=annee_numerique) if candidats_dates else candidats[0]
+
         population = int(float(meilleur["mainsnak"]["datavalue"]["value"]["amount"]))
-        date_str = date_du_claim(meilleur)
-        annee = date_str[1:5] if date_str else None
-        return population, annee
+        annee = annee_numerique(meilleur)
+        return population, (str(annee) if annee is not None else None)
     except Exception:
         return None, None
 
@@ -117,6 +130,20 @@ def population_agglomeration(nom_ville):
     if qid is None:
         return None, None
     return _dernier_claim_population(qid)
+
+
+def deviner_ville_principale(reseau_str, nom_fichier_gtfs):
+    """
+    Devine le nom de la "ville principale" d'un réseau, pour l'affichage
+    (résumé, benchmark) — reseau_str (nom d'agence, ex: "Atac", "Arriva",
+    ou un acronyme comme "IDFM"/"MTA") n'est en général pas un nom de
+    ville lisible. Utilise le nom de fichier GTFS (cf.
+    deviner_ville_depuis_nom_fichier), qui contient presque toujours la
+    ville par convention de nommage dans ce projet ; retombe sur
+    reseau_str si le nom de fichier ne donne rien d'exploitable.
+    """
+    ville_devinee = deviner_ville_depuis_nom_fichier(nom_fichier_gtfs)
+    return ville_devinee or reseau_str
 
 
 def deviner_ville_depuis_nom_fichier(nom_fichier_gtfs):
