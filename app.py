@@ -18,7 +18,7 @@ from src.utils import (
     fusionner_agences_en_une,
 )
 from src.info_reseau import charger_ou_calculer_dates_service, recuperer_logo_reseau, nom_reseau
-from src.population import population_agglomeration
+from src.population import population_agglomeration, deviner_ville_depuis_nom_fichier
 from src.hf_cache import envoyer_vers_hf, lister_fichiers_hf, recuperer_depuis_hf
 from src.telecharger_transitland import rechercher_feeds, telecharger_feed
 from src.i18n import t, LANGUES
@@ -221,6 +221,11 @@ with st.sidebar.expander(t("app.transitland_titre", lang)):
                 try:
                     with st.spinner(t("app.transitland_telechargement_en_cours", lang)):
                         telecharger_feed(feed_transitland_choisi["onestop_id"], destination_transitland)
+                        # Renvoyé vers ww_GTFS (best-effort, comme un upload
+                        # manuel) : sinon, seul disponible localement sur ce
+                        # Space, perdu au prochain redémarrage sans stockage
+                        # persistant, invisible des autres visiteurs/déploiements.
+                        envoyer_vers_hf(destination_transitland, f"GTFS/{nom_fichier_transitland}")
                     st.success(t("app.transitland_succes", lang, nom=nom_fichier_transitland))
                     st.rerun()
                 except Exception as e:
@@ -348,16 +353,24 @@ def charger_donnees_gtfs():
                 chemin_logo = None
 
         # Population de la ville (best-effort, via Wikidata cf.
-        # src/population.py) : ne résout que si reseau_str ressemble à un
-        # nom de ville (échoue silencieusement pour un acronyme comme MTA,
-        # TBM...). Population de la ville-centre, pas de l'agglomération
-        # complète (rarement une entité Wikidata fiable selon les pays) —
-        # approximation à affiner si besoin. POPULATION_FORCE prime sur
-        # Wikidata pour les réseaux dont le nom n'est pas une ville.
+        # src/population.py). Population de la ville-centre, pas de
+        # l'agglomération complète (rarement une entité Wikidata fiable
+        # selon les pays) — approximation à affiner si besoin.
+        # POPULATION_FORCE prime sur Wikidata pour les réseaux dont le nom
+        # n'est pas une ville (ex: IDFM). Sinon, reseau_str est essayé en
+        # premier ; s'il ne résout rien (cas d'un réseau auto-fusionné,
+        # cf. fusionner_agences_en_une ci-dessus, où reseau_str devient un
+        # nom d'agence comme "Atac"/"Arriva", pas une ville), le nom du
+        # fichier GTFS est essayé en repli (contient souvent la ville,
+        # ex: "Roma_gtfs.zip").
         if reseau_str in POPULATION_FORCE:
             population_agglo, annee_population = POPULATION_FORCE[reseau_str]
         else:
             population_agglo, annee_population = population_agglomeration(reseau_str)
+            if population_agglo is None:
+                ville_devinee = deviner_ville_depuis_nom_fichier(nom_gtfs)
+                if ville_devinee and ville_devinee != reseau_str:
+                    population_agglo, annee_population = population_agglomeration(ville_devinee)
 
         # Stocker dans session_state
         st.session_state.feed = feed

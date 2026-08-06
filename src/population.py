@@ -9,6 +9,8 @@ variable selon les pays/langues et régulièrement modifié) : donnée
 structurée, un seul format d'API à gérer quelle que soit la ville.
 """
 
+import re
+
 import requests
 
 WIKIDATA_API = "https://www.wikidata.org/w/api.php"
@@ -21,27 +23,48 @@ HEADERS = {
     "User-Agent": "GTFS-analysis-universal/1.0 (https://github.com/antoinechevre/gtfs_analysis_app)"
 }
 
+# Priorité de désambiguïsation entre plusieurs entités Wikidata partageant
+# un même nom (ex: "Roma" = Rome capitale d'Italie, mais aussi une bourgade
+# du Queensland ou un prénom) : la première entité dont la description
+# (en anglais, langue de recherche la plus fiable pour les exonymes, cf.
+# "Roma" ne remonte pas "Rome" en recherche fr) contient un de ces mots
+# est retenue, dans cet ordre de priorité.
+MOTS_CLES_VILLE = ["capital", "city", "municipality", "commune", "town"]
+
 
 def _rechercher_qid(nom_ville):
     """Cherche l'entité Wikidata correspondant à nom_ville, renvoie son QID
-    (ex: "Q90" pour Paris) ou None si rien trouvé/erreur réseau."""
+    (ex: "Q90" pour Paris) ou None si rien trouvé/erreur réseau. Parmi les
+    homonymes renvoyés, privilégie celui dont la description ressemble le
+    plus à une ville (cf. MOTS_CLES_VILLE) plutôt que le premier résultat
+    brut (souvent un pays, un prénom ou une localité sans rapport)."""
     try:
         r = requests.get(
             WIKIDATA_API,
             params={
                 "action": "wbsearchentities",
                 "search": nom_ville,
-                "language": "fr",
+                "language": "en",
                 "format": "json",
                 "type": "item",
-                "limit": 1,
+                "limit": 8,
             },
             headers=HEADERS,
             timeout=10,
         )
         r.raise_for_status()
         resultats = r.json().get("search", [])
-        return resultats[0]["id"] if resultats else None
+        if not resultats:
+            return None
+
+        def rang_ville(item):
+            description = (item.get("description") or "").lower()
+            for rang, mot in enumerate(MOTS_CLES_VILLE):
+                if mot in description:
+                    return rang
+            return len(MOTS_CLES_VILLE)
+
+        return sorted(resultats, key=rang_ville)[0]["id"]
     except Exception:
         return None
 
@@ -94,3 +117,21 @@ def population_agglomeration(nom_ville):
     if qid is None:
         return None, None
     return _dernier_claim_population(qid)
+
+
+def deviner_ville_depuis_nom_fichier(nom_fichier_gtfs):
+    """
+    Devine un nom de ville à partir du nom de fichier GTFS (ex:
+    "Roma_gtfs.zip" -> "Roma", "Chicago_google_transit.zip" -> "Chicago"),
+    utilisable comme repli pour population_agglomeration quand reseau_str
+    n'est pas un nom de ville (ex: agence fusionnée automatiquement comme
+    "Atac"/"Arriva", cf. fusionner_agences_en_une dans app.py — le nom de
+    fichier contient souvent la ville même quand agency.txt ne le donne
+    pas directement).
+
+    Approche best-effort par regex, pas de garantie de résultat correct :
+    seulement un second essai avant d'abandonner la population.
+    """
+    base = re.sub(r"\.zip$", "", nom_fichier_gtfs, flags=re.IGNORECASE)
+    base = re.sub(r"[_-]?(gtfs|merge|google[_-]?transit).*$", "", base, flags=re.IGNORECASE)
+    return base.replace("_", " ").replace("-", " ").strip()
