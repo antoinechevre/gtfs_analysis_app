@@ -1,14 +1,20 @@
 """
-Prépare le GTFS Berlin (VBB) pour l'app : uniformise le nom d'agence et
+Prépare le GTFS Berlin pour l'app : uniformise le nom d'agence et
 normalise les route_type.
 
-Comme pour merge_gtfs_IDFM.py, il n'y a ici qu'un seul GTFS en entrée
-(Berlin_gtfs.zip) : ce n'est pas une fusion de plusieurs feeds distincts.
-Contrairement à IDFM (où les agency_id d'origine sont préservés à cause de
-l'exception RER), Berlin n'a pas de sous-réseau à distinguer par agency_id
-— ses 37 agences sont donc fusionnées en une seule (comme pour
-merge_gtfs_NYC.py / merge_gtfs_lisboa.py), ce qui règle aussi le garde-fou
-"max 3 agences" de l'app sans whitelist à ajouter dans GTFS_NOM_RESEAU_FORCE.
+Prend en entrée Berlin_urbain_gtfs.zip (pas le GTFS régional VBB brut) :
+le VBB complet couvre tout le Brandebourg (~584 km de diagonale), rejeté
+par le filtre régional de l'app (seuil 300 km, cf. SEUIL_ETENDUE_REGIONALE_KM
+dans app.py). Berlin_urbain_gtfs.zip est le résultat de
+src/isole_ville.py filtré aux deux agences du cœur urbain (796 = Berliner
+Verkehrsbetriebe/BVG, 1 = S-Bahn Berlin), qui ramène l'étendue à ~76 km.
+
+Comme pour merge_gtfs_IDFM.py, il n'y a ici qu'un seul GTFS en entrée : ce
+n'est pas une fusion de plusieurs feeds distincts. Contrairement à IDFM
+(où les agency_id d'origine sont préservés à cause de l'exception RER),
+Berlin n'a pas de sous-réseau à distinguer par agency_id — ses agences
+sont donc fusionnées en une seule (comme pour merge_gtfs_NYC.py /
+merge_gtfs_lisboa.py).
 
 Le GTFS Berlin publie aussi ses route_type au format étendu (centaines :
 700=bus, 900=tram, 400=U-Bahn, 100=S-Bahn/rail...) plutôt qu'en codes de
@@ -34,7 +40,7 @@ sys.path.insert(0, str(BASE_DIR))
 from src.hf_cache import envoyer_vers_hf
 from src.utils import normaliser_route_type_etendu
 
-GTFS_ZIP_PATH_BERLIN = os.path.join(BASE_DIR, "data", "GTFS", "Berlin_gtfs.zip")
+GTFS_ZIP_PATH_BERLIN = os.path.join(BASE_DIR, "data", "GTFS", "Berlin_urbain_gtfs.zip")
 OUTPUT_PATH_BERLIN_merge = os.path.join(BASE_DIR, "data", "GTFS", "Berlin_gtfs_merge.zip")
 
 

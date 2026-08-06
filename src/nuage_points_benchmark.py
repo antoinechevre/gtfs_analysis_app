@@ -29,7 +29,33 @@ LIBELLES_Y = {
     "vehicules_km_bus": "Véhicules.km Bus",
     "vehicules_km_metro": "Véhicules.km Métro",
     "vehicules_km_tram": "Véhicules.km Tram",
+    "vehicules_km_par_1000hab_total": "Véh.km pour 1000 hab. (tous modes)",
+    "vehicules_km_par_1000hab_bus": "Véh.km pour 1000 hab. (Bus seul)",
+    "vehicules_km_par_1000hab_metro_tram": "Véh.km pour 1000 hab. (Métro+Tram)",
 }
+
+# Colonnes dérivées calculées à la volée (numérateur / population_totale *
+# 1000), pas stockées dans le CSV : toujours à jour même si un ancien CSV
+# a été enregistré avant leur ajout, tant que population_totale et le(s)
+# numérateur(s) sont présents.
+COLONNES_PAR_1000HAB = {
+    "vehicules_km_par_1000hab_total": ("vehicules_km_total",),
+    "vehicules_km_par_1000hab_bus": ("vehicules_km_bus",),
+    "vehicules_km_par_1000hab_metro_tram": ("vehicules_km_metro", "vehicules_km_tram"),
+}
+
+
+def ajouter_colonnes_par_1000hab(df):
+    """Ajoute les colonnes de COLONNES_PAR_1000HAB à df (copie), calculées
+    si population_totale et les colonnes numérateur nécessaires sont
+    présentes ; sinon la colonne dérivée n'est simplement pas ajoutée."""
+    if "population_totale" not in df.columns:
+        return df
+    df = df.copy()
+    for nom_colonne, numerateurs in COLONNES_PAR_1000HAB.items():
+        if all(c in df.columns for c in numerateurs):
+            df[nom_colonne] = sum(df[c] for c in numerateurs) / df["population_totale"] * 1000
+    return df
 
 
 def options_y(colonnes):
@@ -51,6 +77,8 @@ def generer_html_str(df, reseau_actuel=None):
     """
     if "date_JOB" in df.columns:
         df = df.loc[df.groupby("reseau")["date_JOB"].transform("max") == df["date_JOB"]]
+
+    df = ajouter_colonnes_par_1000hab(df)
 
     options_x_dispo = [(c, l) for c, l in OPTIONS_X if c in df.columns]
     options_y_dispo = options_y(df.columns)
