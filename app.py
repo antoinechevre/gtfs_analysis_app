@@ -20,6 +20,7 @@ from src.utils import (
 from src.info_reseau import charger_ou_calculer_dates_service, recuperer_logo_reseau, nom_reseau
 from src.population import population_agglomeration
 from src.hf_cache import envoyer_vers_hf, lister_fichiers_hf, recuperer_depuis_hf
+from src.telecharger_transitland import rechercher_feeds, telecharger_feed
 from src.i18n import t, LANGUES
 from views.home import home_page
 from views.arrets import arrets_page
@@ -184,6 +185,46 @@ else:
         options=gtfs_options,
         index=index_gtfs_defaut,
     )
+
+# Recherche d'un GTFS sur Transitland (cf. src/telecharger_transitland.py),
+# pour les réseaux absents du catalogue existant. Le fichier téléchargé
+# atterrit dans data/GTFS/ : il apparaît dans le menu déroulant
+# ci-dessus au rerun déclenché par le bouton "Télécharger" (pas besoin de
+# le rajouter explicitement à gtfs_options ici).
+with st.sidebar.expander(t("app.transitland_titre", lang)):
+    recherche_transitland = st.text_input(t("app.transitland_recherche", lang))
+    if recherche_transitland:
+        try:
+            resultats_transitland = rechercher_feeds(recherche_transitland)
+        except Exception as e:
+            st.error(t("app.transitland_erreur_recherche", lang, erreur=e))
+            resultats_transitland = []
+
+        if not resultats_transitland:
+            st.info(t("app.transitland_aucun_resultat", lang))
+        else:
+            options_transitland = {
+                f"{f.get('onestop_id')} — licence: {(f.get('license') or {}).get('spdx_identifier') or '?'}": f
+                for f in resultats_transitland
+            }
+            choix_transitland = st.selectbox(
+                t("app.transitland_choisir", lang), options=list(options_transitland.keys())
+            )
+            feed_transitland_choisi = options_transitland[choix_transitland]
+            url_transitland_choisi = (feed_transitland_choisi.get("urls") or {}).get("static_current")
+            if url_transitland_choisi:
+                st.caption(url_transitland_choisi)
+
+            if st.button(t("app.transitland_telecharger", lang)):
+                nom_fichier_transitland = f"{recherche_transitland.strip().replace(' ', '_')}_gtfs.zip"
+                destination_transitland = os.path.join(GTFS_DATA_DIR, nom_fichier_transitland)
+                try:
+                    with st.spinner(t("app.transitland_telechargement_en_cours", lang)):
+                        telecharger_feed(feed_transitland_choisi["onestop_id"], destination_transitland)
+                    st.success(t("app.transitland_succes", lang, nom=nom_fichier_transitland))
+                    st.rerun()
+                except Exception as e:
+                    st.error(t("app.transitland_erreur_telechargement", lang, erreur=e))
 
 # Variables globales pour stocker les résultats
 if "feed" not in st.session_state:
