@@ -88,13 +88,31 @@ def telecharger_feed(feed_onestop_id, destination, apikey=None):
     return destination
 
 
+DOSSIER_GTFS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "GTFS")
+
+
 if __name__ == "__main__":
     # Usage : python -m src.telecharger_transitland "Chicago" (argument en
     # ligne de commande), ou sans argument pour se voir demander le nom de
     # la ville. TRANSITLAND_API_KEY doit être exportée avant de lancer.
+    # Le feed choisi est téléchargé directement dans data/GTFS/.
     import sys
 
     recherche = sys.argv[1] if len(sys.argv) > 1 else input("Ville à rechercher : ").strip()
     print(f"Recherche de feeds GTFS pour {recherche!r}...")
-    for feed in rechercher_feeds(recherche):
-        print(f"  {feed.get('onestop_id')} — {feed.get('name') or '(sans nom)'} — licence: {(feed.get('license') or {}).get('spdx_identifier')}")
+    feeds = rechercher_feeds(recherche)
+
+    if not feeds:
+        print("Aucun résultat.")
+    else:
+        for i, feed in enumerate(feeds):
+            url = (feed.get("urls") or {}).get("static_current") or "?"
+            licence = (feed.get("license") or {}).get("spdx_identifier") or "?"
+            print(f"  [{i}] {feed.get('onestop_id')} — licence: {licence} — {url}")
+
+        choix = input(f"Numéro du feed à télécharger (0-{len(feeds) - 1}, vide pour annuler) : ").strip()
+        if choix:
+            feed_choisi = feeds[int(choix)]
+            nom_fichier = f"{recherche.strip().replace(' ', '_')}_gtfs.zip"
+            destination = os.path.join(DOSSIER_GTFS, nom_fichier)
+            telecharger_feed(feed_choisi["onestop_id"], destination)
