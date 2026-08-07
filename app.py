@@ -54,9 +54,14 @@ SEUIL_ETENDUE_REGIONALE_KM = 300
 # porterait le même nom.
 GTFS_NOM_RESEAU_FORCE = {
     "IDFM-gtfs.zip": "IDFM",
-    # IDFM-gtfs_merge.zip : même GTFS, juste agency_name uniformisé à
-    # "IDFM" (cf. src/merge_gtfs_IDFM.py) — toujours 64 agency_id d'origine.
+    # IDFM-gtfs_merge.zip / Paris_IDFM-gtfs_merge.zip : même GTFS, juste
+    # agency_name uniformisé à "IDFM" (cf. src/merge_gtfs_IDFM.py) —
+    # toujours 64 agency_id d'origine. Les deux noms de fichier sont
+    # whitelistés (le second est un renommage manuel du même fichier) :
+    # sans entrée exacte ici, la fusion auto générique s'appliquerait et
+    # casserait la distinction RER (remappage de tous les agency_id).
     "IDFM-gtfs_merge.zip": "IDFM",
+    "Paris_IDFM-gtfs_merge.zip": "IDFM",
     # NYC_gtfs_merge.zip regroupe 6 agences (une par feed d'origine, cf.
     # src/merge_gtfs_NYC.py) mais reste un unique réseau urbain (MTA).
     "NYC_gtfs_merge.zip": "NYC",
@@ -69,6 +74,7 @@ GTFS_NOM_RESEAU_FORCE = {
 GTFS_LOGO_FORCE = {
     "IDFM-gtfs.zip": os.path.join("data", "logos", "Logo_IDFM.png"),
     "IDFM-gtfs_merge.zip": os.path.join("data", "logos", "Logo_IDFM.png"),
+    "Paris_IDFM-gtfs_merge.zip": os.path.join("data", "logos", "Logo_IDFM.png"),
 }
 
 # Population forcée (habitants, année) pour un reseau_str donné : Wikidata
