@@ -20,7 +20,12 @@ def trace_lignes_gtfs(zip_path, date_analyse):
     geo_shapes = gk.geometrize_shapes(shapes_actifs)
 
     # Fusionner avec les routes pour avoir noms/couleurs
+    # route_color est un champ optionnel de la spec GTFS, absent de
+    # certains feeds (ex. TCL) : on le rajoute à défaut pour que le merge
+    # ne plante pas sur ces réseaux.
     trips_routes = active_trips.merge(feed.routes, on='route_id')
+    if 'route_color' not in trips_routes.columns:
+        trips_routes['route_color'] = pd.NA
     geo_shapes = geo_shapes.merge(
         trips_routes[['shape_id', 'route_short_name', 'route_color']].drop_duplicates(),
         on='shape_id'

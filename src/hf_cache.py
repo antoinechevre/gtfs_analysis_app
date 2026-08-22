@@ -1,19 +1,20 @@
 """
 Catalogue GTFS + cache de calculs sur Hugging Face, sur deux datasets :
 - antoinechevre/accessibility-data : dataset historique de l'app sœur
-  "accessibility", en lecture seule ici. Contient déjà un cache
-  memory_troncons/ conséquent (dont IDFM en entier) — on le réutilise pour
-  cette app plutôt que tout recalculer, mais on n'y écrit jamais depuis ici
-  (pas notre dataset), et on n'y pioche PAS le catalogue GTFS/ : cette app
-  ne doit proposer que les GTFS déposés sur son propre dataset.
+  "accessibility", en lecture seule ici. Contient déjà des caches
+  memory_troncons/ et memory_ttm/ (matrices de temps de trajet) conséquents
+  (dont IDFM en entier) — on les réutilise pour cette app plutôt que tout
+  recalculer, mais on n'y écrit jamais depuis ici (pas notre dataset), et on
+  n'y pioche PAS le catalogue GTFS/ : cette app ne doit proposer que les
+  GTFS déposés sur son propre dataset.
 - antoinechevre/ww_GTFS : dataset dédié à cette app, en lecture+écriture.
   Toute donnée nouvelle (GTFS uploadé, résultat de calcul) y est déposée,
   et c'est l'unique source du catalogue GTFS/ proposé dans l'app.
 
 Le repli sur accessibility-data (recuperer_depuis_hf, lister_fichiers_hf)
-ne s'applique donc qu'aux chemins memory_troncons/ (résultats de calcul),
-jamais à GTFS/ (catalogue de fichiers zip). Écriture (envoyer_vers_hf) :
-toujours vers ww_GTFS uniquement.
+ne s'applique donc qu'aux chemins memory_troncons/ et memory_ttm/
+(résultats de calcul), jamais à GTFS/ (catalogue de fichiers zip).
+Écriture (envoyer_vers_hf) : toujours vers ww_GTFS uniquement.
 
 Les deux datasets étant privés, un token HF (variable d'environnement
 HF_TOKEN, droits lecture pour les consulter, écriture pour contribuer à
@@ -29,7 +30,7 @@ HF_DATA_REPO_ID_LEGACY = "antoinechevre/accessibility-data"
 # Seuls ces sous-dossiers bénéficient du repli en lecture sur
 # HF_DATA_REPO_ID_LEGACY : le catalogue GTFS/ ne doit provenir que de
 # HF_DATA_REPO_ID (cf. docstring du module).
-SOUS_DOSSIERS_AVEC_REPLI_LEGACY = ("memory_troncons",)
+SOUS_DOSSIERS_AVEC_REPLI_LEGACY = ("memory_troncons", "memory_ttm")
 
 
 def _repos_pour_chemin(chemin_hf):

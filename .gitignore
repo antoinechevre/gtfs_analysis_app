@@ -28,6 +28,11 @@ data/memory_troncons/
 # besoin par src/hf_cache.lire_csv_partage, cf. views/benchmark.py
 data/benchmark/
 
+# Cache local des matrices de temps de trajet (dataset
+# antoinechevre/accessibility-data, dossier memory_ttm/) — repeuplé au
+# besoin par src/hf_cache.recuperer_depuis_hf
+data/memory_ttm/
+
 # macOS
 .DS_Store
 
