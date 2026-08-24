@@ -2,8 +2,12 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# libexpat1 : dépendance runtime de rasterio (via GDAL), absente de l'image
+# slim — sans elle, "ImportError: libexpat.so.1: cannot open shared object
+# file" au premier import de rasterio (src/worldpop.py).
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
+    libexpat1 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
