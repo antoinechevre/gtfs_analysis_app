@@ -13,7 +13,18 @@
 #
 # Authentification : HF_TOKEN doit être exporté dans l'environnement (droits
 # écriture sur ce Space). Jamais embarqué dans l'URL du remote ni dans la
-# config git — passé uniquement le temps du push via un header HTTP.
+# config git — passé uniquement le temps du fetch/push via un header HTTP.
+#
+# Basic, pas Bearer : le frontend git de HF (www-authenticate: Basic
+# realm="git-frontend") rejette un simple "Authorization: Bearer <token>"
+# en 401 sur les endpoints POST (git-upload-pack pour fetch, git-receive-pack
+# pour push) — seul le GET /info/refs l'accepte, ce qui masque le problème
+# tant qu'on ne pousse pas réellement. Il faut du Basic (user:token en
+# base64), user = propriétaire du Space (extrait de l'URL du remote).
+#
+# protocol.version=0, pas v2 (défaut de ce git) : le POST git-upload-pack
+# de HF renvoie un corps vide (Content-Length: 0) en v2, que git interprète
+# comme "fatal: expected 'acknowledgments'" ; v0 fonctionne normalement.
 #
 # Usage : HF_TOKEN=hf_xxx ./scripts/deploy_hf_africa.sh
 
@@ -36,6 +47,12 @@ if ! git remote get-url "$REMOTE" >/dev/null 2>&1; then
     exit 1
 fi
 
+# Propriétaire du Space, extrait de l'URL du remote (.../spaces/<user>/<space>)
+# plutôt que codé en dur : sert de "username" à l'auth Basic ci-dessous (cf.
+# note d'authentification en tête de fichier).
+HF_USERNAME=$(git remote get-url "$REMOTE" | sed -E 's#.*/spaces/([^/]+)/.*#\1#')
+AUTH_HEADER="Authorization: Basic $(printf '%s:%s' "$HF_USERNAME" "$HF_TOKEN" | base64)"
+
 # Fichiers à exclure du déploiement, en plus de deploy/ (sources des
 # substitutions ci-dessous, sans intérêt une fois le Dockerfile/README
 # substitués — cf. EXCLUDE_PATHS_EXTRA pour tout ajout futur).
@@ -43,17 +60,39 @@ EXCLUDE_PATHS=("deploy")
 EXCLUDE_PATHS_EXTRA=()
 EXCLUDE_PATHS+=("${EXCLUDE_PATHS_EXTRA[@]:-}")
 
-git fetch "$REMOTE" "$BRANCH" -q || true
-# --verify -q : échoue silencieusement (rien sur stdout/stderr) si la ref
-# n'existe pas encore (Space tout juste créé, jamais poussé) — sans ce
-# flag, `git rev-parse <ref inexistante>` réécrit la ref elle-même sur
-# stdout en plus de son message d'erreur, que `2>/dev/null || echo ""`
-# laisse passer tel quel : PARENT valait alors littéralement "hf-africa/main"
-# (chaîne, pas un SHA), faisant échouer git commit-tree -p plus loin.
-PARENT=$(git rev-parse --verify -q "$REMOTE/$BRANCH" 2>/dev/null || echo "")
+# Récupère (si elle existe) l'objet commit de la tête actuelle du Space, pour
+# le lier comme parent ci-dessous (historique linéaire plutôt qu'un commit
+# orphelin, que HF refuserait de toute façon en non-fast-forward).
+#
+# Un fetch direct HTTPS depuis CE dépôt échoue systématiquement ("fatal: the
+# remote end hung up unexpectedly") : ce dépôt a trop de commits/refs locaux,
+# tous proposés comme "have" pendant la négociation — la même requête aboutit
+# sans problème depuis un clone tout neuf, sans historique à offrir. D'où le
+# détour : clone superficiel (--depth=1) de la tête du Space dans un dossier
+# temporaire (négociation triviale, aucun "have" à proposer), puis rapatrié
+# dans ce dépôt via un fetch en LOCAL (transport filesystem, pas de
+# négociation smart-HTTP, donc pas concerné par le problème ci-dessus).
+PARENT_CLONE_DIR=$(mktemp -d)
+PARENT=""
+if git -c protocol.version=0 -c http.extraHeader="$AUTH_HEADER" \
+    clone -q --bare --depth=1 --branch "$BRANCH" "$(git remote get-url "$REMOTE")" "$PARENT_CLONE_DIR" 2>/dev/null; then
+    PARENT=$(git -C "$PARENT_CLONE_DIR" rev-parse -q --verify "$BRANCH" 2>/dev/null || echo "")
+    # --update-shallow : sans ça, l'objet commit est bien rapatrié mais son
+    # SHA n'est pas enregistré dans .git/shallow de CE dépôt ("warning:
+    # rejected ... because shallow roots are not allowed to be updated") —
+    # git le traite alors comme un commit normal et tente de remonter à SON
+    # propre parent (absent localement, puisque le clone d'où il vient est
+    # lui-même superficiel) dès qu'autre chose (ex: le push plus bas) a
+    # besoin de parcourir son historique, avec "error: Could not read
+    # <sha du grand-parent>". --update-shallow enregistre correctement la
+    # frontière superficielle, qui bloque net la remontée à cet endroit.
+    [ -n "$PARENT" ] && git fetch --update-shallow -q "$PARENT_CLONE_DIR" "$PARENT" 2>/dev/null || true
+fi
+# Sinon (Space tout juste créé, jamais poussé, ou clone temporaire indisponible) :
+# PARENT reste vide, le commit ci-dessous est créé sans parent.
 
 INDEX_FILE=$(mktemp)
-trap 'rm -f "$INDEX_FILE"' EXIT
+trap 'rm -f "$INDEX_FILE"; rm -rf "$PARENT_CLONE_DIR"' EXIT
 export GIT_INDEX_FILE="$INDEX_FILE"
 
 git read-tree HEAD
@@ -89,5 +128,5 @@ else
     COMMIT=$(git commit-tree "$TREE" -m "$MESSAGE")
 fi
 
-git -c http.extraHeader="Authorization: Bearer ${HF_TOKEN}" push "$REMOTE" "${COMMIT}:refs/heads/${BRANCH}"
+git -c protocol.version=0 -c http.extraHeader="$AUTH_HEADER" push "$REMOTE" "${COMMIT}:refs/heads/${BRANCH}"
 echo "✓ Poussé sur ${REMOTE}/${BRANCH} : ${COMMIT}"
