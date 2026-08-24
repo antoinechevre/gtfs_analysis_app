@@ -32,6 +32,11 @@ LIBELLES_Y = {
     "vehicules_km_par_1000hab_total": "Véh.km pour 1000 hab. (tous modes)",
     "vehicules_km_par_1000hab_bus": "Véh.km pour 1000 hab. (Bus seul)",
     "vehicules_km_par_1000hab_metro_tram": "Véh.km pour 1000 hab. (Métro+Tram)",
+    # Index villes africaines (cf. views/benchmark.py, data/GTFS_Africa) :
+    # substituts aux métriques BPE-par-domaine du benchmark standard,
+    # indisponibles hors de France — cf. views/accessibilite.py.
+    "population_accessible_60min": "Population accessible en 60 min",
+    "equipements_accessibles_60min": "Équipements accessibles en 60 min (tous types)",
 }
 
 # Colonnes dérivées calculées à la volée (numérateur / population_totale *

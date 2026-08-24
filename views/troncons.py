@@ -406,6 +406,7 @@ def troncons_page(lang="fr"):
                 chemin_logo=st.session_state.chemin_logo,
                 lang=lang,
                 couches_supplementaires=couches_supplementaires,
+                grille_population=st.session_state.grille_population,
             )
             # get_root().render() (le HTML complet, celui écrit par .save())
             # plutôt que _repr_html_() : cette dernière enveloppe la carte

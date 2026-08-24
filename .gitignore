@@ -33,6 +33,20 @@ data/benchmark/
 # besoin par src/hf_cache.recuperer_depuis_hf
 data/memory_ttm/
 
+# Cache local des rasters WorldPop bruts téléchargés par pays (un GeoTIFF
+# par pays/année, plusieurs centaines de Mo pièce) — cf. world_pop_data.ipynb
+data/worldpop/
+
+# Cache local du catalogue GTFS Afrique (app_africa.py) — même principe que
+# data/GTFS/ ci-dessus : repeuplé au besoin depuis le dataset HF partagé
+# (préfixe GTFS_Africa/, cf. src/hf_cache.py), jamais commité.
+data/GTFS_Africa/
+
+# Dossier de travail scratch pour l'extraction OSM (tuiles .osm téléchargées
+# puis découpées à l'osmium, cf. src/osm_extract.py) — fichiers intermédiaires
+# jetables, jamais le PBF final (mis en cache sur HF, memory_pbf/).
+data/osm_extract/
+
 # macOS
 .DS_Store
 

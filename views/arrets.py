@@ -16,6 +16,34 @@ from src.hf_cache import charger_ou_calculer_avec_cache_hf
 from src.i18n import t
 
 
+def obtenir_indicateurs_arrets(lang="fr"):
+    """Calcule les indicateurs par arrêt s'ils ne sont pas déjà en session
+    (ou les recharge depuis le cache disque/Hugging Face s'ils y ont déjà
+    été calculés pour ce réseau — sûr d'une exécution à l'autre car
+    date_JOB est déterministe pour un GTFS donné, cf. dates_service dans
+    info_reseau.py), et renvoie st.session_state.indicateurs_arrets.
+
+    Extrait d'arrets_page pour être réutilisé par tout autre onglet ayant
+    besoin de la liste des arrêts avec leur fréquentation (ex: le sélecteur
+    de point de départ de l'onglet Isochrone carreaux)."""
+    if st.session_state.indicateurs_arrets is None:
+        with st.spinner(t("arrets.spinner_indicateurs", lang)):
+            nom_fichier = "indicateurs_arrets.csv"
+            nom_reseau = st.session_state.nom_reseau_str
+            chemin_cache = os.path.join("data", "memory_troncons", nom_reseau, nom_fichier)
+            nom_fichier_hf = f"memory_troncons/{nom_reseau}/{nom_fichier}"
+            indicateurs = charger_ou_calculer_avec_cache_hf(
+                chemin_cache,
+                nom_fichier_hf,
+                lambda: calculer_indicateurs_arrets(
+                    st.session_state.feed,
+                    st.session_state.date_str,
+                ),
+            )
+            st.session_state.indicateurs_arrets = indicateurs
+    return st.session_state.indicateurs_arrets
+
+
 def arrets_page(lang="fr"):
     st.markdown("---")
 
@@ -52,24 +80,11 @@ def arrets_page(lang="fr"):
         # exécution à l'autre car date_JOB est déterministe pour un GTFS
         # donné (cf. dates_service, info_reseau.py).
         if st.session_state.indicateurs_arrets is None:
-            with st.spinner(t("arrets.spinner_indicateurs", lang)):
-                try:
-                    nom_fichier = "indicateurs_arrets.csv"
-                    nom_reseau = st.session_state.nom_reseau_str
-                    chemin_cache = os.path.join("data", "memory_troncons", nom_reseau, nom_fichier)
-                    nom_fichier_hf = f"memory_troncons/{nom_reseau}/{nom_fichier}"
-                    indicateurs = charger_ou_calculer_avec_cache_hf(
-                        chemin_cache,
-                        nom_fichier_hf,
-                        lambda: calculer_indicateurs_arrets(
-                            st.session_state.feed,
-                            st.session_state.date_str,
-                        ),
-                    )
-                    st.session_state.indicateurs_arrets = indicateurs
-                except Exception as e:
-                    st.error(t("arrets.erreur_indicateurs", lang, erreur=e))
-                    return
+            try:
+                obtenir_indicateurs_arrets(lang)
+            except Exception as e:
+                st.error(t("arrets.erreur_indicateurs", lang, erreur=e))
+                return
 
         if st.session_state.indicateurs_arrets is not None:
             indicateurs = st.session_state.indicateurs_arrets
@@ -123,6 +138,7 @@ def arrets_page(lang="fr"):
                 output_map,
                 chemin_logo=st.session_state.chemin_logo,
                 lang=lang,
+                grille_population=st.session_state.grille_population,
             )
             # get_root().render() (le HTML complet, celui écrit par .save())
             # plutôt que _repr_html_() : cette dernière enveloppe la carte

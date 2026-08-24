@@ -1,4 +1,8 @@
+import csv
+import io
 import os
+import pathlib
+import zipfile
 
 import gtfs_kit as gk
 import pandas as pd
@@ -420,6 +424,67 @@ def charger_ou_calculer_gdf(chemin_cache, fonction_calcul):
     resultat.to_csv(chemin_cache, index=False)
     print(f"✓ Calculé et mis en cache : {chemin_cache}")
     return resultat
+
+
+def dir_tree(path, prefix=""):
+    """Équivalent de fs::dir_tree(data_path) : affiche l'arborescence d'un dossier."""
+    path = pathlib.Path(path)
+    entries = sorted(path.iterdir(), key=lambda p: (p.is_file(), p.name))
+    for i, entry in enumerate(entries):
+        connector = "└── " if i == len(entries) - 1 else "├── "
+        print(prefix + connector + entry.name)
+        if entry.is_dir():
+            extension = "    " if i == len(entries) - 1 else "│   "
+            dir_tree(entry, prefix + extension)
+
+
+# r5py (contrairement à gtfs_kit) distingue "fichier absent" de "fichier
+# présent mais vide" et rejette le second cas avec une EmptyTableError au
+# lieu de l'ignorer — cf. preparer_gtfs_pour_r5py ci-dessous. Tables
+# optionnelles du GTFS déjà vues vides mais présentes sur des GTFS réels.
+TABLES_OPTIONNELLES_VIDABLES_R5PY = [
+    "calendar.txt", "transfers.txt", "frequencies.txt", "fare_rules.txt", "shapes.txt",
+]
+
+
+def preparer_gtfs_pour_r5py(zip_path, output_path=None):
+    """
+    Retire du GTFS les tables de TABLES_OPTIONNELLES_VIDABLES_R5PY présentes
+    mais vides (cf. commentaire ci-dessus).
+
+    Si aucune de ces tables n'est présente-mais-vide, le zip d'origine est
+    renvoyé tel quel (aucune copie créée).
+
+    zip_path: chemin vers le GTFS à préparer.
+    output_path: chemin du GTFS nettoyé (par défaut : "<zip_path stem>_r5py.zip").
+    Returns: chemin du GTFS à utiliser avec r5py.TransportNetwork(gtfs=...).
+    """
+    zip_path = pathlib.Path(zip_path)
+    with zipfile.ZipFile(zip_path) as z:
+        noms_presents = set(z.namelist())
+        a_retirer = []
+        for nom in TABLES_OPTIONNELLES_VIDABLES_R5PY:
+            if nom not in noms_presents:
+                continue
+            with z.open(nom) as f:
+                nb_lignes = sum(1 for _ in csv.reader(io.TextIOWrapper(f, "utf-8"))) - 1
+            if nb_lignes <= 0:
+                a_retirer.append(nom)
+
+        if not a_retirer:
+            return zip_path
+
+        for nom in a_retirer:
+            print(f"{nom} vide dans {zip_path.name} : retrait avant chargement r5py")
+        if output_path is None:
+            output_path = zip_path.with_name(f"{zip_path.stem}_r5py.zip")
+        with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zout:
+            for item in z.infolist():
+                if item.filename in a_retirer:
+                    continue
+                zout.writestr(item, z.read(item.filename))
+    print(f"✓ GTFS nettoyé écrit dans {output_path}")
+    return output_path
 
 
 

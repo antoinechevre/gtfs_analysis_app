@@ -10,3 +10,13 @@ beautifulsoup4
 requests
 ipython
 huggingface_hub
+rasterio
+pycountry
+affine
+pyproj
+pyarrow
+urllib3
+matplotlib
+mapclassify
+r5py
+openpyxl

@@ -9,7 +9,48 @@ import mimetypes
 
 from src.i18n import t
 
-def create_carte_arrets(df, nom_reseau_str,date_service_str, date_analyse, zip_path, output_path, chemin_logo=None, lang="fr"):
+
+def ajouter_couche_population(m, grille_population, lang="fr"):
+    """
+    Ajoute la grille de population (WorldPop, cf. src/worldpop.py) comme
+    couche optionnelle (folium.FeatureGroup, décochée par défaut) à une
+    carte Folium existante — même rendu que carte_population_worldpop
+    (dégradé de rouge par population, carreaux vides transparents), mais
+    en couche superposable plutôt qu'en carte autonome, pour rester
+    sélectionnable via le LayerControl aux côtés des arrêts/tronçons.
+
+    Ne fait rien si grille_population est None ou vide (population WorldPop
+    pas encore chargée/calculée pour ce réseau, cf. app.py).
+    """
+    if grille_population is None or grille_population.empty:
+        return
+
+    grille_active = grille_population[grille_population["population"] > 0]
+    if grille_active.empty:
+        return
+
+    vmin = grille_active["population"].min()
+    vmax = grille_active["population"].max()
+    colormap = cm.LinearColormap(
+        colors=["#fee5d9", "#fcae91", "#fb6a4a", "#de2d26", "#a50f15"],
+        vmin=vmin, vmax=vmax,
+        caption=t("carto.caption_population", lang),
+    )
+
+    feature_group = folium.FeatureGroup(name=t("carto.couche_population", lang), show=False)
+    for _, row in grille_active.iterrows():
+        folium.GeoJson(
+            row["geometry"],
+            style_function=lambda _feature, couleur=colormap(row["population"]): {
+                "fillColor": couleur, "color": couleur, "weight": 0, "fillOpacity": 0.6,
+            },
+            tooltip=f"{row['population']:,.0f} hab.",
+        ).add_to(feature_group)
+    feature_group.add_to(m)
+    colormap.add_to(m)
+
+
+def create_carte_arrets(df, nom_reseau_str,date_service_str, date_analyse, zip_path, output_path, chemin_logo=None, lang="fr", grille_population=None):
     # Carte des arrêts avec leur nombre de passages
 
     # Définir les seuils pour les couleurs : 5 classes de même effectif
@@ -181,6 +222,9 @@ def create_carte_arrets(df, nom_reseau_str,date_service_str, date_analyse, zip_p
         """
         m.get_root().html.add_child(folium.Element(logo_html))
 
+    ajouter_couche_population(m, grille_population, lang=lang)
+    folium.LayerControl(collapsed=False).add_to(m)
+
     m.save(output_path)
 
     print(f"\n✓ Carte des arrêts enregistrée dans : {output_path}")
@@ -271,7 +315,7 @@ def _ajouter_couche_troncons_generique(
     return legende_items_html
 
 
-def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, gdf_train, output_path,date_service_str, colonne_frequence="nombre_passages", nom_reseau_str=None, chemin_logo=None, lang="fr", couches_supplementaires=None):
+def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, gdf_train, output_path,date_service_str, colonne_frequence="nombre_passages", nom_reseau_str=None, chemin_logo=None, lang="fr", couches_supplementaires=None, grille_population=None):
     """
     Crée une carte Folium interactive avec les tronçons bus et tram.
     Les tronçons sont colorés selon la fréquence et peuvent être activés/désactivés.
@@ -769,6 +813,8 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, gd
             popup_vitesse, popup_distance, suffixe_passages,
             weight_base=2 * poids_trait, weight_amplitude=6 * poids_trait,
         )
+
+    ajouter_couche_population(m, grille_population, lang=lang)
 
     # Ajouter le contrôle des couches (cases à cocher)
     folium.LayerControl(collapsed=False).add_to(m)

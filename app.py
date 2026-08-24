@@ -11,6 +11,7 @@ sys.path.append('..')
 
 import streamlit as st
 
+from src.worldpop import charger_ou_construire_grille_population_reseau
 from src.utils import (
     charger_gtfs,
     obtenir_service_ids_pour_date,
@@ -237,6 +238,13 @@ with st.sidebar.expander(t("app.transitland_titre", lang)):
                 except Exception as e:
                     st.error(t("app.transitland_erreur_telechargement", lang, erreur=e))
 
+# Couche population (WorldPop, cf. src/worldpop.py) optionnelle sur les
+# cartes arrêts/lignes : décochée par défaut (construction potentiellement
+# longue au premier appel pour un pays pas encore en cache, cf.
+# charger_ou_calculer_grille_population ci-dessous) — calculée seulement à
+# la demande, pas à chaque chargement de GTFS.
+afficher_couche_population = st.sidebar.checkbox(t("app.sidebar_couche_population", lang))
+
 # Variables globales pour stocker les résultats
 if "feed" not in st.session_state:
     st.session_state.feed = None
@@ -266,6 +274,34 @@ if "population_agglo" not in st.session_state:
     st.session_state.population_agglo = None
 if "annee_population" not in st.session_state:
     st.session_state.annee_population = None
+if "grille_population" not in st.session_state:
+    st.session_state.grille_population = None
+
+
+def charger_ou_calculer_grille_population():
+    """
+    Charge/construit la grille de population WorldPop du réseau courant
+    (cf. charger_ou_construire_grille_population_reseau, src/worldpop.py —
+    cache local puis Hugging Face, calcul en dernier recours), mise en
+    cache dans st.session_state.grille_population pour ne pas recalculer à
+    chaque interaction. Fonction partagée avec views/accessibilite.py, qui
+    l'appelle indépendamment (pas d'import depuis app.py : app.py est
+    exécuté comme __main__ par streamlit, pas importable comme module).
+    """
+    if st.session_state.grille_population is not None:
+        return st.session_state.grille_population
+
+    with st.spinner(t("app.spinner_grille_population", lang)):
+        try:
+            grille = charger_ou_construire_grille_population_reseau(
+                st.session_state.feed, st.session_state.nom_reseau_str,
+            )
+        except Exception as e:
+            st.sidebar.error(t("app.erreur_grille_population", lang, erreur=e))
+            return None
+
+    st.session_state.grille_population = grille
+    return grille
 
 
 # Fonction pour charger les données. La date d'analyse (date_JOB) n'est
@@ -392,6 +428,7 @@ def charger_donnees_gtfs():
         st.session_state.indicateurs_par_mode = None
         st.session_state.total_vk_plage = None
         st.session_state.modes_disponibles = None
+        st.session_state.grille_population = None
 
         # GTFS uploadé (pas choisi dans le catalogue existant) et jamais vu :
         # renvoyé vers le dataset HF pour que les prochains déploiements /
@@ -418,6 +455,9 @@ def charger_donnees_gtfs():
 
 # Charger les données automatiquement si nécessaire
 charger_donnees_gtfs()
+
+if afficher_couche_population and st.session_state.feed is not None:
+    charger_ou_calculer_grille_population()
 
 # Navigation entre les pages
 if st.session_state.selected_page == "Accueil":
