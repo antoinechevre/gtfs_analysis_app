@@ -1,7 +1,8 @@
 """
-Enchaîne index_accessibility_notebook_africa.ipynb sur tous les GTFS de
-data/GTFS_Africa/ (ou un sous-ensemble filtré), un kernel Jupyter neuf par
-réseau — plutôt que de relancer le notebook à la main ville par ville.
+Enchaîne un notebook d'accessibilité Afrique (par défaut la variante grille
+800m, cf. --notebook) sur tous les GTFS de data/GTFS_Africa/ (ou un
+sous-ensemble filtré), un kernel Jupyter neuf par réseau — plutôt que de
+relancer le notebook à la main ville par ville.
 
 GTFS_ZIP_PATH est paramétrable via variable d'environnement (cf. la cellule
 "#chemins fixes" du notebook) : ce script se contente de la positionner
@@ -21,9 +22,14 @@ depuis le cache) et ne recalcule que les réseaux restants — pas besoin
 d'une logique de reprise dédiée ici.
 
 Usage (depuis la racine du repo) :
-    ./env/bin/python -m scripts.run_notebook_afrique                # tous les GTFS
+    ./env/bin/python -m scripts.run_notebook_afrique                # tous les GTFS, grille 800m (défaut)
     ./env/bin/python -m scripts.run_notebook_afrique Abidjan Accra   # sous-ensemble (sous-chaîne du nom de fichier)
     ./env/bin/python -m scripts.run_notebook_afrique --liste         # liste les GTFS détectés, sans rien exécuter
+    ./env/bin/python -m scripts.run_notebook_afrique --notebook index_accessibility_notebook_africa_1km.ipynb
+        # autre résolution de grille (fichier relatif à la racine du repo, ou chemin absolu) — cf.
+        # index_accessibility_notebook_africa_{600m,800m,1km}.ipynb, dérivées de la version 400m
+        # (index_accessibility_notebook_africa.ipynb) pour tenir en mémoire au rechargement de la TTM
+        # (charger_ttm) sur une machine à RAM limitée.
 
 Prérequis (une fois) :
     ./env/bin/pip install nbclient
@@ -43,7 +49,7 @@ from nbclient.exceptions import CellExecutionError
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 GTFS_DIR = BASE_DIR / "data" / "GTFS_Africa"
-NOTEBOOK_PATH = BASE_DIR / "index_accessibility_notebook_africa.ipynb"
+NOTEBOOK_PATH_DEFAUT = BASE_DIR / "index_accessibility_notebook_africa_800m.ipynb"
 RUNS_DIR = BASE_DIR / "output" / "notebook_runs"
 KERNEL_NAME = "gtfs-app-env"
 
@@ -58,13 +64,13 @@ def gtfs_disponibles(filtres=None):
     return [p for p in fichiers if any(f in p.name.lower() for f in filtres_bas)]
 
 
-def executer_pour_gtfs(gtfs_path):
-    """Exécute une copie de NOTEBOOK_PATH avec GTFS_ZIP_PATH=gtfs_path,
+def executer_pour_gtfs(gtfs_path, notebook_path):
+    """Exécute une copie de notebook_path avec GTFS_ZIP_PATH=gtfs_path,
     sauvegarde le notebook exécuté (résultats + éventuelle erreur) dans
     RUNS_DIR, et renvoie True si l'exécution s'est terminée sans erreur."""
     os.environ["GTFS_ZIP_PATH"] = str(gtfs_path)
 
-    nb = nbformat.read(NOTEBOOK_PATH, as_version=4)
+    nb = nbformat.read(notebook_path, as_version=4)
     # timeout=None : plusieurs cellules (TTM notamment) tournent légitimement
     # pendant des dizaines de minutes à plusieurs heures — un timeout par
     # cellule interromprait le calcul en cours pour rien.
@@ -101,13 +107,25 @@ def main():
         "--liste", action="store_true",
         help="Liste les GTFS qui seraient traités, sans rien exécuter.",
     )
+    parser.add_argument(
+        "--notebook", default=str(NOTEBOOK_PATH_DEFAUT),
+        help=f"Notebook à exécuter (chemin relatif à la racine du repo, ou absolu) — défaut : {NOTEBOOK_PATH_DEFAUT.name}",
+    )
     args = parser.parse_args()
+
+    notebook_path = Path(args.notebook)
+    if not notebook_path.is_absolute():
+        notebook_path = BASE_DIR / notebook_path
+    if not notebook_path.exists():
+        print(f"Notebook introuvable : {notebook_path}", file=sys.stderr)
+        sys.exit(1)
 
     fichiers = gtfs_disponibles(args.filtres)
     if not fichiers:
         print(f"Aucun GTFS trouvé dans {GTFS_DIR} avec les filtres {args.filtres!r}.", file=sys.stderr)
         sys.exit(1)
 
+    print(f"Notebook : {notebook_path.name}")
     print(f"{len(fichiers)} GTFS à traiter :")
     for f in fichiers:
         print(f"  - {f.name}")
@@ -123,7 +141,7 @@ def main():
 
         t0 = time.time()
         try:
-            erreur, sortie_path = executer_pour_gtfs(gtfs_path)
+            erreur, sortie_path = executer_pour_gtfs(gtfs_path, notebook_path)
         except KeyboardInterrupt:
             print("\nInterrompu (Ctrl+C) — arrêt propre, résumé de ce qui a été traité :")
             break
