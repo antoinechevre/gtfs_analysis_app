@@ -57,6 +57,11 @@ data/osm_pbf_pays/
 # (memory_pbf/, cf. index_accessibility_notebook_africa.ipynb).
 data/memory_pbf/
 
+# Cache local des équipements OSM pondérés par réseau (substitut BPE pour
+# l'Afrique) — repeuplé au besoin depuis le dataset HF partagé
+# (equipements_osm/, cf. index_accessibility_notebook_africa.ipynb).
+data/equipements_osm/
+
 # macOS
 .DS_Store
 
