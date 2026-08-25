@@ -42,6 +42,12 @@ data/worldpop/
 # (préfixe GTFS_Africa/, cf. src/hf_cache.py), jamais commité.
 data/GTFS_Africa/
 
+# GTFS retirés du catalogue sélectionnable (collision de nom de ville ou
+# données corrompues, ex. Abidjan_AMUGA_GTFS_2025_mapping_v2.zip vs.
+# Abidjan_gtfs.zip) : gardés hors de data/GTFS_Africa/ pour ne plus jamais
+# être proposés dans l'app, jamais commités non plus.
+data/GTFS_Africa_deprecated/
+
 # Dossier de travail scratch pour l'extraction OSM (tuiles .osm téléchargées
 # puis découpées à l'osmium, cf. src/osm_extract.py) — fichiers intermédiaires
 # jetables, jamais le PBF final (mis en cache sur HF, memory_pbf/).
