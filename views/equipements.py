@@ -24,7 +24,7 @@ import geopandas as gpd
 import streamlit as st
 import streamlit.components.v1 as components
 
-from src.equipements_osm import compter_equipements_par_carreau
+from src.equipements_osm import compter_equipements_par_carreau, recuperer_equipements_hf
 from src.i18n import t
 from src.worldpop import charger_ou_construire_grille_population_reseau
 
@@ -41,6 +41,10 @@ def equipements_page(lang="fr"):
     st.markdown("---")
     st.warning(t("equipements.avertissement_couverture", lang))
 
+    # Best-effort : sur un Space déployé, data/equipements_osm/ est vide
+    # (exclu du déploiement, cf. scripts/deploy_hf_africa.sh) — ces .gpkg ne
+    # sont disponibles qu'en les récupérant depuis le dataset HF partagé.
+    recuperer_equipements_hf(DOSSIER_EQUIPEMENTS)
     fichiers_gpkg = sorted(glob.glob(os.path.join(DOSSIER_EQUIPEMENTS, "*.gpkg")))
 
     if not fichiers_gpkg:

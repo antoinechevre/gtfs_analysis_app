@@ -56,7 +56,15 @@ AUTH_HEADER="Authorization: Basic $(printf '%s:%s' "$HF_USERNAME" "$HF_TOKEN" | 
 # Fichiers à exclure du déploiement, en plus de deploy/ (sources des
 # substitutions ci-dessous, sans intérêt une fois le Dockerfile/README
 # substitués — cf. EXCLUDE_PATHS_EXTRA pour tout ajout futur).
-EXCLUDE_PATHS=("deploy")
+#
+# data/equipements_osm : le backend git des Spaces HF rejette tout blob
+# binaire hors stockage Xet ("Your push was rejected because it contains
+# binary files"), quelle que soit sa taille (indépendant du contrôle
+# TOO_BIG ci-dessous, qui ne couvre que la limite 10 Mo hors Xet/LFS) — .xlsx
+# et .gpkg en font partie. L'app récupère ces fichiers depuis le dataset HF
+# au runtime à la place (cf. src/equipements_osm.py, recuperer_equipements_hf),
+# pas besoin qu'ils soient dans l'image Docker poussée ici.
+EXCLUDE_PATHS=("deploy" "data/equipements_osm")
 EXCLUDE_PATHS_EXTRA=()
 EXCLUDE_PATHS+=("${EXCLUDE_PATHS_EXTRA[@]:-}")
 

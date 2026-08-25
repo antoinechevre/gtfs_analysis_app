@@ -18,6 +18,24 @@ import pandas as pd
 DOSSIER_EQUIPEMENTS_DEFAUT = os.path.join("data", "equipements_osm")
 
 
+def recuperer_equipements_hf(dossier=DOSSIER_EQUIPEMENTS_DEFAUT):
+    """Télécharge (best-effort, ceux pas déjà en local) tous les .gpkg
+    disponibles sous equipements_osm/ sur le dataset HF partagé, vers
+    `dossier`. À appeler avant compter_equipements_par_carreau sur un
+    déploiement qui n'a pas ces fichiers dans son image (contrairement au
+    poste de dev, où ils sont commités dans le dépôt) : le backend git des
+    Spaces HF rejette tout blob binaire hors stockage Xet (.xlsx, .gpkg),
+    donc data/equipements_osm est exclu du déploiement (cf.
+    scripts/deploy_hf_africa.sh, EXCLUDE_PATHS) — cette fonction est l'unique
+    façon dont ces fichiers atteignent un Space déployé."""
+    from src.hf_cache import lister_fichiers_hf, recuperer_depuis_hf
+
+    for nom_fichier in lister_fichiers_hf("equipements_osm"):
+        if not nom_fichier.endswith(".gpkg"):
+            continue
+        recuperer_depuis_hf(f"equipements_osm/{nom_fichier}", os.path.join(dossier, nom_fichier))
+
+
 def compter_equipements_par_carreau(grille_population, dossier=DOSSIER_EQUIPEMENTS_DEFAUT):
     """
     Union de tous les .gpkg de `dossier` (un point par équipement OSM,

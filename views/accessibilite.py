@@ -19,7 +19,7 @@ cette page se contente de lire un résultat déjà calculé en amont.
 import streamlit as st
 import streamlit.components.v1 as components
 
-from src.equipements_osm import compter_equipements_par_carreau
+from src.equipements_osm import compter_equipements_par_carreau, recuperer_equipements_hf
 from src.i18n import t
 from src.utilitaires_matrix import charger_ttm_reseau, cumulative_cutoff
 from src.worldpop import charger_ou_construire_grille_population_reseau
@@ -69,6 +69,10 @@ def accessibilite_page(lang="fr"):
             travel_cost="travel_time", cutoff=CUTOFF_MIN,
         )
 
+        # Best-effort : sur un Space déployé, data/equipements_osm/ est vide
+        # (exclu du déploiement, cf. scripts/deploy_hf_africa.sh) — ces .gpkg
+        # ne sont disponibles qu'en les récupérant depuis le dataset HF partagé.
+        recuperer_equipements_hf()
         equipements_par_carreau = compter_equipements_par_carreau(grille_population)
         cum_equipements = None
         if equipements_par_carreau is not None:
