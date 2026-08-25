@@ -114,17 +114,26 @@ def arrets_page(lang="fr"):
 
             # Fiche statistiques (export HTML)
             st.header(t("arrets.header_fiche", lang))
-            output_stats = os.path.join(tempfile.gettempdir(), "statistiques_arrets_streamlit.html")
-            exporter_statistiques_html(
-                indicateurs,
-                t("commun.analyse_du", lang, date=st.session_state.date_str),
-                st.session_state.date_str,
-                output_stats,
-                nom_reseau_str=st.session_state.nom_reseau_str,
-                lang=lang,
-            )
-            with open(output_stats, "r", encoding="utf-8") as f:
-                components.html(f.read(), height=600, scrolling=True)
+            if indicateurs.empty:
+                # indicateurs vide (pas seulement "aucun arrêt actif" ci-dessus,
+                # cf. actifs) : calculer_indicateurs_arrets n'a trouvé aucun
+                # trip pour date_JOB, typiquement un date_JOB mis en cache
+                # pour un autre GTFS ayant partagé le même nom de réseau (cf.
+                # collision Abidjan AMUGA / Abidjan_gtfs) — sans ce garde,
+                # exporter_statistiques_html plante sur df.iloc[0].
+                st.info(t("arrets.aucun_service", lang))
+            else:
+                output_stats = os.path.join(tempfile.gettempdir(), "statistiques_arrets_streamlit.html")
+                exporter_statistiques_html(
+                    indicateurs,
+                    t("commun.analyse_du", lang, date=st.session_state.date_str),
+                    st.session_state.date_str,
+                    output_stats,
+                    nom_reseau_str=st.session_state.nom_reseau_str,
+                    lang=lang,
+                )
+                with open(output_stats, "r", encoding="utf-8") as f:
+                    components.html(f.read(), height=600, scrolling=True)
 
             # Carte
             st.header(t("arrets.header_carte", lang))
