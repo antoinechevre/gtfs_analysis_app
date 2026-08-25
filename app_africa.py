@@ -27,8 +27,9 @@ from src.utils import (
     obtenir_service_ids_pour_date,
     etendue_geographique_km,
     fusionner_agences_en_une,
+    ville_str_depuis_fichier,
 )
-from src.info_reseau import charger_ou_calculer_dates_service, recuperer_logo_reseau, nom_reseau
+from src.info_reseau import charger_ou_calculer_dates_service, recuperer_logo_reseau
 from src.population import population_agglomeration, deviner_ville_depuis_nom_fichier
 from src.hf_cache import envoyer_vers_hf, lister_fichiers_hf, recuperer_depuis_hf
 from src.worldpop import charger_ou_construire_grille_population_reseau, RESOLUTION_M_AFRIQUE
@@ -233,7 +234,13 @@ def charger_donnees_gtfs():
             fusionner_agences_en_une(feed, nom_agence_fusion)
             print(f"✓ {nb_agences} agences fusionnées en une seule ('{nom_agence_fusion}', étendue {etendue_km:.0f} km)")
 
-        reseau_str = str(nom_reseau(feed))
+        # Dérivé du nom de fichier (pas de nom_reseau(feed), basé sur
+        # agency_name) : déterministe même pour un GTFS multi-agences (ex:
+        # Abidjan/AMUGA, 8 agences), et identique à ce que calculent les
+        # notebooks Afrique (cf. src.utils.ville_str_depuis_fichier) — sans
+        # ça, les caches HF (grille, TTM, PBF) ne se retrouvaient jamais
+        # entre l'app et un notebook exécuté sur le même GTFS.
+        reseau_str = ville_str_depuis_fichier(nom_gtfs)
         _, _, _, date_JOB = charger_ou_calculer_dates_service(feed, reseau_str)
         date_str = date_JOB
         active_service_ids = obtenir_service_ids_pour_date(feed, date_str)

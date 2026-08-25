@@ -106,6 +106,24 @@ def fusionner_agences_en_une(feed, nom_agence):
     return feed
 
 
+def ville_str_depuis_fichier(nom_fichier_gtfs):
+    """Nom de ville/réseau dérivé du nom de fichier GTFS (ex:
+    "Abidjan_AMUGA_GTFS_2025_mapping_v2.zip" -> "Abidjan",
+    "Accra_gtfs.zip" -> "Accra") : premier segment avant "_", en convention
+    dans le catalogue data/GTFS_Africa/ (cf. _provenance.json).
+
+    À utiliser comme clé de cache (grille, TTM, extrait OSM, équipements)
+    pour app_africa.py ET index_accessibility_notebook_africa*.ipynb à la
+    place de nom_reseau_str(feed) (dérivé d'agency_name) : ce dernier n'est
+    pas stable pour un GTFS multi-agences (ex: Abidjan/AMUGA, 8 agences) —
+    fusionner_agences_en_une donne un nom différent selon l'ordre/le
+    contexte d'exécution, et un notebook qui ne fusionne pas du tout donne
+    encore un autre nom (concaténation des 8 agences) — les caches HF ne se
+    retrouvaient alors jamais entre l'app et le notebook. Un nom dérivé du
+    fichier, lui, est trivialement déterministe et identique partout."""
+    return os.path.splitext(os.path.basename(nom_fichier_gtfs))[0].split("_")[0]
+
+
 def charger_gtfs(zip_path):
     """
     Charge le fichier GTFS à l'aide de gtfs_kit.

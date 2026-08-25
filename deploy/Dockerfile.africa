@@ -1,13 +1,29 @@
+# JDK 21 via l'image officielle Eclipse Temurin plutôt qu'un paquet apt
+# (openjdk-21 pas forcément dans les dépôts Debian de l'image de base) :
+# multi-stage, on ne copie que le JDK installé, pas l'image Temurin entière.
+# Requis par r5py (JVM), lui-même nécessaire à src/pipeline_accessibilite_afrique.py
+# (calcul de la matrice de temps de trajet directement depuis l'app —
+# onglet Accessibilité — quand aucune TTM n'est déjà en cache).
+FROM eclipse-temurin:21-jdk-jammy AS jdk
+
 FROM python:3.11-slim
 
 WORKDIR /app
 
+COPY --from=jdk /opt/java/openjdk /opt/java/openjdk
+ENV JAVA_HOME=/opt/java/openjdk
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
+
 # libexpat1 : dépendance runtime de rasterio (via GDAL), absente de l'image
 # slim — sans elle, "ImportError: libexpat.so.1: cannot open shared object
 # file" au premier import de rasterio (src/worldpop.py).
+# osmium-tool : requis par src/osm_extract.py (découpage des extraits OSM
+# Geofabrik, extraction des équipements amenity=*) — absent de l'image de
+# base, jamais installé via pip (c'est un binaire C++, pas un paquet Python).
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     libexpat1 \
+    osmium-tool \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .

@@ -8,14 +8,18 @@ domaine d'équipement ni par décile de niveau de vie) :
 - équipements accessibles en <= 60 min, tous les fichiers de
   data/equipements_osm/ combinés (opportunity="equipements").
 
-Nécessite une matrice de temps de trajet (TTM) déjà calculée pour ce réseau
-à la résolution RESOLUTION_M_AFRIQUE (cf. src/worldpop.py — 800m,
-index_accessibility_notebook_africa_800m.ipynb) et mise en cache sur le
-dataset Hugging Face partagé, sous
+Nécessite une matrice de temps de trajet (TTM) pour ce réseau à la
+résolution RESOLUTION_M_AFRIQUE (cf. src/worldpop.py — 800m,
+index_accessibility_notebook_africa_800m.ipynb), mise en cache sur le
+dataset Hugging Face partagé sous
 memory_ttm/ttm_{nom_reseau_str}_{RESOLUTION_M_AFRIQUE}m.parquet (cf.
-src.utilitaires_matrix.nom_fichier_ttm) : le calcul r5py lui-même (JVM,
-extraction OSM) est bien trop lourd pour tourner dans l'app Streamlit —
-cette page se contente de lire un résultat déjà calculé en amont.
+src.utilitaires_matrix.nom_fichier_ttm). Si absente, un bouton permet de
+lancer le calcul complet directement depuis l'app (cf.
+src.pipeline_accessibilite_afrique.calculer_pipeline_complet) — même
+chaîne que le notebook (grille, OSM, équipements, r5py, TTM), mais lourde
+(JVM) et bloquante (process Streamlit mono-thread pendant tout le calcul,
+plusieurs dizaines de minutes possible) : à l'utilisateur de choisir de la
+déclencher en connaissance de cause plutôt qu'un calcul automatique.
 """
 
 import streamlit as st
@@ -23,6 +27,7 @@ import streamlit.components.v1 as components
 
 from src.equipements_osm import compter_equipements_par_carreau, recuperer_equipements_hf
 from src.i18n import t
+from src.pipeline_accessibilite_afrique import calculer_pipeline_complet
 from src.utilitaires_matrix import charger_ttm_reseau, cumulative_cutoff
 from src.worldpop import charger_ou_construire_grille_population_reseau, RESOLUTION_M_AFRIQUE
 
@@ -61,7 +66,25 @@ def accessibilite_page(lang="fr"):
     ttm = charger_ttm_reseau(st.session_state.nom_reseau_str, resolution_m=RESOLUTION_M_AFRIQUE)
     if ttm is None:
         st.warning(t("accessibilite.pas_de_ttm", lang, reseau=st.session_state.nom_reseau_str))
-        return
+        st.warning(t("accessibilite.avertissement_calcul_complet", lang))
+
+        if st.button(t("accessibilite.bouton_calculer", lang), type="primary"):
+            statut = st.status(t("accessibilite.status_calcul", lang), expanded=True)
+            try:
+                grille_population, ttm = calculer_pipeline_complet(
+                    st.session_state.feed,
+                    st.session_state.nom_reseau_str,
+                    st.session_state.zip_path,
+                    resolution_m=RESOLUTION_M_AFRIQUE,
+                    on_step=statut.write,
+                )
+            except Exception as e:
+                statut.update(label=t("accessibilite.erreur_calcul", lang, erreur=e), state="error")
+                return
+            st.session_state.grille_population = grille_population
+            statut.update(label=t("accessibilite.status_termine", lang), state="complete")
+        else:
+            return
 
     land_use_data = grille_population[["id", "population"]].copy()
 

@@ -248,12 +248,22 @@ def url_raster_worldpop(iso3, annee):
 
 def telecharger_raster_worldpop(iso3, annee, dossier_cache=DOSSIER_CACHE_DEFAUT):
     """Télécharge (en streaming) le raster WorldPop de iso3/annee vers
-    dossier_cache, sauf s'il y est déjà. Renvoie le chemin local."""
+    dossier_cache, sauf s'il y est déjà en local OU déjà sur le dataset HF
+    partagé (memory_worldpop/{iso3}_ppp_{annee}.tif — plusieurs centaines
+    de Mo par pays : sans ce cache, chaque nouveau conteneur/redéploiement
+    du Space le retéléchargerait depuis les serveurs WorldPop à chaque
+    fois, jamais partagé entre déploiements ni avec le notebook). Renvoie
+    le chemin local."""
     os.makedirs(dossier_cache, exist_ok=True)
     chemin_local = os.path.join(dossier_cache, f"{iso3}_ppp_{annee}.tif")
+    nom_fichier_hf = f"memory_worldpop/{iso3}_ppp_{annee}.tif"
 
     if os.path.exists(chemin_local):
-        print(f"✓ Raster déjà en cache : {chemin_local}")
+        print(f"✓ Raster déjà en cache local : {chemin_local}")
+        return chemin_local
+
+    if recuperer_depuis_hf(nom_fichier_hf, chemin_local):
+        print(f"✓ Raster repris du cache HF : {chemin_local}")
         return chemin_local
 
     url = url_raster_worldpop(iso3, annee)
@@ -264,6 +274,7 @@ def telecharger_raster_worldpop(iso3, annee, dossier_cache=DOSSIER_CACHE_DEFAUT)
             for bloc in r.iter_content(chunk_size=1024 * 1024):
                 f.write(bloc)
     print(f"✓ Téléchargé : {chemin_local}")
+    envoyer_vers_hf(chemin_local, nom_fichier_hf)
     return chemin_local
 
 
