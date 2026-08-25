@@ -47,6 +47,16 @@ data/GTFS_Africa/
 # jetables, jamais le PBF final (mis en cache sur HF, memory_pbf/).
 data/osm_extract/
 
+# Cache local des extraits pays Geofabrik (plusieurs dizaines à centaines
+# de Mo pièce) et de l'index de son catalogue — cf.
+# src/osm_extract.osm_pbf_creator_depuis_geofabrik.
+data/osm_pbf_pays/
+
+# Cache local des .osm.pbf finaux par réseau (découpés sur la zone GTFS+marge,
+# prêts pour r5py) — repeuplé au besoin depuis le dataset HF partagé
+# (memory_pbf/, cf. index_accessibility_notebook_africa.ipynb).
+data/memory_pbf/
+
 # macOS
 .DS_Store
 
