@@ -62,6 +62,14 @@ data/memory_pbf/
 # (equipements_osm/, cf. index_accessibility_notebook_africa.ipynb).
 data/equipements_osm/
 
+# Cache local des grilles de population déjà construites, par réseau —
+# repeuplé au besoin depuis le dataset HF partagé (memory_gpkg/, cf.
+# src.worldpop.charger_ou_construire_grille_population_reseau).
+data/memory_gpkg/
+
+# Logs de run locaux (ex: scripts/run_notebook_afrique.py en arrière-plan)
+*.log
+
 # macOS
 .DS_Store
 

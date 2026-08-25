@@ -392,6 +392,22 @@ def construire_grille_population_gtfs(feed, marge_km=0, annee=2020, resolution_m
     return grille, lat_centre, lon_centre
 
 
+# Résolution de grille utilisée par app_africa.py et tous ses onglets
+# (Équipements, Accessibilité, Isochrone carreaux) — 800m plutôt que le
+# défaut générique 400m de charger_ou_construire_grille_population_reseau
+# ci-dessous (repris tel quel par l'app universelle, app.py, pour sa couche
+# population optionnelle) : la TTM d'un réseau dense comme Abidjan (grille
+# 400m, ~59 273 carreaux) fait ~87 Go en mémoire au rechargement
+# (charger_ttm) — OOM constaté sur une machine à 16 Go de RAM. 800m
+# (~14 800 carreaux, TTM ~16x plus légère, cf.
+# index_accessibility_notebook_africa_800m.ipynb) est le compromis retenu.
+# Tous les appels Afrique doivent utiliser CETTE résolution pour que la
+# grille (partagée en session, st.session_state.grille_population) reste
+# cohérente d'un onglet à l'autre, et que ses "id" correspondent à ceux de
+# la TTM 800m.
+RESOLUTION_M_AFRIQUE = 800
+
+
 def charger_ou_construire_grille_population_reseau(
     feed, nom_reseau_str, marge_km=5, resolution_m=400, annee=2020,
     dossier_cache_worldpop=DOSSIER_CACHE_DEFAUT, dossier_cache_local=None,
@@ -414,11 +430,21 @@ def charger_ou_construire_grille_population_reseau(
     chaque carreau doit correspondre à celui utilisé pour construire la
     TTM (cf. index_accessibility_notebook_abidjan.ipynb, mêmes valeurs
     par défaut ici).
+
+    Nom de cache suffixé par résolution seulement si resolution_m diffère
+    du défaut historique (400m, sans suffixe — grilles déjà en cache sous
+    ce nom pour les réseaux existants) : les notebooks Afrique
+    600m/800m/1km (cf. index_accessibility_notebook_africa_800m.ipynb)
+    utilisent une résolution différente pour la même grille — sans ce
+    suffixe, deux résolutions du même réseau se marcheraient dessus (même
+    nom de fichier, mauvaise grille rechargée silencieusement, comme pour
+    la TTM, cf. src.utilitaires_matrix.nom_fichier_ttm).
     """
+    suffixe_resolution = "" if resolution_m == 400 else f"_{resolution_m}m"
     dossier_cache_local = dossier_cache_local or os.path.join("data", "memory_gpkg")
     os.makedirs(dossier_cache_local, exist_ok=True)
-    chemin_cache = os.path.join(dossier_cache_local, f"grille_population_{nom_reseau_str}.gpkg")
-    nom_fichier_hf = f"memory_gpkg/grille_population_{nom_reseau_str}.gpkg"
+    chemin_cache = os.path.join(dossier_cache_local, f"grille_population_{nom_reseau_str}{suffixe_resolution}.gpkg")
+    nom_fichier_hf = f"memory_gpkg/grille_population_{nom_reseau_str}{suffixe_resolution}.gpkg"
 
     recuperer_depuis_hf(nom_fichier_hf, chemin_cache)
     if os.path.exists(chemin_cache):

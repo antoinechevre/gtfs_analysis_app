@@ -26,7 +26,7 @@ import streamlit.components.v1 as components
 
 from src.equipements_osm import compter_equipements_par_carreau, recuperer_equipements_hf
 from src.i18n import t
-from src.worldpop import charger_ou_construire_grille_population_reseau
+from src.worldpop import charger_ou_construire_grille_population_reseau, RESOLUTION_M_AFRIQUE
 
 DOSSIER_EQUIPEMENTS = os.path.join("data", "equipements_osm")
 
@@ -132,7 +132,7 @@ def equipements_page(lang="fr"):
             with st.spinner(t("app.spinner_grille_population", lang)):
                 try:
                     st.session_state.grille_population = charger_ou_construire_grille_population_reseau(
-                        st.session_state.feed, st.session_state.nom_reseau_str,
+                        st.session_state.feed, st.session_state.nom_reseau_str, resolution_m=RESOLUTION_M_AFRIQUE,
                     )
                 except Exception as e:
                     st.warning(t("equipements.pas_de_grille", lang, erreur=e))

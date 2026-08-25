@@ -11,7 +11,7 @@ import streamlit.components.v1 as components
 from src.i18n import t
 from src.isochrone_carreaux import build_map_isochrone_carreaux, carreaux_atteignables, trouver_carreau_origine
 from src.utilitaires_matrix import charger_ttm_reseau
-from src.worldpop import charger_ou_construire_grille_population_reseau
+from src.worldpop import charger_ou_construire_grille_population_reseau, RESOLUTION_M_AFRIQUE
 from views.arrets import obtenir_indicateurs_arrets
 
 BUDGET_MIN_DEFAUT = 30
@@ -29,7 +29,7 @@ def isochrone_carreaux_page(lang="fr"):
         with st.spinner(t("app.spinner_grille_population", lang)):
             try:
                 st.session_state.grille_population = charger_ou_construire_grille_population_reseau(
-                    st.session_state.feed, st.session_state.nom_reseau_str,
+                    st.session_state.feed, st.session_state.nom_reseau_str, resolution_m=RESOLUTION_M_AFRIQUE,
                 )
             except Exception as e:
                 st.warning(t("accessibilite.pas_de_grille", lang, erreur=e))
@@ -40,7 +40,7 @@ def isochrone_carreaux_page(lang="fr"):
         st.warning(t("accessibilite.pas_de_grille", lang, erreur=t("accessibilite.grille_vide", lang)))
         return
 
-    ttm = charger_ttm_reseau(st.session_state.nom_reseau_str)
+    ttm = charger_ttm_reseau(st.session_state.nom_reseau_str, resolution_m=RESOLUTION_M_AFRIQUE)
     if ttm is None:
         st.warning(t("accessibilite.pas_de_ttm", lang, reseau=st.session_state.nom_reseau_str))
         return

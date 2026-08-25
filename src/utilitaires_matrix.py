@@ -5,11 +5,26 @@ import numpy as np
 import pandas as pd
 
 
-def charger_ttm_reseau(nom_reseau_str):
-    """Charge la TTM carreau->carreau de nom_reseau_str depuis le cache
-    local, ou la récupère depuis le dataset Hugging Face partagé (calculée
-    en amont par un notebook, jamais ici — cf. charger_ttm). None si
-    absente des deux.
+def nom_fichier_ttm(nom_reseau_str, resolution_m=None):
+    """Nom de fichier (sans dossier) de la TTM de nom_reseau_str.
+    resolution_m=None : convention historique, sans suffixe
+    (ttm_<reseau>.parquet — TTM calculées par le notebook Accessibilité
+    France/le notebook Afrique 400m d'origine). resolution_m fourni :
+    suffixée (ttm_<reseau>_<resolution>m.parquet — notebooks Afrique
+    600m/800m/1km, cf. index_accessibility_notebook_africa_800m.ipynb) :
+    la TTM dépend du nombre et de l'identité des carreaux, donc de la
+    résolution de la grille — sans ce suffixe, deux résolutions du même
+    réseau se marcheraient dessus (même nom de fichier, mauvaise TTM
+    rechargée silencieusement)."""
+    suffixe = f"_{resolution_m}m" if resolution_m else ""
+    return f"ttm_{nom_reseau_str}{suffixe}.parquet"
+
+
+def charger_ttm_reseau(nom_reseau_str, resolution_m=None):
+    """Charge la TTM carreau->carreau de nom_reseau_str (à resolution_m,
+    cf. nom_fichier_ttm) depuis le cache local, ou la récupère depuis le
+    dataset Hugging Face partagé (calculée en amont par un notebook,
+    jamais ici — cf. charger_ttm). None si absente des deux.
 
     Utilisée par tout onglet qui a besoin d'une TTM déjà calculée pour un
     réseau donné (Accessibilité, Isochrone carreaux) : centralisée ici
@@ -18,8 +33,9 @@ def charger_ttm_reseau(nom_reseau_str):
     """
     from src.hf_cache import recuperer_depuis_hf
 
-    chemin_cache = os.path.join("data", "memory_ttm", f"ttm_{nom_reseau_str}.parquet")
-    recuperer_depuis_hf(f"memory_ttm/ttm_{nom_reseau_str}.parquet", chemin_cache)
+    nom_fichier = nom_fichier_ttm(nom_reseau_str, resolution_m)
+    chemin_cache = os.path.join("data", "memory_ttm", nom_fichier)
+    recuperer_depuis_hf(f"memory_ttm/{nom_fichier}", chemin_cache)
     if not os.path.exists(chemin_cache):
         return None
     return charger_ttm(chemin_cache)

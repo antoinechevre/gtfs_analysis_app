@@ -31,7 +31,7 @@ from src.utils import (
 from src.info_reseau import charger_ou_calculer_dates_service, recuperer_logo_reseau, nom_reseau
 from src.population import population_agglomeration, deviner_ville_depuis_nom_fichier
 from src.hf_cache import envoyer_vers_hf, lister_fichiers_hf, recuperer_depuis_hf
-from src.worldpop import charger_ou_construire_grille_population_reseau
+from src.worldpop import charger_ou_construire_grille_population_reseau, RESOLUTION_M_AFRIQUE
 from src.i18n import t, LANGUES
 from views.home import home_page
 from views.arrets import arrets_page
@@ -186,7 +186,7 @@ def charger_ou_calculer_grille_population():
     with st.spinner(t("app.spinner_grille_population", lang)):
         try:
             grille = charger_ou_construire_grille_population_reseau(
-                st.session_state.feed, st.session_state.nom_reseau_str,
+                st.session_state.feed, st.session_state.nom_reseau_str, resolution_m=RESOLUTION_M_AFRIQUE,
             )
         except Exception as e:
             st.sidebar.error(t("app.erreur_grille_population", lang, erreur=e))
