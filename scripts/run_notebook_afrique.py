@@ -64,6 +64,20 @@ def gtfs_disponibles(filtres=None):
     return [p for p in fichiers if any(f in p.name.lower() for f in filtres_bas)]
 
 
+def _gtfs_path_confirme(nb, gtfs_path):
+    """True si str(gtfs_path) apparaît dans au moins une sortie de cellule
+    du notebook exécuté (cf. garde-fou dans executer_pour_gtfs) — ne
+    regarde que les toutes premières cellules (avant le chargement du GTFS
+    lui-même) : au-delà, le nom de fichier n'a plus de raison de
+    réapparaître tel quel dans les sorties."""
+    cible = str(gtfs_path)
+    for cell in nb.cells[:6]:
+        for out in cell.get("outputs", []):
+            if cible in out.get("text", ""):
+                return True
+    return False
+
+
 def executer_pour_gtfs(gtfs_path, notebook_path):
     """Exécute une copie de notebook_path avec GTFS_ZIP_PATH=gtfs_path,
     sauvegarde le notebook exécuté (résultats + éventuelle erreur) dans
@@ -84,6 +98,17 @@ def executer_pour_gtfs(gtfs_path, notebook_path):
     erreur = None
     try:
         client.execute()
+        # Garde-fou : le notebook a déjà silencieusement retraité un autre
+        # GTFS que celui demandé (GTFS_ZIP_PATH="chemin fixes" écrasée entre
+        # deux runs, cf. commentaire dans la cellule concernée) — sans
+        # erreur, juste "réussi" sur le mauvais réseau. On vérifie donc que
+        # gtfs_path apparaît bien dans une sortie de cellule (imprimé par la
+        # cellule "chemins fixes") avant de déclarer le run réussi.
+        if not _gtfs_path_confirme(nb, gtfs_path):
+            erreur = (
+                f"GTFS_ZIP_PATH={gtfs_path} introuvable dans les sorties du notebook exécuté — "
+                "probablement retombé sur un autre GTFS (cf. cellule '#chemins fixes')."
+            )
     except CellExecutionError as e:
         erreur = str(e).splitlines()[-1] if str(e).splitlines() else str(e)
     except Exception as e:
