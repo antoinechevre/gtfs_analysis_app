@@ -121,8 +121,11 @@ def equipements_page(lang="fr"):
     # Carte grille (densité pondérée) : même grille 400x400 que la page
     # Accessibilité (population WorldPop, cf. charger_ou_construire_grille_
     # population_reseau), carreaux colorés en nuances de bleu selon le score
-    # pondéré d'équipements qu'ils contiennent — lit tous les .gpkg du
-    # dossier, pas seulement celui du réseau chargé (cf. docstring du module).
+    # pondéré d'équipements qu'ils contiennent — contrairement à la carte
+    # "toutes couches" ci-dessus (qui affiche volontairement chaque ville en
+    # calque séparé, cf. docstring du module), celle-ci se limite au seul
+    # .gpkg du réseau chargé (nom_reseau_str) pour rester correcte même si
+    # deux réseaux différents ont des zones qui se recouvrent.
     st.header(t("equipements.header_carte_grille", lang))
 
     if st.session_state.feed is None:
@@ -142,7 +145,9 @@ def equipements_page(lang="fr"):
             if grille_population is not None:  # vide, pas une erreur de calcul (déjà signalée ci-dessus)
                 st.warning(t("equipements.pas_de_grille", lang, erreur=t("accessibilite.grille_vide", lang)))
         else:
-            score_par_carreau = compter_equipements_par_carreau(grille_population, dossier=DOSSIER_EQUIPEMENTS)
+            score_par_carreau = compter_equipements_par_carreau(
+                grille_population, dossier=DOSSIER_EQUIPEMENTS, nom_reseau_str=st.session_state.nom_reseau_str,
+            )
             carte_grille = grille_population[["id", "geometry"]].merge(score_par_carreau, on="id")
             m_grille = carte_grille.explore(
                 "equipements",

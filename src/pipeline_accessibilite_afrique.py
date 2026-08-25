@@ -22,6 +22,7 @@ from src.hf_cache import envoyer_vers_hf, recuperer_depuis_hf
 from src.info_reseau import charger_ou_calculer_dates_service
 from src.osm_extract import extraire_amenities_depuis_pbf, osm_pbf_creator_depuis_geofabrik
 from src.utilitaires_matrix import charger_ttm, nom_fichier_ttm
+from src.utils import ville_str_depuis_fichier
 from src.worldpop import (
     RESOLUTION_M_AFRIQUE,
     charger_ou_construire_grille_population_reseau,
@@ -113,7 +114,7 @@ def calculer_pipeline_complet(feed, nom_reseau_str, gtfs_zip_path, resolution_m=
         envoyer_vers_hf(pbf_path_saved, f"memory_pbf/agglo_osm_pbf_{nom_reseau_str}.osm.pbf")
 
     etape("Extraction et pondération des équipements OSM...")
-    nom_ville_simple = os.path.splitext(os.path.basename(gtfs_zip_path))[0].split("_")[0]
+    nom_ville_simple = ville_str_depuis_fichier(gtfs_zip_path)
     os.makedirs(DOSSIER_EQUIPEMENTS_DEFAUT, exist_ok=True)
     chemin_equipements_gpkg = os.path.join(DOSSIER_EQUIPEMENTS_DEFAUT, f"{nom_ville_simple.lower()}_equipements.gpkg")
     nom_fichier_hf_equipements = f"equipements_osm/{nom_ville_simple.lower()}_equipements.gpkg"

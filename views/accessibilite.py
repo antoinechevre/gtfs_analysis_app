@@ -98,7 +98,9 @@ def accessibilite_page(lang="fr"):
         # (exclu du déploiement, cf. scripts/deploy_hf_africa.sh) — ces .gpkg
         # ne sont disponibles qu'en les récupérant depuis le dataset HF partagé.
         recuperer_equipements_hf()
-        equipements_par_carreau = compter_equipements_par_carreau(grille_population)
+        equipements_par_carreau = compter_equipements_par_carreau(
+            grille_population, nom_reseau_str=st.session_state.nom_reseau_str,
+        )
         cum_equipements = None
         if equipements_par_carreau is not None:
             cum_equipements = cumulative_cutoff(

@@ -36,18 +36,30 @@ def recuperer_equipements_hf(dossier=DOSSIER_EQUIPEMENTS_DEFAUT):
         recuperer_depuis_hf(f"equipements_osm/{nom_fichier}", os.path.join(dossier, nom_fichier))
 
 
-def compter_equipements_par_carreau(grille_population, dossier=DOSSIER_EQUIPEMENTS_DEFAUT):
+def compter_equipements_par_carreau(grille_population, dossier=DOSSIER_EQUIPEMENTS_DEFAUT, nom_reseau_str=None):
     """
-    Union de tous les .gpkg de `dossier` (un point par équipement OSM,
-    colonne "ponderation" par type), jointure spatiale dans les carreaux de
-    grille_population, sommés par carreau (colonne "equipements" = score
-    pondéré, pas un simple comptage). Un fichier sans colonne "ponderation"
-    (format hérité) retombe sur un poids de 1 par équipement.
+    Jointure spatiale point-dans-polygone des équipements OSM dans les
+    carreaux de grille_population, sommés par carreau (colonne "equipements"
+    = score pondéré, pas un simple comptage). Un fichier sans colonne
+    "ponderation" (format hérité) retombe sur un poids de 1 par équipement.
 
-    Renvoie un DataFrame [id, equipements], ou None si `dossier` ne contient
-    aucun .gpkg.
+    Si nom_reseau_str est fourni, se limite au seul fichier de cette ville
+    (`{nom_reseau_str.lower()}_equipements.gpkg`) — c'est le mode à utiliser
+    pour tout calcul lié à un réseau donné (views/accessibilite.py, carte
+    grille de views/equipements.py) : agréger tous les .gpkg du dossier (cas
+    par défaut, nom_reseau_str=None, utilisé seulement par la carte "toutes
+    couches" de views/equipements.py qui affiche volontairement chaque ville
+    en calque séparé) exposerait au même risque que la collision Abidjan
+    AMUGA / Abidjan_gtfs si deux réseaux différents se recouvraient
+    géographiquement — la jointure spatiale ne le détecterait pas.
+
+    Renvoie un DataFrame [id, equipements], ou None si aucun .gpkg trouvé.
     """
-    fichiers = sorted(glob.glob(os.path.join(dossier, "*.gpkg")))
+    if nom_reseau_str is not None:
+        chemin = os.path.join(dossier, f"{nom_reseau_str.lower()}_equipements.gpkg")
+        fichiers = [chemin] if os.path.exists(chemin) else []
+    else:
+        fichiers = sorted(glob.glob(os.path.join(dossier, "*.gpkg")))
     if not fichiers:
         return None
 
