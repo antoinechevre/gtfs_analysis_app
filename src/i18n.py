@@ -235,7 +235,7 @@ TRANSLATIONS = {
 
         # --- views/equipements.py ---
         "equipements.aucun_fichier": "Aucun fichier d'équipements trouvé dans {dossier}.",
-        "equipements.aide_extraction": "Générez-en un avec extraire_equipements_osm.py, ex : python3 extraire_equipements_osm.py \"Abidjan\" amenity=hospital healthcare=hospital -o data/equipements_osm/abidjan_hopitaux.gpkg --gtfs data/GTFS/mon_reseau.zip --marge-km 5",
+        "equipements.aide_extraction": "Générez-en un en lançant index_accessibility_notebook_africa_600m.ipynb pour ce réseau (section \"Équipements\"), ou le bouton de calcul complet de l'onglet Accessibilité.",
         "equipements.description": "Équipements OpenStreetMap extraits à la main (extraire_equipements_osm.py) — substitut à la Base Permanente des Équipements (BPE, INSEE, France uniquement) pour un réseau hors de France.",
         "equipements.avertissement_couverture": "⚠ La couverture OpenStreetMap des équipements varie énormément d'une ville à l'autre en Afrique subsaharienne (contributeurs locaux inégaux) : un faible nombre d'équipements peut refléter un vrai manque d'infrastructures, ou simplement des données OSM incomplètes pour cette zone — à ne pas confondre sans vérification terrain.",
         "equipements.erreur_lecture": "Impossible de lire {fichier} : {erreur}",
@@ -510,7 +510,7 @@ TRANSLATIONS = {
 
         # --- views/equipements.py ---
         "equipements.aucun_fichier": "No facilities file found in {dossier}.",
-        "equipements.aide_extraction": "Generate one with extraire_equipements_osm.py, e.g.: python3 extraire_equipements_osm.py \"Abidjan\" amenity=hospital healthcare=hospital -o data/equipements_osm/abidjan_hopitaux.gpkg --gtfs data/GTFS/my_network.zip --marge-km 5",
+        "equipements.aide_extraction": "Generate one by running index_accessibility_notebook_africa_600m.ipynb for this network (\"Équipements\" section), or the full-computation button on the Accessibility tab.",
         "equipements.description": "OpenStreetMap facilities extracted by hand (extraire_equipements_osm.py) — a substitute for the BPE facilities database (INSEE, France only) for a network outside France.",
         "equipements.avertissement_couverture": "⚠ OpenStreetMap facility coverage varies enormously between cities in Sub-Saharan Africa (uneven local contributor base): a low facility count may reflect a real lack of infrastructure, or simply incomplete OSM data for that area — don't conflate the two without ground-truthing.",
         "equipements.erreur_lecture": "Could not read {fichier}: {erreur}",

@@ -5,9 +5,9 @@ App séparée de app.py (pas un mode d'app.py) : catalogue GTFS propre
 (data/GTFS_Africa, cf. data/GTFS_Africa/_provenance.json), onglets
 spécifiques à ce que permet la donnée disponible hors de France (pas de
 Base Permanente des Équipements ni de population Wikidata/BPE fiable) —
-Équipements (OpenStreetMap pondéré, cf. extraire_amenities_osm.py),
+Équipements (OpenStreetMap pondéré, cf. src/osm_extract.py),
 Accessibilité (population/équipements accessibles en 60 min, cf.
-index_accessibility_notebook_africa.ipynb) et Benchmark villes africaines.
+index_accessibility_notebook_africa_600m.ipynb) et Benchmark villes africaines.
 Déployée séparément sur son propre Space Hugging Face
 (antoinechevre/GTFS_Analysis_Africa, cf. scripts/deploy_hf_africa.sh) —
 codebase dupliqué à dessein (cf. échange avec l'utilisateur) plutôt qu'un

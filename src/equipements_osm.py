@@ -1,7 +1,8 @@
 """
 Dispatch des équipements OSM (data/equipements_osm/*.gpkg, cf.
-extraire_amenities_osm.py et index_accessibility_notebook_africa.ipynb) sur
-une grille de carreaux (population WorldPop, cf. src/worldpop.py) : jointure
+src/osm_extract.py:extraire_amenities_depuis_pbf et
+index_accessibility_notebook_africa_600m.ipynb) sur une grille de carreaux
+(population WorldPop, cf. src/worldpop.py) : jointure
 spatiale point-dans-polygone, sommée par carreau (colonne "ponderation").
 
 Fonction partagée entre views/accessibilite.py (score utilisé comme

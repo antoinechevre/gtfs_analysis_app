@@ -1,11 +1,12 @@
 """
 Page Équipements - affiche les équipements OSM extraits via
-extraire_amenities_osm.py (substitut à la BPE INSEE pour un réseau hors de
-France, cf. data/equipements_osm/ et index_accessibility_notebook_africa.
-ipynb) : un fichier .gpkg par ville (un point = un équipement OSM, colonne
-"ponderation" par type — cf. le référentiel Abidjan_amenities.xlsx), points
-colorés par pondération (gris = pondération nulle, pas un pôle d'équipement
-pertinent ; rouge = pondération élevée).
+src/osm_extract.py:extraire_amenities_depuis_pbf (substitut à la BPE INSEE
+pour un réseau hors de France, cf. data/equipements_osm/ et
+index_accessibility_notebook_africa_600m.ipynb) : un fichier .gpkg par
+ville (un point = un équipement OSM, colonne "ponderation" par type — cf.
+le référentiel Abidjan_amenities.xlsx), points colorés par pondération
+(gris = pondération nulle, pas un pôle d'équipement pertinent ; rouge =
+pondération élevée).
 
 Se limite au seul fichier du réseau actuellement chargé dans la barre
 latérale (nom_reseau_str) — pas d'affichage de toutes les villes du cache
