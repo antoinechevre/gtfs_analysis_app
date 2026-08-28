@@ -92,44 +92,106 @@ st.markdown(
     width: 100% !important;
     margin: 0 !important;
 }
+/* Nav à deux niveaux (même principe que le projet sœur Accessibility_analysis,
+   app.py) : niveau 1 (section) en aplat plein, niveau 2 (sous-page) en
+   contour seul et légèrement en retrait, pour se lire comme un sous-menu. */
+.st-key-nav_niveau1 [data-testid="stButtonGroup"] button,
+.st-key-nav_niveau2 [data-testid="stButtonGroup"] button {
+    padding: .65rem 1rem;
+    min-height: 44px;
+}
+.st-key-nav_niveau1 [data-testid="stButtonGroup"] button {
+    font-size: 1rem;
+    font-weight: 700;
+}
+.st-key-nav_niveau1 [data-testid="stButtonGroup"] button[aria-checked="true"] {
+    background: #0E7C7B !important;
+    border-color: #0E7C7B !important;
+}
+.st-key-nav_niveau1 [data-testid="stButtonGroup"] button[aria-checked="true"] p {
+    color: #FAFAF8 !important;
+}
+.st-key-nav_niveau2 {
+    background: rgba(14, 124, 123, 0.07);
+    border-radius: 10px;
+    padding: .5rem .6rem .35rem;
+    margin-top: -.3rem;
+}
+.st-key-nav_niveau2 [data-testid="stButtonGroup"] button {
+    font-size: .85rem;
+    font-weight: 500;
+}
+.st-key-nav_niveau2 [data-testid="stButtonGroup"] button[aria-checked="true"] {
+    background: transparent !important;
+    border: 1.5px solid #0E7C7B !important;
+}
 </style>
 """,
     unsafe_allow_html=True,
 )
 
 st.markdown("---")
-col1, col2, col3, col4, col5, col6, col7 = st.columns([1, 1, 1, 1, 1, 1, 1])
-
-with col1:
-    if st.button(t("app.nav_accueil", lang), use_container_width=True):
-        st.session_state.selected_page = "Accueil"
-
-with col2:
-    if st.button(t("app.nav_arrets", lang), use_container_width=True):
-        st.session_state.selected_page = "Arrêts"
-
-with col3:
-    if st.button(t("app.nav_lignes", lang), use_container_width=True):
-        st.session_state.selected_page = "Lignes"
-
-with col4:
-    if st.button(t("app.nav_equipements", lang), use_container_width=True):
-        st.session_state.selected_page = "Équipements"
-
-with col5:
-    if st.button(t("app.nav_accessibilite", lang), use_container_width=True):
-        st.session_state.selected_page = "Accessibilité"
-
-with col6:
-    if st.button(t("app.nav_benchmark_afrique", lang), use_container_width=True):
-        st.session_state.selected_page = "Benchmark Afrique"
-
-with col7:
-    if st.button(t("app.nav_isochrone_carreaux", lang), use_container_width=True):
-        st.session_state.selected_page = "Isochrone carreaux"
 
 if "selected_page" not in st.session_state:
     st.session_state.selected_page = "Accueil"
+
+# Navigation à deux niveaux (même principe que le projet sœur
+# Accessibility_analysis, app.py) : les pages dérivées de la grille de
+# population/TTM (Accessibilité, Équipements, Isochrone carreaux) sont
+# regroupées sous "Analyse accessibilité urbaine", à côté d'Accueil,
+# Analyse réseau (Arrêts/Lignes, dérivées du seul GTFS) et Benchmark, qui
+# n'ont pas de lien direct entre eux.
+GROUPES_NAV = {
+    "Accueil": ["Accueil"],
+    "Analyse réseau": ["Arrêts", "Lignes"],
+    "Analyse accessibilité urbaine": ["Accessibilité", "Équipements", "Isochrone carreaux"],
+    "Benchmark": ["Benchmark Afrique"],
+}
+LIBELLES_GROUPE = {
+    "Accueil": t("app.groupe_accueil", lang),
+    "Analyse réseau": t("app.groupe_analyse_reseau", lang),
+    "Analyse accessibilité urbaine": t("app.groupe_accessibilite_urbaine", lang),
+    "Benchmark": t("app.groupe_benchmark", lang),
+}
+LIBELLES_PAGE = {
+    "Arrêts": t("app.nav_arrets", lang),
+    "Lignes": t("app.nav_lignes", lang),
+    "Accessibilité": t("app.nav_accessibilite", lang),
+    "Équipements": t("app.nav_equipements", lang),
+    "Isochrone carreaux": t("app.nav_isochrone_carreaux", lang),
+    "Benchmark Afrique": t("app.nav_benchmark_afrique", lang),
+}
+GROUPE_DE_LA_PAGE = {page: groupe for groupe, pages in GROUPES_NAV.items() for page in pages}
+
+with st.container(key="nav_niveau1"):
+    groupe_choisi = st.segmented_control(
+        "Section",
+        options=list(GROUPES_NAV.keys()),
+        format_func=lambda g: LIBELLES_GROUPE[g],
+        default=GROUPE_DE_LA_PAGE.get(st.session_state.selected_page, "Accueil"),
+        required=True,
+        label_visibility="collapsed",
+        key="nav_groupe",
+    )
+
+pages_du_groupe = GROUPES_NAV[groupe_choisi]
+if len(pages_du_groupe) == 1:
+    st.session_state.selected_page = pages_du_groupe[0]
+else:
+    with st.container(key="nav_niveau2"):
+        st.session_state.selected_page = st.segmented_control(
+            "Page",
+            options=pages_du_groupe,
+            format_func=lambda p: LIBELLES_PAGE[p],
+            default=(
+                st.session_state.selected_page
+                if st.session_state.selected_page in pages_du_groupe
+                else pages_du_groupe[0]
+            ),
+            required=True,
+            label_visibility="collapsed",
+            key="nav_sous_page",
+        )
 
 # Barre latérale
 st.sidebar.header(t("app.sidebar_header", lang))

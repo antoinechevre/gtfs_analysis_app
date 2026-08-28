@@ -28,6 +28,7 @@ import os
 import streamlit as st
 import streamlit.components.v1 as components
 
+from src.cartographie import fond_carte_kwargs
 from src.equipements_osm import compter_equipements_par_carreau
 from src.hf_cache import recuperer_depuis_hf
 from src.i18n import t
@@ -153,7 +154,7 @@ def accessibilite_page(lang="fr"):
     st.header(t("accessibilite.header_carte_population", lang, cutoff=CUTOFF_MIN))
     carte_pop = grille_population[["id", "geometry"]].merge(cum_population, on="id")
     m_pop = carte_pop.explore(
-        "population", cmap="viridis", tiles="cartodbpositron",
+        "population", cmap="viridis", **fond_carte_kwargs("CartoDB positron"),
         style_kwds={"style_function": lambda x: {"weight": 0, "fillOpacity": 0.7}},
     )
     components.html(m_pop.get_root().render(), height=650, width=1000)
@@ -162,7 +163,7 @@ def accessibilite_page(lang="fr"):
         st.header(t("accessibilite.header_carte_equipements", lang, cutoff=CUTOFF_MIN))
         carte_equip = grille_population[["id", "geometry"]].merge(cum_equipements, on="id")
         m_equip = carte_equip.explore(
-            "equipements", cmap="magma", tiles="cartodbpositron",
+            "equipements", cmap="magma", **fond_carte_kwargs("CartoDB positron"),
             style_kwds={"style_function": lambda x: {"weight": 0, "fillOpacity": 0.7}},
         )
         components.html(m_equip.get_root().render(), height=650, width=1000)

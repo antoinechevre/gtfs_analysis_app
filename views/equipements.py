@@ -23,6 +23,7 @@ import geopandas as gpd
 import streamlit as st
 import streamlit.components.v1 as components
 
+from src.cartographie import fond_carte_kwargs
 from src.equipements_osm import compter_equipements_par_carreau
 from src.hf_cache import recuperer_depuis_hf
 from src.i18n import t
@@ -83,7 +84,7 @@ def equipements_page(lang="fr"):
         caption=t("equipements.legende_ponderation", lang),
     )
 
-    m = folium.Map(location=[centre.y, centre.x], zoom_start=11, tiles="cartodbpositron")
+    m = folium.Map(location=[centre.y, centre.x], zoom_start=11, **fond_carte_kwargs("CartoDB positron"))
     for _, row in gdf.iterrows():
         ponderation = row["ponderation"]
         couleur = colormap(ponderation)
@@ -131,7 +132,7 @@ def equipements_page(lang="fr"):
         m_grille = carte_grille.explore(
             "equipements",
             cmap="Blues",
-            tiles="cartodbpositron",
+            **fond_carte_kwargs("CartoDB positron"),
             style_kwds={"style_function": lambda x: {"weight": 0, "fillOpacity": 0.75}},
         )
         components.html(m_grille.get_root().render(), height=650, width=1000)

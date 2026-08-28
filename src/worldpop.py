@@ -479,13 +479,15 @@ def carte_population_worldpop(grille, nom_ville, annee, tiles="CartoDB positron"
     """
     import folium
 
+    from src.cartographie import fond_carte_kwargs
+
     if grille.empty:
         return None
 
     carte = grille.explore(
         "population",
         cmap="Reds",
-        tiles=tiles,
+        **fond_carte_kwargs(tiles),
         style_kwds={
             "style_function": lambda x: {
                 "fillOpacity": 0 if x["properties"]["population"] == 0 else 0.7,

@@ -21,6 +21,8 @@ import branca.colormap as cm
 import folium
 from shapely.geometry import Point
 
+from src.cartographie import tile_layer_cartodb
+
 # Mêmes seuils/couleurs que l'app sœur (src/isochrone.py côté
 # Accessibility_analysis) : dégradé vert (rapide) -> rouge (lent).
 DUREE_COLOR_SEUILS = [0, 15, 30, 45, 60, 90]
@@ -62,8 +64,8 @@ def build_map_isochrone_carreaux(origine, gdf_carreaux, budget_min, legende_dure
     center = [origine["stop_lat"], origine["stop_lon"]]
     m = folium.Map(location=center, zoom_start=12, tiles=None, prefer_canvas=True, control_scale=True)
     folium.TileLayer("OpenStreetMap", name="OpenStreetMap", cross_origin=True).add_to(m)
-    folium.TileLayer("CartoDB dark_matter", name="CartoDB Dark Matter", cross_origin=True).add_to(m)
-    folium.TileLayer("CartoDB positron", name="CartoDB Positron", cross_origin=True).add_to(m)
+    tile_layer_cartodb("CartoDB dark_matter", "CartoDB Dark Matter", cross_origin=True).add_to(m)
+    tile_layer_cartodb("CartoDB positron", "CartoDB Positron", cross_origin=True).add_to(m)
 
     if not gdf_carreaux.empty:
         colormap = cm.StepColormap(

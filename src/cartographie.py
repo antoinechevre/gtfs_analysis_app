@@ -9,6 +9,44 @@ import mimetypes
 
 from src.i18n import t
 
+# CARTO a coupé l'accès anonyme à ses fonds de carte (Positron / Dark
+# Matter) : sans clé API, les tuiles sont servies filigranées "API KEY
+# REQUIRED" (cf. https://carto.com/basemaps/apikey/). CARTO_API_KEY (var
+# d'env, définie en secret côté déploiement) réactive le rendu normal ;
+# sans elle, fond_carte_kwargs retombe sur OpenStreetMap. Même correctif
+# que le projet sœur Accessibility_analysis (src/cartographie.py).
+CARTO_API_KEY = os.environ.get("CARTO_API_KEY")
+
+_CARTODB_VARIANTS = {"CartoDB positron": "light_all", "CartoDB dark_matter": "dark_all"}
+_CARTODB_ATTR = (
+    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> '
+    'contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+)
+
+
+def fond_carte_kwargs(tiles):
+    """kwargs tiles=/attr= prêts pour folium.Map/.explore()/DualMap, à partir
+    d'un nom de fond de carte ("CartoDB positron", "CartoDB dark_matter",
+    "OpenStreetMap"...). Construit l'URL CartoDB avec CARTO_API_KEY si
+    disponible ; sinon retombe sur OpenStreetMap plutôt que d'afficher les
+    tuiles filigranées "API KEY REQUIRED"."""
+    variant = _CARTODB_VARIANTS.get(tiles)
+    if variant is None:
+        return {"tiles": tiles}
+    if not CARTO_API_KEY:
+        return {"tiles": "OpenStreetMap"}
+    url = f"https://{{s}}.basemaps.cartocdn.com/{variant}/{{z}}/{{x}}/{{y}}{{r}}.png?key={CARTO_API_KEY}"
+    return {"tiles": url, "attr": _CARTODB_ATTR}
+
+
+def tile_layer_cartodb(tiles, name, **kwargs):
+    """folium.TileLayer équivalent pour un contrôle de couches (cf.
+    create_carte_arrets / isochrone_carreaux.build_map) : même logique de
+    repli que fond_carte_kwargs, sous forme de TileLayer prêt à .add_to(m).
+    kwargs (ex: cross_origin=True) transmis tels quels au TileLayer."""
+    fond = fond_carte_kwargs(tiles)
+    return folium.TileLayer(fond["tiles"], name=name, attr=fond.get("attr"), **kwargs)
+
 
 def ajouter_couche_population(m, grille_population, lang="fr"):
     """
@@ -74,7 +112,7 @@ def create_carte_arrets(df, nom_reseau_str,date_service_str, date_analyse, zip_p
         zoom_start=12,
         width="100%",
         height="1000px",
-        tiles="cartodbpositron",
+        **fond_carte_kwargs("CartoDB positron"),
     )
 
     # --- Ajout des lignes GTFS sur la même carte ---
@@ -378,11 +416,11 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, gd
 
     # Créer la carte de base (fond de carte en nuances de gris par défaut)
     m = folium.Map(
-        location=[center_lat, center_lon], zoom_start=12, tiles="cartodbpositron"
+        location=[center_lat, center_lon], zoom_start=12, **fond_carte_kwargs("CartoDB positron")
     )
     # Ajouter des fonds de carte alternatifs
     folium.TileLayer("OpenStreetMap", name="OpenStreetMap").add_to(m)
-    folium.TileLayer("cartodbdark_matter", name="Carto Dark").add_to(m)
+    tile_layer_cartodb("CartoDB dark_matter", "Carto Dark").add_to(m)
 
     # Légende des échelles de couleur (construite au fil des blocs bus/tram
     # ci-dessous, affichée en bas de carte)
