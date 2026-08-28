@@ -78,8 +78,10 @@ Cette application regroupe deux types d'analyses se basant sur le même jeu de d
 2. Récupère la grille de population WorldPop (raster mondial, résolution ~100m rééchantillonné en carreaux de 600x600 m) sur le rectangle englobant les arrêts du GTFS, et les équipements OpenStreetMap pondérés par type sur cette même zone
 3. Calcule la matrice des temps de trajet (`TravelTimeMatrix`) entre tous les carreaux, à l'heure de pointe en JOB
 4. Calcule l'accessibilité aux équipements à 60 min (opportunités cumulées, `cumulative_cutoff`)
-5. Propose une carte isochrone par carreaux depuis un arrêt sélectionné
-6. Propose un benchmark inter-villes africaines sur ces indicateurs
+5. Propose un benchmark inter-villes africaines sur ces indicateurs
+
+#### 🗺️ Isochrone carreaux
+- Carte interactive des carreaux atteignables en moins de X minutes depuis un arrêt sélectionné, directement lue depuis la matrice de temps de trajet déjà calculée — équivalent de l'onglet "Isochrone TTM" de l'app sœur, mais sur la grille WorldPop plutôt que le carroyage INSEE
 """,
         "home_afrique.expander_equipements_titre": "Détail de la pondération des équipements (substitut OSM à la BPE)",
         "home_afrique.expander_equipements_md": """
@@ -108,6 +110,35 @@ Pas de découpage par domaine (santé, enseignement, commerces...) comme la BPE 
         "home_afrique.credits_md": """
 Antoine Chèvre [@antoinechevre](https://github.com/antoinechevre) 🐐
 In we goat we trust
+""",
+        "home_afrique.titre_gtfs_md": "## 🚏 Analyse GTFS",
+        "home_afrique.gtfs_intro_md": """
+L'analyse GTFS (indépendante de l'accessibilité ci-dessus) a été développée lors du Hackathon TSNI 2025 du Cerema et reprise par Antoine Chèvre (et claude.ai...).
+
+**Équipe Cerema :** Patrick Gendre, Hugo De Luca et Maxence Liogier
+""",
+        "home_afrique.gtfs_fonctionnalites_md": """
+Analyse des données GTFS (General Transit Feed Specification) pour extraire des indicateurs clés sur les transports en commun — indépendamment de l'analyse d'accessibilité ci-dessus. Détermine la plage temporelle sur laquelle le GTFS est actif et identifie un JOB (jour ouvré de base, mardi ou jeudi le plus loin dans le temps sur cette plage).
+
+#### 📍 Analyse par arrêts
+- Nombre de passages par arrêt
+- Carte interactive des arrêts
+- Statistiques détaillées
+
+Fonctionne avec n'importe quel GTFS, même sans `shapes.txt`.
+
+#### 🛤️ Analyse par lignes
+- Nombre de passages par ligne, par mode (bus, tram, métro, trolley, ferry...)
+- Calcul des vitesses moyennes
+- Carte interactive des lignes
+""",
+        "home_afrique.gtfs_liens_md": """
+- **📓 Hackathon Cerema** : [Notebook Google Colab](https://colab.research.google.com/github/CEREMA/hackathon-gtfs/blob/main/gtfs_notebook.ipynb) — prendre en main le code, exécuter les cellules et regarder les cartographies dynamiques
+- **📓 Application universelle** : [GTFS Analysis Universal](https://huggingface.co/spaces/antoinechevre/GTFS_Analysis_Universal)
+
+Où trouver un GTFS africain :
+- Catalogue de ce projet : `data/GTFS_Africa/` (cf. `data/GTFS_Africa/_provenance.json` pour la source et la date de chaque fichier)
+- À l'international : [transit.land](https://www.transit.land/)
 """,
         "app.dialog_afrique_titre": "🌍 Charger un réseau africain",
         "app.dialog_afrique_aucun": "Aucun GTFS trouvé dans {dossier}. Déposez-y un fichier .zip pour qu'il apparaisse ici.",
@@ -414,8 +445,10 @@ From an African GTFS in the catalog (or uploaded):
 2. Fetches the WorldPop population grid (global raster, ~100m resolution resampled into 600x600m cells) over the rectangle bounding the GTFS stops, and OpenStreetMap facilities weighted by type over the same area
 3. Computes the travel time matrix (`TravelTimeMatrix`) between all cells, at peak hour on the base weekday
 4. Computes facility accessibility within 60 min (cumulative opportunities, `cumulative_cutoff`)
-5. Offers a grid-cell isochrone map from a selected stop
-6. Offers a benchmark across African cities on these indicators
+5. Offers a benchmark across African cities on these indicators
+
+#### 🗺️ Grid-cell isochrone
+- Interactive map of grid cells reachable within X minutes from a selected stop, read directly from the already-computed travel time matrix — equivalent to the "Isochrone TTM" tab of the sister app, but on the WorldPop grid instead of the INSEE grid
 """,
         "home_afrique.expander_equipements_titre": "Facility weighting detail (OSM substitute for the BPE)",
         "home_afrique.expander_equipements_md": """
@@ -444,6 +477,35 @@ No breakdown by domain (health, education, retail...) like the BPE: a single wei
         "home_afrique.credits_md": """
 Antoine Chèvre [@antoinechevre](https://github.com/antoinechevre) 🐐
 In we goat we trust
+""",
+        "home_afrique.titre_gtfs_md": "## 🚏 GTFS Analysis",
+        "home_afrique.gtfs_intro_md": """
+The GTFS analysis (independent from the accessibility analysis above) was developed during the Cerema TSNI 2025 Hackathon and taken over by Antoine Chèvre (and claude.ai...).
+
+**Cerema team:** Patrick Gendre, Hugo De Luca and Maxence Liogier
+""",
+        "home_afrique.gtfs_fonctionnalites_md": """
+Analysis of GTFS (General Transit Feed Specification) data to extract key public transit indicators — independent of the accessibility analysis above. Determines the date range over which the GTFS is active and identifies a base weekday (JOB, the latest Tuesday or Thursday in that range).
+
+#### 📍 Stops analysis
+- Number of passages per stop
+- Interactive stop map
+- Detailed statistics
+
+Works with any GTFS, even without `shapes.txt`.
+
+#### 🛤️ Lines analysis
+- Number of passages per line, by mode (bus, tram, metro, trolley, ferry...)
+- Average speed computation
+- Interactive line map
+""",
+        "home_afrique.gtfs_liens_md": """
+- **📓 Cerema Hackathon**: [Google Colab Notebook](https://colab.research.google.com/github/CEREMA/hackathon-gtfs/blob/main/gtfs_notebook.ipynb) — get familiar with the code, run the cells and look at the dynamic maps
+- **📓 Universal app**: [GTFS Analysis Universal](https://huggingface.co/spaces/antoinechevre/GTFS_Analysis_Universal)
+
+Where to find an African GTFS:
+- This project's catalog: `data/GTFS_Africa/` (cf. `data/GTFS_Africa/_provenance.json` for each file's source and date)
+- Internationally: [transit.land](https://www.transit.land/)
 """,
         "app.dialog_afrique_titre": "🌍 Load an African network",
         "app.dialog_afrique_aucun": "No GTFS found in {dossier}. Drop a .zip file there for it to appear here.",

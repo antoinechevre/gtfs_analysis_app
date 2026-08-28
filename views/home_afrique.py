@@ -38,4 +38,27 @@ def home_page_afrique(lang="fr"):
         st.warning(t("africa.avertissement_general", lang))
 
     st.markdown("---")
+    _explications_analyse_gtfs_afrique(lang)
+
+    st.markdown("---")
     st.markdown(t("home_afrique.credits_md", lang))
+
+
+def _explications_analyse_gtfs_afrique(lang="fr"):
+    """Présentation de l'analyse réseau GTFS (arrêts/lignes) — même principe
+    que explications_analyse_gtfs() côté projet sœur Accessibility_analysis
+    (views/home.py), mais reprend seulement Arrêts/Lignes (pas d'isochrone
+    arrêt à arrêt séparée côté app_africa.py, cf. GROUPES_NAV["Analyse
+    réseau"] dans app_africa.py)."""
+    st.markdown(t("home_afrique.titre_gtfs_md", lang))
+    st.markdown(t("home_afrique.gtfs_intro_md", lang))
+
+    onglet_fonctionnalites_gtfs, onglet_liens_gtfs = st.tabs(
+        [t("home_afrique.onglet_fonctionnalites", lang), t("home_afrique.onglet_liens", lang)]
+    )
+
+    with onglet_fonctionnalites_gtfs:
+        st.markdown(t("home_afrique.gtfs_fonctionnalites_md", lang))
+
+    with onglet_liens_gtfs:
+        st.markdown(t("home_afrique.gtfs_liens_md", lang))
