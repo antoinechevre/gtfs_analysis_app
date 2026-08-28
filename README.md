@@ -15,7 +15,7 @@ Il est également proposé un notebook interactif pour comprendre les opération
 
 Elle a été initialement développée lors du Hackathon TSNI 2025 du Cerema par l'équipe composée de Patrick GENDRE, Hugo DE LUCA et Maxence LIOGIER.
 
-Elle a été enrichie par Antoine CHEVRE (et claude.ai...) en juillet 2026
+Elle a été enrichie par Antoine CHEVRE (et claude.ai...) en juillet 2026, avec un volet accessibilité urbaine (`app_africa.py`, notebooks `index_accessibility_notebook_africa_*.ipynb`) qui s'inspire des travaux du livre *Introduction to urban accessibility* (Rafael H. M. Pereira et Daniel Herszenhut, Ipea - Institute for Applied Economic Research), notamment le chapitre [Calculating accessibility estimates in R](https://ipeagit.github.io/intro_access_book/3_calculando_acesso.en.html), réadaptés ici en Python — cf. le projet sœur [Accessibility_analysis](https://github.com/antoinechevre/Accessibility_analysis) (contexte France, carroyage INSEE/BPE) dont ce volet Afrique est dérivé.
 
 Ce projet est en version alpha et il reste des [améliorations à implémenter](#todo).
 
@@ -55,7 +55,7 @@ _old l'application originelle
 │ README.md
 │ LICENSE ← licence AGPL-3.0
 │ app.py ← point d’entrée de l’application Streamlit
-│ gtfs_notebook.ipynb ← notebook d’exemple / démonstration
+│ app_africa.py ← point d’entrée dédié aux réseaux africains
 │ pyproject.toml ← configuration du projet / dépendances Python
 │ uv.lock ← lockfile des dépendances (gestion d’environnement)
 │
@@ -67,7 +67,7 @@ _old l'application originelle
 ```
 
 - Le fichier `app.py` correspond à l’interface web : il permet le lancement de [l’application Streamlit](https://hackathon-gtfs-2prba9bbsr43p8k8zzcv7d.streamlit.app/).
-- Le notebook `gtfs_notebook.ipynb` sert de démonstration / tutoriel : charger un GTFS, exécuter le traitement, visualiser les sorties. Il est possible de [le consulter en direct en utilisant Google Colab](https://colab.research.google.com/github/CEREMA/hackathon-gtfs/blob/main/gtfs_notebook.ipynb).
+- [Le notebook de démonstration/tutoriel sur Google Colab](https://colab.research.google.com/github/CEREMA/hackathon-gtfs/blob/main/gtfs_notebook.ipynb) : charger un GTFS, exécuter le traitement, visualiser les sorties.
 - `pyproject.toml` et `uv.lock` permettent de gérer les dépendances Python.  
 - Le dossier `src/` contient l’essentiel de la logique de traitement — voir ci-dessous.  
 - `data/` et `output/` permettent respectivement de stocker les données d’entrée utilisées pour l'exemple (GTFS) et les résultats (fichiers tableurs ou SIG exportés).  
@@ -128,9 +128,11 @@ Dans l’interface, l’utilisateur peut charger un fichier GTFS au format zip e
 
 En plus de l'upload, la barre latérale propose de choisir un GTFS déjà présent dans le catalogue partagé du dataset Hugging Face [antoinechevre/accessibility-data](https://huggingface.co/datasets/antoinechevre/accessibility-data) (dossier `GTFS/`, cf. `src/hf_cache.py`) : un GTFS uploadé par un visiteur y est renvoyé automatiquement pour être réutilisable sans réupload par la suite. Le dataset étant privé, un secret `HF_TOKEN` (droits lecture pour consulter le catalogue, écriture pour y contribuer) doit être configuré dans les paramètres du déploiement (Settings → Variables and secrets sur un Space Hugging Face) — sans lui, l'app se rabat silencieusement sur l'upload seul.
 
+Les fonds de carte CartoDB (Positron / Dark Matter) nécessitent également une clé API depuis que CARTO a coupé l'accès anonyme (secret `CARTO_API_KEY`, cf. `src/cartographie.py`) — sans lui, l'app se rabat sur OpenStreetMap.
+
 ### Notebook d’exemple / démonstration
 
-Ouvrez ``gtfs_notebook.ipynb`` en local ou via [le lien Google Colab](https://colab.research.google.com/github/CEREMA/hackathon-gtfs/blob/main/gtfs_notebook.ipynb) pour suivre un workflow pas-à-pas :
+Suivez [le notebook sur Google Colab](https://colab.research.google.com/github/CEREMA/hackathon-gtfs/blob/main/gtfs_notebook.ipynb) pour un workflow pas-à-pas :
 
 * import des modules
 * chargement d’un jeu GTFS exemple

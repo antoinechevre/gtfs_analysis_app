@@ -34,7 +34,7 @@ from src.population import population_agglomeration, deviner_ville_depuis_nom_fi
 from src.hf_cache import envoyer_vers_hf, lister_fichiers_hf, recuperer_depuis_hf
 from src.worldpop import charger_ou_construire_grille_population_reseau, RESOLUTION_M_AFRIQUE
 from src.i18n import t, LANGUES
-from views.home import home_page
+from views.home_afrique import home_page_afrique
 from views.arrets import arrets_page
 from views.troncons import troncons_page
 from views.equipements import equipements_page
@@ -366,7 +366,7 @@ if st.session_state.feed is not None:
     charger_ou_calculer_grille_population()
 
 if st.session_state.selected_page == "Accueil":
-    home_page(lang)
+    home_page_afrique(lang)
 elif st.session_state.selected_page == "Arrêts":
     arrets_page(lang)
 elif st.session_state.selected_page == "Lignes":

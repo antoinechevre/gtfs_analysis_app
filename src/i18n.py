@@ -48,6 +48,67 @@ TRANSLATIONS = {
         "app.nav_villes_africaines": "🌍 Villes africaines",
         "africa.title": "🌍 GTFS Analysis Africa",
         "africa.avertissement_general": "⚠ Données et résultats à manier avec précaution : il n'existe pas de recensement fiable à l'échelle infracommunale pour la plupart de ces villes (les données de population WorldPop sont une estimation modélisée, pas un comptage), la couverture OpenStreetMap des équipements est très inégale selon les villes et les quartiers, et plusieurs GTFS de ce catalogue datent de 2018-2020 et ne sont plus maintenus (cf. data/GTFS_Africa/_provenance.json). Les résultats (grille de population, équipements, accessibilité) sont des ordres de grandeur, pas des chiffres de référence.",
+
+        # --- views/home_afrique.py --- (même modèle que le projet sœur
+        # Accessibility_analysis, views/home.py : intro + onglets Objectifs/
+        # Fonctionnalités/Liens avec expanders)
+        "home_afrique.intro_md": """
+Cette application analyse des réseaux de transport africains à partir de GTFS, en s'inspirant des travaux du livre *Introduction to urban accessibility* (Rafael H. M. Pereira et Daniel Herszenhut, Ipea - Institute for Applied Economic Research), notamment le chapitre [Calculating accessibility estimates in R](https://ipeagit.github.io/intro_access_book/3_calculando_acesso.en.html) — réadaptés en Python pour un contexte hors de France, où la Base Permanente des Équipements (BPE, INSEE) et le carroyage population INSEE 200x200 m n'existent pas.
+
+**Concepteur :** Antoine Chèvre 🐐 (et claude.ai....)
+
+Cette application regroupe deux types d'analyses se basant sur le même jeu de données GTFS : l'analyse d'accessibilité urbaine aux équipements en transport collectif / piéton, et l'analyse du réseau de transport collectif en lui-même — cf. le projet sœur [Accessibility_analysis](https://github.com/antoinechevre/Accessibility_analysis) (contexte France) dont ce volet Afrique est dérivé.
+""",
+        "home_afrique.titre_section_md": "## 📍 Analyse accessibilité urbaine",
+        "home_afrique.onglet_objectifs": "🎯 Objectifs",
+        "home_afrique.onglet_fonctionnalites": "⚙️ Fonctionnalités",
+        "home_afrique.onglet_liens": "🔗 Liens & Instructions",
+        "home_afrique.objectifs_md": """
+- **Offrir une chaîne de traitement** pour passer d'un jeu GTFS brut à l'analyse d'accessibilité du réseau concerné, sans dépendre de données INSEE :
+    - en mode piéton/transports collectifs en JOB à l'heure de pointe
+    - des équipements OpenStreetMap pondérés (substitut à la BPE) à 60 min du réseau
+    - selon une grille de population WorldPop 600x600 m (substitut au carroyage INSEE)
+- **Proposer un calcul directement depuis l'app** si aucune matrice de temps de trajet n'est déjà en cache, sans passer par le notebook
+- **Proposer un benchmark entre villes africaines** en comparant les indicateurs d'accessibilité aux équipements, séparé du benchmark standard (population Wikidata/BPE peu fiables hors de France)
+""",
+        "home_afrique.fonctionnalites_md": """
+À partir d'un GTFS africain du catalogue (ou uploadé) :
+
+1. Construit le réseau multimodal piéton + transport collectif (`r5py`) à partir du GTFS pour une date JOB indiquée, et le réseau viaire pour les cheminements piétons (extrait OpenStreetMap Geofabrik, découpé sur la zone desservie)
+2. Récupère la grille de population WorldPop (raster mondial, résolution ~100m rééchantillonné en carreaux de 600x600 m) sur le rectangle englobant les arrêts du GTFS, et les équipements OpenStreetMap pondérés par type sur cette même zone
+3. Calcule la matrice des temps de trajet (`TravelTimeMatrix`) entre tous les carreaux, à l'heure de pointe en JOB
+4. Calcule l'accessibilité aux équipements à 60 min (opportunités cumulées, `cumulative_cutoff`)
+5. Propose une carte isochrone par carreaux depuis un arrêt sélectionné
+6. Propose un benchmark inter-villes africaines sur ces indicateurs
+""",
+        "home_afrique.expander_equipements_titre": "Détail de la pondération des équipements (substitut OSM à la BPE)",
+        "home_afrique.expander_equipements_md": """
+Pas de Base Permanente des Équipements hors de France : tous les points OpenStreetMap taggés `amenity=*` sont extraits (osmium, extrait Geofabrik local — pas de dépendance à l'API Overpass), puis pondérés par type via un référentiel défini à la main sur Abidjan (`data/equipements_osm/Abidjan_amenities.xlsx`, feuille "resume_par_type") et réutilisé tel quel comme référentiel unique pour toutes les villes : 0 = pas un pôle d'équipement pertinent, jusqu'à 30 pour les équipements structurants (hôpital, gouvernement, bâtiment public...).
+
+Pas de découpage par domaine (santé, enseignement, commerces...) comme la BPE : un seul score pondéré, "tout équipement confondu".
+""",
+        "home_afrique.expander_indicateurs_titre": "Détail des indicateurs d'accessibilité",
+        "home_afrique.expander_indicateurs_md": """
+- **Opportunités cumulées** : nombre d'équipements (pondérés) atteignables depuis chaque carreau en 60 min — mesure retenue pour l'onglet Accessibilité de l'app
+- **Coût au plus proche, gravité, compétition (Enhanced 2SFCA)** : calculés aussi dans le notebook (`index_accessibility_notebook_africa_600m.ipynb`), non repris dans l'app pour rester simple
+""",
+        "home_afrique.liens_md": """
+### Liens rapides
+
+- **📓 Ouvrage de référence** : [Introduction to urban accessibility](https://ipeagit.github.io/intro_access_book/3_calculando_acesso.en.html) — chapitre adapté : [3. Calculating accessibility estimates in R](https://ipeagit.github.io/intro_access_book/s2_calculo.en.html)
+- **📓 Ce projet** : [gtfs_analysis_app](https://github.com/antoinechevre/gtfs_analysis_app) (`app_africa.py`, `index_accessibility_notebook_africa_600m.ipynb`)
+- **📓 Projet sœur (France)** : [Accessibility_analysis](https://github.com/antoinechevre/Accessibility_analysis)
+- **🚏 App universelle (tous pays, arrêts/lignes uniquement)** : [GTFS Analysis Universal](https://huggingface.co/spaces/antoinechevre/GTFS_Analysis_Universal)
+
+### Instructions
+
+1. **Choisissez un GTFS** du catalogue (barre latérale) ou uploadez le vôtre
+2. **Naviguez entre les pages** pour explorer les analyses
+""",
+        "home_afrique.credits_md": """
+Antoine Chèvre [@antoinechevre](https://github.com/antoinechevre) 🐐
+In we goat we trust
+""",
         "app.dialog_afrique_titre": "🌍 Charger un réseau africain",
         "app.dialog_afrique_aucun": "Aucun GTFS trouvé dans {dossier}. Déposez-y un fichier .zip pour qu'il apparaisse ici.",
         "app.dialog_afrique_choisir": "Réseau à charger",
@@ -325,6 +386,65 @@ TRANSLATIONS = {
         "app.nav_villes_africaines": "🌍 African cities",
         "africa.title": "🌍 GTFS Analysis Africa",
         "africa.avertissement_general": "⚠ Handle data and results with caution: there is no reliable sub-municipal census for most of these cities (WorldPop population data is a modeled estimate, not a headcount), OpenStreetMap facility coverage varies a lot between cities and neighborhoods, and several GTFS files in this catalog date back to 2018-2020 and are no longer maintained (cf. data/GTFS_Africa/_provenance.json). Results (population grid, facilities, accessibility) are orders of magnitude, not reference figures.",
+
+        # --- views/home_afrique.py ---
+        "home_afrique.intro_md": """
+This app analyzes African transport networks from GTFS data, inspired by the book *Introduction to urban accessibility* (Rafael H. M. Pereira and Daniel Herszenhut, Ipea - Institute for Applied Economic Research), specifically the chapter [Calculating accessibility estimates in R](https://ipeagit.github.io/intro_access_book/3_calculando_acesso.en.html) — adapted to Python for a context outside France, where the French national facilities database (BPE, INSEE) and 200x200m population grid don't exist.
+
+**Designer:** Antoine Chèvre 🐐 (with claude.ai....)
+
+This app combines two types of analysis based on the same GTFS dataset: urban accessibility to facilities by public transit / walking, and the public transit network analysis itself — cf. the sister project [Accessibility_analysis](https://github.com/antoinechevre/Accessibility_analysis) (France) this Africa branch is derived from.
+""",
+        "home_afrique.titre_section_md": "## 📍 Urban accessibility analysis",
+        "home_afrique.onglet_objectifs": "🎯 Goals",
+        "home_afrique.onglet_fonctionnalites": "⚙️ Features",
+        "home_afrique.onglet_liens": "🔗 Links & Instructions",
+        "home_afrique.objectifs_md": """
+- **Offer a processing chain** to go from a raw GTFS to accessibility analysis of the network, without relying on French national datasets:
+    - walking/public transit mode, on a base weekday at peak hour
+    - weighted OpenStreetMap facilities (substitute for the BPE) within 60 min of the network
+    - on a WorldPop 600x600m population grid (substitute for the INSEE grid)
+- **Offer a computation directly from the app** when no travel-time matrix is cached yet, without going through the notebook
+- **Offer a benchmark across African cities**, comparing facility-accessibility indicators, separate from the standard benchmark (Wikidata/BPE population is unreliable outside France)
+""",
+        "home_afrique.fonctionnalites_md": """
+From an African GTFS in the catalog (or uploaded):
+
+1. Builds the multimodal walking + public transit network (`r5py`) from the GTFS for a given base weekday, and the road network for walking paths (Geofabrik OpenStreetMap extract, clipped to the service area)
+2. Fetches the WorldPop population grid (global raster, ~100m resolution resampled into 600x600m cells) over the rectangle bounding the GTFS stops, and OpenStreetMap facilities weighted by type over the same area
+3. Computes the travel time matrix (`TravelTimeMatrix`) between all cells, at peak hour on the base weekday
+4. Computes facility accessibility within 60 min (cumulative opportunities, `cumulative_cutoff`)
+5. Offers a grid-cell isochrone map from a selected stop
+6. Offers a benchmark across African cities on these indicators
+""",
+        "home_afrique.expander_equipements_titre": "Facility weighting detail (OSM substitute for the BPE)",
+        "home_afrique.expander_equipements_md": """
+No national facilities database outside France: every OpenStreetMap point tagged `amenity=*` is extracted (osmium, local Geofabrik extract — no dependency on the Overpass API), then weighted by type using a reference table built by hand on Abidjan (`data/equipements_osm/Abidjan_amenities.xlsx`, "resume_par_type" sheet) and reused as-is as the single reference for every city: 0 = not a relevant facility hub, up to 30 for structuring facilities (hospital, government, public building...).
+
+No breakdown by domain (health, education, retail...) like the BPE: a single weighted score, "all facility types combined".
+""",
+        "home_afrique.expander_indicateurs_titre": "Accessibility indicator detail",
+        "home_afrique.expander_indicateurs_md": """
+- **Cumulative opportunities**: number of (weighted) facilities reachable from each cell within 60 min — the measure used on the app's Accessibility tab
+- **Cost to closest, gravity, competition (Enhanced 2SFCA)**: also computed in the notebook (`index_accessibility_notebook_africa_600m.ipynb`), not carried over to the app to keep it simple
+""",
+        "home_afrique.liens_md": """
+### Quick links
+
+- **📓 Reference book**: [Introduction to urban accessibility](https://ipeagit.github.io/intro_access_book/3_calculando_acesso.en.html) — adapted chapter: [3. Calculating accessibility estimates in R](https://ipeagit.github.io/intro_access_book/s2_calculo.en.html)
+- **📓 This project**: [gtfs_analysis_app](https://github.com/antoinechevre/gtfs_analysis_app) (`app_africa.py`, `index_accessibility_notebook_africa_600m.ipynb`)
+- **📓 Sister project (France)**: [Accessibility_analysis](https://github.com/antoinechevre/Accessibility_analysis)
+- **🚏 Universal app (any country, stops/lines only)**: [GTFS Analysis Universal](https://huggingface.co/spaces/antoinechevre/GTFS_Analysis_Universal)
+
+### Instructions
+
+1. **Pick a GTFS** from the catalog (sidebar) or upload your own
+2. **Navigate between pages** to explore the analyses
+""",
+        "home_afrique.credits_md": """
+Antoine Chèvre [@antoinechevre](https://github.com/antoinechevre) 🐐
+In we goat we trust
+""",
         "app.dialog_afrique_titre": "🌍 Load an African network",
         "app.dialog_afrique_aucun": "No GTFS found in {dossier}. Drop a .zip file there for it to appear here.",
         "app.dialog_afrique_choisir": "Network to load",
