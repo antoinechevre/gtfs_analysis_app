@@ -10,8 +10,8 @@ domaine d'équipement ni par décile de niveau de vie) :
   (opportunity="equipements").
 
 Nécessite une matrice de temps de trajet (TTM) pour ce réseau à la
-résolution RESOLUTION_M_AFRIQUE (cf. src/worldpop.py — 800m,
-index_accessibility_notebook_africa_800m.ipynb), mise en cache sur le
+résolution RESOLUTION_M_AFRIQUE (cf. src/worldpop.py — 600m,
+index_accessibility_notebook_africa_600m.ipynb), mise en cache sur le
 dataset Hugging Face partagé sous
 memory_ttm/ttm_{nom_reseau_str}_{RESOLUTION_M_AFRIQUE}m.parquet (cf.
 src.utilitaires_matrix.nom_fichier_ttm). Si absente, un bouton permet de

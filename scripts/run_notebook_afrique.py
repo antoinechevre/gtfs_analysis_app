@@ -1,6 +1,6 @@
 """
 Enchaîne un notebook d'accessibilité Afrique (par défaut la variante grille
-800m, cf. --notebook) sur tous les GTFS de data/GTFS_Africa/ (ou un
+600m, cf. --notebook) sur tous les GTFS de data/GTFS_Africa/ (ou un
 sous-ensemble filtré), un kernel Jupyter neuf par réseau — plutôt que de
 relancer le notebook à la main ville par ville.
 
@@ -22,14 +22,12 @@ depuis le cache) et ne recalcule que les réseaux restants — pas besoin
 d'une logique de reprise dédiée ici.
 
 Usage (depuis la racine du repo) :
-    ./env/bin/python -m scripts.run_notebook_afrique                # tous les GTFS, grille 800m (défaut)
+    ./env/bin/python -m scripts.run_notebook_afrique                # tous les GTFS, grille 600m (défaut)
     ./env/bin/python -m scripts.run_notebook_afrique Abidjan Accra   # sous-ensemble (sous-chaîne du nom de fichier)
     ./env/bin/python -m scripts.run_notebook_afrique --liste         # liste les GTFS détectés, sans rien exécuter
-    ./env/bin/python -m scripts.run_notebook_afrique --notebook index_accessibility_notebook_africa_1km.ipynb
-        # autre résolution de grille (fichier relatif à la racine du repo, ou chemin absolu) — cf.
-        # index_accessibility_notebook_africa_{600m,800m,1km}.ipynb, dérivées de la version 400m
-        # (index_accessibility_notebook_africa.ipynb) pour tenir en mémoire au rechargement de la TTM
-        # (charger_ttm) sur une machine à RAM limitée.
+    ./env/bin/python -m scripts.run_notebook_afrique --notebook index_accessibility_notebook_africa_600m.ipynb
+        # autre notebook (fichier relatif à la racine du repo, ou chemin absolu) — seule la
+        # variante 600m (index_accessibility_notebook_africa_600m.ipynb) est maintenue.
 
 Prérequis (une fois) :
     ./env/bin/pip install nbclient
@@ -49,7 +47,7 @@ from nbclient.exceptions import CellExecutionError
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 GTFS_DIR = BASE_DIR / "data" / "GTFS_Africa"
-NOTEBOOK_PATH_DEFAUT = BASE_DIR / "index_accessibility_notebook_africa_800m.ipynb"
+NOTEBOOK_PATH_DEFAUT = BASE_DIR / "index_accessibility_notebook_africa_600m.ipynb"
 RUNS_DIR = BASE_DIR / "output" / "notebook_runs"
 KERNEL_NAME = "gtfs-app-env"
 

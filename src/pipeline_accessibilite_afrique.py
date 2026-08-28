@@ -1,6 +1,6 @@
 """
 Reproduit, directement depuis l'app Streamlit (views/accessibilite.py),
-la chaîne de traitement d'index_accessibility_notebook_africa_800m.ipynb :
+la chaîne de traitement d'index_accessibility_notebook_africa_600m.ipynb :
 grille de population -> extrait OSM (Geofabrik) -> équipements OSM -> réseau
 de transport (r5py) -> matrice de temps de trajet (TTM). À utiliser
 uniquement quand aucune TTM n'est déjà en cache pour ce réseau (cf.

@@ -10,8 +10,8 @@ def nom_fichier_ttm(nom_reseau_str, resolution_m=None):
     resolution_m=None : convention historique, sans suffixe
     (ttm_<reseau>.parquet — TTM calculées par le notebook Accessibilité
     France/le notebook Afrique 400m d'origine). resolution_m fourni :
-    suffixée (ttm_<reseau>_<resolution>m.parquet — notebooks Afrique
-    600m/800m/1km, cf. index_accessibility_notebook_africa_800m.ipynb) :
+    suffixée (ttm_<reseau>_<resolution>m.parquet — notebook Afrique,
+    cf. index_accessibility_notebook_africa_600m.ipynb) :
     la TTM dépend du nombre et de l'identité des carreaux, donc de la
     résolution de la grille — sans ce suffixe, deux résolutions du même
     réseau se marcheraient dessus (même nom de fichier, mauvaise TTM

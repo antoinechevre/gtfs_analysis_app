@@ -404,19 +404,22 @@ def construire_grille_population_gtfs(feed, marge_km=0, annee=2020, resolution_m
 
 
 # Résolution de grille utilisée par app_africa.py et tous ses onglets
-# (Équipements, Accessibilité, Isochrone carreaux) — 800m plutôt que le
+# (Équipements, Accessibilité, Isochrone carreaux) — 600m plutôt que le
 # défaut générique 400m de charger_ou_construire_grille_population_reseau
 # ci-dessous (repris tel quel par l'app universelle, app.py, pour sa couche
 # population optionnelle) : la TTM d'un réseau dense comme Abidjan (grille
 # 400m, ~59 273 carreaux) fait ~87 Go en mémoire au rechargement
-# (charger_ttm) — OOM constaté sur une machine à 16 Go de RAM. 800m
-# (~14 800 carreaux, TTM ~16x plus légère, cf.
-# index_accessibility_notebook_africa_800m.ipynb) est le compromis retenu.
+# (charger_ttm) — OOM constaté sur une machine à 16 Go de RAM. 600m
+# (~5,4x plus léger que 400m, cf.
+# index_accessibility_notebook_africa_600m.ipynb) reste ~17 Go estimé au
+# rechargement sur cette même machine — accepté en connaissance de cause
+# (choix explicite malgré le risque, plutôt que le compromis plus prudent
+# 800m utilisé jusqu'ici) : à surveiller sur le Space déployé (cpu-basic).
 # Tous les appels Afrique doivent utiliser CETTE résolution pour que la
 # grille (partagée en session, st.session_state.grille_population) reste
 # cohérente d'un onglet à l'autre, et que ses "id" correspondent à ceux de
-# la TTM 800m.
-RESOLUTION_M_AFRIQUE = 800
+# la TTM 600m.
+RESOLUTION_M_AFRIQUE = 600
 
 
 def charger_ou_construire_grille_population_reseau(
@@ -445,7 +448,7 @@ def charger_ou_construire_grille_population_reseau(
     Nom de cache suffixé par résolution seulement si resolution_m diffère
     du défaut historique (400m, sans suffixe — grilles déjà en cache sous
     ce nom pour les réseaux existants) : les notebooks Afrique
-    600m/800m/1km (cf. index_accessibility_notebook_africa_800m.ipynb)
+    (cf. index_accessibility_notebook_africa_600m.ipynb)
     utilisent une résolution différente pour la même grille — sans ce
     suffixe, deux résolutions du même réseau se marcheraient dessus (même
     nom de fichier, mauvaise grille rechargée silencieusement, comme pour
