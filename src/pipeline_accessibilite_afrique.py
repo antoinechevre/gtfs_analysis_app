@@ -22,7 +22,6 @@ from src.hf_cache import envoyer_vers_hf, recuperer_depuis_hf
 from src.info_reseau import charger_ou_calculer_dates_service
 from src.osm_extract import extraire_amenities_depuis_pbf, osm_pbf_creator_depuis_geofabrik
 from src.utilitaires_matrix import charger_ttm, nom_fichier_ttm
-from src.utils import ville_str_depuis_fichier
 from src.worldpop import (
     RESOLUTION_M_AFRIQUE,
     charger_ou_construire_grille_population_reseau,
@@ -114,10 +113,17 @@ def calculer_pipeline_complet(feed, nom_reseau_str, gtfs_zip_path, resolution_m=
         envoyer_vers_hf(pbf_path_saved, f"memory_pbf/agglo_osm_pbf_{nom_reseau_str}.osm.pbf")
 
     etape("Extraction et pondération des équipements OSM...")
-    nom_ville_simple = ville_str_depuis_fichier(gtfs_zip_path)
+    # nom_reseau_str, pas ville_str_depuis_fichier(gtfs_zip_path) : ce
+    # dernier vaut déjà nom_reseau_str côté appelant (app_africa.py) quand
+    # gtfs_zip_path pointe vers le fichier original, mais ici gtfs_zip_path
+    # est st.session_state.zip_path — le fichier temporaire créé par
+    # tempfile.NamedTemporaryFile à l'upload (ex. "/tmp/tmpxxxxxx.zip"), pas
+    # le nom original. Le recalculer dessus produisait un nom d'équipements
+    # complètement déconnecté de nom_reseau_str (ex. "tmptz2sfh7g"),
+    # introuvable ensuite par compter_equipements_par_carreau.
     os.makedirs(DOSSIER_EQUIPEMENTS_DEFAUT, exist_ok=True)
-    chemin_equipements_gpkg = os.path.join(DOSSIER_EQUIPEMENTS_DEFAUT, f"{nom_ville_simple.lower()}_equipements.gpkg")
-    nom_fichier_hf_equipements = f"equipements_osm/{nom_ville_simple.lower()}_equipements.gpkg"
+    chemin_equipements_gpkg = os.path.join(DOSSIER_EQUIPEMENTS_DEFAUT, f"{nom_reseau_str.lower()}_equipements.gpkg")
+    nom_fichier_hf_equipements = f"equipements_osm/{nom_reseau_str.lower()}_equipements.gpkg"
     if not recuperer_depuis_hf(nom_fichier_hf_equipements, chemin_equipements_gpkg):
         import geopandas as gpd
         import pandas as pd
