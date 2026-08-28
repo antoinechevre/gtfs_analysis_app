@@ -1,13 +1,11 @@
 """
 Page Accessibilité - version simplifiée de l'onglet Accessibilité du projet
 sœur Accessibility_analysis (github.com/antoinechevre/Accessibility_analysis) :
-un seul seuil (60 min) et deux mesures "tout confondu" (pas de découpage par
-domaine d'équipement ni par décile de niveau de vie) :
-- population accessible en <= 60 min depuis chaque carreau (cumulative_cutoff,
-  opportunity="population") ;
-- équipements accessibles en <= 60 min, à partir du seul fichier
-  data/equipements_osm/{nom_reseau_str}_equipements.gpkg du réseau chargé
-  (opportunity="equipements").
+un seul seuil (60 min) et une seule mesure "tout équipement confondu" (pas de
+découpage par domaine d'équipement ni par décile de niveau de vie) —
+équipements accessibles en <= 60 min depuis chaque carreau
+(cumulative_cutoff, opportunity="equipements"), à partir du seul fichier
+data/equipements_osm/{nom_reseau_str}_equipements.gpkg du réseau chargé.
 
 Nécessite une matrice de temps de trajet (TTM) pour ce réseau à la
 résolution RESOLUTION_M_AFRIQUE (cf. src/worldpop.py — 600m,
@@ -94,11 +92,6 @@ def accessibilite_page(lang="fr"):
     land_use_data = grille_population[["id", "population"]].copy()
 
     with st.spinner(t("accessibilite.spinner_calcul", lang)):
-        cum_population = cumulative_cutoff(
-            ttm, land_use_data=land_use_data, opportunity="population",
-            travel_cost="travel_time", cutoff=CUTOFF_MIN,
-        )
-
         # Best-effort : sur un Space déployé, data/equipements_osm/ est vide
         # (exclu du déploiement, cf. scripts/deploy_hf_africa.sh) — ce .gpkg
         # n'est disponible qu'en le récupérant depuis le dataset HF partagé.
@@ -118,62 +111,43 @@ def accessibilite_page(lang="fr"):
                 travel_cost="travel_time", cutoff=CUTOFF_MIN,
             )
 
-    # Statistiques globales : moyenne pondérée par la population du carreau
+    if cum_equipements is None:
+        st.info(t("accessibilite.pas_equipements", lang))
+        return
+
+    # Statistique globale : moyenne pondérée par la population du carreau
     # d'origine (même principe que calculer_index_benchmark côté notebook
     # source, simplifié à un seul cutoff/groupe "Tous").
     st.header(t("accessibilite.header_stats", lang, cutoff=CUTOFF_MIN))
     poids = grille_population.set_index("id")["population"]
     population_totale = poids.sum()
 
-    col1, col2 = st.columns(2)
-    with col1:
-        moyenne_pop = (
-            (cum_population.set_index("id")["population"] * poids).sum() / population_totale
-            if population_totale else 0
-        )
-        st.metric(t("accessibilite.metric_population", lang, cutoff=CUTOFF_MIN), f"{moyenne_pop:,.0f}")
+    moyenne_equip = (
+        (cum_equipements.set_index("id")["equipements"] * poids).sum() / population_totale
+        if population_totale else 0
+    )
+    st.metric(t("accessibilite.metric_equipements", lang, cutoff=CUTOFF_MIN), f"{moyenne_equip:,.1f}")
 
     # Mis en session pour l'onglet Benchmark (index spécifique villes
-    # africaines, cf. views/benchmark.py) : ces deux indicateurs y servent
-    # de substitut aux métriques BPE-par-domaine du benchmark standard,
-    # indisponibles hors de France.
-    st.session_state.accessibilite_population_60min = moyenne_pop
+    # africaines, cf. views/benchmark.py) : substitut aux métriques
+    # BPE-par-domaine du benchmark standard, indisponibles hors de France.
+    st.session_state.accessibilite_equipements_60min = moyenne_equip
 
-    with col2:
-        if cum_equipements is not None:
-            moyenne_equip = (
-                (cum_equipements.set_index("id")["equipements"] * poids).sum() / population_totale
-                if population_totale else 0
-            )
-            st.metric(t("accessibilite.metric_equipements", lang, cutoff=CUTOFF_MIN), f"{moyenne_equip:,.1f}")
-            st.session_state.accessibilite_equipements_60min = moyenne_equip
-        else:
-            st.info(t("accessibilite.pas_equipements", lang))
-
-    # Cartes
-    st.header(t("accessibilite.header_carte_population", lang, cutoff=CUTOFF_MIN))
-    carte_pop = grille_population[["id", "geometry"]].merge(cum_population, on="id")
-    m_pop = carte_pop.explore(
-        "population", cmap="viridis", **fond_carte_kwargs("CartoDB positron"),
+    # Carte
+    st.header(t("accessibilite.header_carte_equipements", lang, cutoff=CUTOFF_MIN))
+    carte_equip = grille_population[["id", "geometry"]].merge(cum_equipements, on="id")
+    m_equip = carte_equip.explore(
+        "equipements", cmap="magma", **fond_carte_kwargs("CartoDB positron"),
         style_kwds={"style_function": lambda x: {"weight": 0, "fillOpacity": 0.7}},
     )
-    components.html(m_pop.get_root().render(), height=650, width=1000)
-
-    if cum_equipements is not None:
-        st.header(t("accessibilite.header_carte_equipements", lang, cutoff=CUTOFF_MIN))
-        carte_equip = grille_population[["id", "geometry"]].merge(cum_equipements, on="id")
-        m_equip = carte_equip.explore(
-            "equipements", cmap="magma", **fond_carte_kwargs("CartoDB positron"),
-            style_kwds={"style_function": lambda x: {"weight": 0, "fillOpacity": 0.7}},
-        )
-        components.html(m_equip.get_root().render(), height=650, width=1000)
+    components.html(m_equip.get_root().render(), height=650, width=1000)
 
     # Téléchargement
     st.header(t("commun.header_telechargement", lang))
-    csv = cum_population.to_csv(index=False).encode("utf-8")
+    csv = cum_equipements.to_csv(index=False).encode("utf-8")
     st.download_button(
-        label=t("accessibilite.telecharger_population", lang),
+        label=t("accessibilite.telecharger_equipements", lang),
         data=csv,
-        file_name=f"accessibilite_population_{CUTOFF_MIN}min_{st.session_state.nom_reseau_str}.csv",
+        file_name=f"accessibilite_equipements_{CUTOFF_MIN}min_{st.session_state.nom_reseau_str}.csv",
         mime="text/csv",
     )
