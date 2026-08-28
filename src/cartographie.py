@@ -51,14 +51,16 @@ def tile_layer_cartodb(tiles, name, **kwargs):
 def ajouter_couche_population(m, grille_population, lang="fr"):
     """
     Ajoute la grille de population (WorldPop, cf. src/worldpop.py) comme
-    couche optionnelle (folium.FeatureGroup, décochée par défaut) à une
-    carte Folium existante — même rendu que carte_population_worldpop
-    (dégradé de rouge par population, carreaux vides transparents), mais
-    en couche superposable plutôt qu'en carte autonome, pour rester
-    sélectionnable via le LayerControl aux côtés des arrêts/tronçons.
+    couche superposable (folium.FeatureGroup, cochée par défaut) à une carte
+    Folium existante — même rendu que carte_population_worldpop (dégradé de
+    rouge par population, carreaux vides transparents), mais en couche
+    superposable plutôt qu'en carte autonome, pour rester sélectionnable
+    (dé-cochable) via le LayerControl aux côtés des arrêts/tronçons.
+    Ajoutée à la carte AVANT les arrêts/tronçons par l'appelant (ordre
+    d'ajout Folium = z-order), pour ne jamais les recouvrir.
 
     Ne fait rien si grille_population est None ou vide (population WorldPop
-    pas encore chargée/calculée pour ce réseau, cf. app.py).
+    pas encore chargée/calculée pour ce réseau, cf. app.py/app_africa.py).
     """
     if grille_population is None or grille_population.empty:
         return
@@ -75,7 +77,7 @@ def ajouter_couche_population(m, grille_population, lang="fr"):
         caption=t("carto.caption_population", lang),
     )
 
-    feature_group = folium.FeatureGroup(name=t("carto.couche_population", lang), show=False)
+    feature_group = folium.FeatureGroup(name=t("carto.couche_population", lang), show=True)
     for _, row in grille_active.iterrows():
         folium.GeoJson(
             row["geometry"],
@@ -114,6 +116,10 @@ def create_carte_arrets(df, nom_reseau_str,date_service_str, date_analyse, zip_p
         height="1000px",
         **fond_carte_kwargs("CartoDB positron"),
     )
+
+    # Sous les lignes/arrêts (z-order = ordre d'ajout à la carte Folium) :
+    # ajoutée avant plutôt qu'après, pour ne jamais recouvrir les marqueurs.
+    ajouter_couche_population(m, grille_population, lang=lang)
 
     # --- Ajout des lignes GTFS sur la même carte ---
     feed = gk.read_feed(zip_path, dist_units="km")
@@ -260,7 +266,6 @@ def create_carte_arrets(df, nom_reseau_str,date_service_str, date_analyse, zip_p
         """
         m.get_root().html.add_child(folium.Element(logo_html))
 
-    ajouter_couche_population(m, grille_population, lang=lang)
     folium.LayerControl(collapsed=False).add_to(m)
 
     m.save(output_path)
@@ -421,6 +426,10 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, gd
     # Ajouter des fonds de carte alternatifs
     folium.TileLayer("OpenStreetMap", name="OpenStreetMap").add_to(m)
     tile_layer_cartodb("CartoDB dark_matter", "Carto Dark").add_to(m)
+
+    # Sous les lignes/tronçons (z-order = ordre d'ajout à la carte Folium) :
+    # ajoutée avant plutôt qu'après, pour ne jamais recouvrir les tracés.
+    ajouter_couche_population(m, grille_population, lang=lang)
 
     # Légende des échelles de couleur (construite au fil des blocs bus/tram
     # ci-dessous, affichée en bas de carte)
@@ -851,8 +860,6 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, gd
             popup_vitesse, popup_distance, suffixe_passages,
             weight_base=2 * poids_trait, weight_amplitude=6 * poids_trait,
         )
-
-    ajouter_couche_population(m, grille_population, lang=lang)
 
     # Ajouter le contrôle des couches (cases à cocher)
     folium.LayerControl(collapsed=False).add_to(m)

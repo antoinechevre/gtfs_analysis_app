@@ -223,10 +223,6 @@ else:
         index=index_gtfs_defaut,
     )
 
-# Couche population (WorldPop) optionnelle sur les cartes arrêts/lignes,
-# cf. app.py — calculée seulement à la demande.
-afficher_couche_population = st.sidebar.checkbox(t("app.sidebar_couche_population", lang))
-
 # Variables de session
 for cle in (
     "feed", "active_service_ids", "date_str", "indicateurs_arrets", "indicateurs_par_mode",
@@ -361,7 +357,12 @@ def charger_donnees_gtfs():
 
 charger_donnees_gtfs()
 
-if afficher_couche_population and st.session_state.feed is not None:
+# Grille de population (WorldPop) toujours chargée dès qu'un GTFS l'est —
+# affichée par défaut (cochée, sous les arrêts/lignes) sur les cartes
+# arrêts/lignes, cf. src.cartographie.ajouter_couche_population — plus de
+# case à cocher, la grille est de toute façon déjà nécessaire aux onglets
+# Accessibilité/Équipements/Isochrone carreaux.
+if st.session_state.feed is not None:
     charger_ou_calculer_grille_population()
 
 if st.session_state.selected_page == "Accueil":
