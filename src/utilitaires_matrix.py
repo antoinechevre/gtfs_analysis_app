@@ -86,6 +86,44 @@ def envoyer_cumulative_cutoff_cache(resultat, nom_reseau_str, opportunity, cutof
     envoyer_vers_hf(chemin_cache, f"memory_accessibilite/{nom_fichier}")
 
 
+def nom_fichier_carte_accessibilite(nom_reseau_str, opportunity, cutoff, resolution_m=None):
+    """Nom de fichier (sans dossier) de la carte HTML pré-rendue associée à
+    un résultat cumulative_cutoff en cache — même base de nom que
+    nom_fichier_cumulative_cutoff, extension .html. Permet à
+    views/accessibilite.py d'afficher directement une carte déjà rendue
+    (folium .explore(), calculée une fois par le notebook ou un run
+    précédent de l'app) plutôt que de reconstruire la carte à chaque
+    affichage de la page."""
+    nom_csv = nom_fichier_cumulative_cutoff(nom_reseau_str, opportunity, cutoff, resolution_m)
+    return nom_csv[: -len(".csv")] + ".html"
+
+
+def charger_carte_accessibilite_cache(nom_reseau_str, opportunity, cutoff, resolution_m=None):
+    """Chemin local d'une carte HTML pré-rendue en cache pour (réseau,
+    opportunité, cutoff) — cf. nom_fichier_carte_accessibilite — récupérée
+    depuis Hugging Face si absente localement. None si introuvable des deux
+    côtés (à générer alors avec .explore() puis mettre en cache via
+    envoyer_carte_accessibilite_cache)."""
+    from src.hf_cache import recuperer_depuis_hf
+
+    nom_fichier = nom_fichier_carte_accessibilite(nom_reseau_str, opportunity, cutoff, resolution_m)
+    chemin_cache = os.path.join("data", "memory_accessibilite", nom_fichier)
+    recuperer_depuis_hf(f"memory_accessibilite/{nom_fichier}", chemin_cache)
+    return chemin_cache if os.path.exists(chemin_cache) else None
+
+
+def envoyer_carte_accessibilite_cache(chemin_html, nom_reseau_str, opportunity, cutoff, resolution_m=None):
+    """Envoie vers Hugging Face une carte HTML déjà enregistrée localement
+    (chemin_html, ex. carte.save(...)) sous la convention de
+    nom_fichier_carte_accessibilite — à appeler juste après l'avoir
+    générée, pour que le prochain affichage passe par
+    charger_carte_accessibilite_cache plutôt que de la reconstruire."""
+    from src.hf_cache import envoyer_vers_hf
+
+    nom_fichier = nom_fichier_carte_accessibilite(nom_reseau_str, opportunity, cutoff, resolution_m)
+    envoyer_vers_hf(chemin_html, f"memory_accessibilite/{nom_fichier}")
+
+
 def charger_ttm(ttm_path):
     """Charge une matrice de temps de trajet depuis un parquet (ttm_path)
     avec des dtypes compacts : from_id/to_id (identifiants de carreau INSEE,

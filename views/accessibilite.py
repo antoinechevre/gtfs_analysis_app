@@ -27,6 +27,9 @@ memory_accessibilite/accessibilite_{nom_reseau_str}_{RESOLUTION_M_AFRIQUE}m_equi
 si le notebook (ou un run précédent de cette page) l'a déjà calculé pour ce
 réseau, cette page n'a jamais besoin de charger la TTM entière (parquet
 potentiellement plusieurs Go, cf. charger_ttm) juste pour ce petit résultat.
+Même principe pour la carte elle-même (fichier .html jumeau du .csv,
+cf. charger_carte_accessibilite_cache) : évite même le coût du rendu
+.explore() quand une carte déjà rendue existe.
 """
 
 import os
@@ -40,10 +43,13 @@ from src.hf_cache import recuperer_depuis_hf
 from src.i18n import t
 from src.pipeline_accessibilite_afrique import calculer_pipeline_complet
 from src.utilitaires_matrix import (
+    charger_carte_accessibilite_cache,
     charger_cumulative_cutoff_cache,
     charger_ttm_reseau,
     cumulative_cutoff,
+    envoyer_carte_accessibilite_cache,
     envoyer_cumulative_cutoff_cache,
+    nom_fichier_carte_accessibilite,
 )
 from src.worldpop import charger_ou_construire_grille_population_reseau, RESOLUTION_M_AFRIQUE
 
@@ -157,14 +163,37 @@ def accessibilite_page(lang="fr"):
     # BPE-par-domaine du benchmark standard, indisponibles hors de France.
     st.session_state.accessibilite_equipements_60min = moyenne_equip
 
-    # Carte
+    # Carte : tente d'abord une carte déjà rendue en cache (par le notebook
+    # ou un run précédent de cette page, cf. envoyer_carte_accessibilite_cache
+    # ci-dessous) — évite même le coût du rendu .explore() (jointure +
+    # génération du HTML Folium), pas seulement le chargement de la TTM.
     st.header(t("accessibilite.header_carte_equipements", lang, cutoff=CUTOFF_MIN))
-    carte_equip = grille_population[["id", "geometry"]].merge(cum_equipements, on="id")
-    m_equip = carte_equip.explore(
-        "equipements", cmap="magma", **fond_carte_kwargs("CartoDB positron"),
-        style_kwds={"style_function": lambda x: {"weight": 0, "fillOpacity": 0.7}},
+    chemin_carte_cache = charger_carte_accessibilite_cache(
+        st.session_state.nom_reseau_str, "equipements", CUTOFF_MIN, resolution_m=RESOLUTION_M_AFRIQUE,
     )
-    components.html(m_equip.get_root().render(), height=650, width=1000)
+    if chemin_carte_cache is not None:
+        with open(chemin_carte_cache, "r", encoding="utf-8") as f:
+            components.html(f.read(), height=650, width=1000)
+    else:
+        carte_equip = grille_population[["id", "geometry"]].merge(cum_equipements, on="id")
+        m_equip = carte_equip.explore(
+            "equipements", cmap="magma", **fond_carte_kwargs("CartoDB positron"),
+            style_kwds={"style_function": lambda x: {"weight": 0, "fillOpacity": 0.7}},
+        )
+        html_carte = m_equip.get_root().render()
+        components.html(html_carte, height=650, width=1000)
+
+        nom_fichier_carte = nom_fichier_carte_accessibilite(
+            st.session_state.nom_reseau_str, "equipements", CUTOFF_MIN, resolution_m=RESOLUTION_M_AFRIQUE,
+        )
+        chemin_carte = os.path.join("data", "memory_accessibilite", nom_fichier_carte)
+        os.makedirs(os.path.dirname(chemin_carte), exist_ok=True)
+        with open(chemin_carte, "w", encoding="utf-8") as f:
+            f.write(html_carte)
+        envoyer_carte_accessibilite_cache(
+            chemin_carte, st.session_state.nom_reseau_str, "equipements", CUTOFF_MIN,
+            resolution_m=RESOLUTION_M_AFRIQUE,
+        )
 
     # Téléchargement
     st.header(t("commun.header_telechargement", lang))
