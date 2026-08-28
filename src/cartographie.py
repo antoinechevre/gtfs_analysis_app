@@ -126,8 +126,12 @@ def create_carte_arrets(df, nom_reseau_str,date_service_str, date_analyse, zip_p
     active_trips = feed.get_trips(date=date_analyse)
     trips_routes = active_trips.merge(feed.routes, on='route_id')
 
-    if feed.shapes is not None and not feed.shapes.empty:
-        shapes_actifs = feed.shapes[feed.shapes['shape_id'].isin(active_trips['shape_id'].unique())]
+    shapes_actifs = (
+        feed.shapes[feed.shapes['shape_id'].isin(active_trips['shape_id'].unique())]
+        if feed.shapes is not None else None
+    )
+
+    if shapes_actifs is not None and not shapes_actifs.empty:
         geo_shapes = gk.geometrize_shapes(shapes_actifs)
         geo_shapes = geo_shapes.merge(
             trips_routes[['shape_id', 'route_short_name']].drop_duplicates(),
@@ -145,9 +149,13 @@ def create_carte_arrets(df, nom_reseau_str,date_service_str, date_analyse, zip_p
             ).add_to(m)
     else:
         # shapes.txt est optionnel dans la spec GTFS (absent par exemple du
-        # jeu de données TCL) : à défaut, on trace un trip représentatif par
-        # ligne à partir des arrêts qu'il dessert.
-        print("⚠ shapes.txt absent du GTFS : tracé des lignes estimé à partir des arrêts desservis")
+        # jeu de données TCL), et même présent globalement il peut n'avoir
+        # aucune shape référencée par les trips actifs de date_analyse (cf.
+        # Abidjan_2025_gtfs.zip : gk.geometrize_shapes plante sur un
+        # GeoDataFrame vide, "no existing columns with geometry data type")
+        # — dans les deux cas, on trace un trip représentatif par ligne à
+        # partir des arrêts qu'il dessert.
+        print("⚠ Aucune shape active dans le GTFS pour cette date : tracé des lignes estimé à partir des arrêts desservis")
 
         trip_par_route = trips_routes.drop_duplicates(subset='route_id')
         stops = feed.stops.set_index('stop_id')[['stop_lat', 'stop_lon']]
