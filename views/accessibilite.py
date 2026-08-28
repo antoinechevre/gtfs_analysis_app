@@ -5,8 +5,9 @@ un seul seuil (60 min) et deux mesures "tout confondu" (pas de découpage par
 domaine d'équipement ni par décile de niveau de vie) :
 - population accessible en <= 60 min depuis chaque carreau (cumulative_cutoff,
   opportunity="population") ;
-- équipements accessibles en <= 60 min, tous les fichiers de
-  data/equipements_osm/ combinés (opportunity="equipements").
+- équipements accessibles en <= 60 min, à partir du seul fichier
+  data/equipements_osm/{nom_reseau_str}_equipements.gpkg du réseau chargé
+  (opportunity="equipements").
 
 Nécessite une matrice de temps de trajet (TTM) pour ce réseau à la
 résolution RESOLUTION_M_AFRIQUE (cf. src/worldpop.py — 800m,
@@ -22,10 +23,13 @@ plusieurs dizaines de minutes possible) : à l'utilisateur de choisir de la
 déclencher en connaissance de cause plutôt qu'un calcul automatique.
 """
 
+import os
+
 import streamlit as st
 import streamlit.components.v1 as components
 
-from src.equipements_osm import compter_equipements_par_carreau, recuperer_equipements_hf
+from src.equipements_osm import compter_equipements_par_carreau
+from src.hf_cache import recuperer_depuis_hf
 from src.i18n import t
 from src.pipeline_accessibilite_afrique import calculer_pipeline_complet
 from src.utilitaires_matrix import charger_ttm_reseau, cumulative_cutoff
@@ -95,9 +99,14 @@ def accessibilite_page(lang="fr"):
         )
 
         # Best-effort : sur un Space déployé, data/equipements_osm/ est vide
-        # (exclu du déploiement, cf. scripts/deploy_hf_africa.sh) — ces .gpkg
-        # ne sont disponibles qu'en les récupérant depuis le dataset HF partagé.
-        recuperer_equipements_hf()
+        # (exclu du déploiement, cf. scripts/deploy_hf_africa.sh) — ce .gpkg
+        # n'est disponible qu'en le récupérant depuis le dataset HF partagé.
+        # Un seul fichier (celui du réseau chargé), pas tout le dossier : cf.
+        # compter_equipements_par_carreau(nom_reseau_str=...) ci-dessous.
+        recuperer_depuis_hf(
+            f"equipements_osm/{st.session_state.nom_reseau_str.lower()}_equipements.gpkg",
+            os.path.join("data", "equipements_osm", f"{st.session_state.nom_reseau_str.lower()}_equipements.gpkg"),
+        )
         equipements_par_carreau = compter_equipements_par_carreau(
             grille_population, nom_reseau_str=st.session_state.nom_reseau_str,
         )
