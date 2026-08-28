@@ -41,6 +41,51 @@ def charger_ttm_reseau(nom_reseau_str, resolution_m=None):
     return charger_ttm(chemin_cache)
 
 
+def nom_fichier_cumulative_cutoff(nom_reseau_str, opportunity, cutoff, resolution_m=None):
+    """Nom de fichier (sans dossier) du résultat cumulative_cutoff mis en
+    cache pour (réseau, opportunité, cutoff) — ex.
+    accessibilite_Abidjan_600m_equipements_60min.csv. Un résultat
+    cumulative_cutoff ne dépend que de la TTM et de land_use_data, donc
+    coûte quelques secondes une fois la TTM en mémoire ; mais charger_ttm
+    charge la TTM ENTIÈRE en mémoire (potentiellement plusieurs Go, cf.
+    charger_ttm) pour n'en tirer au final qu'un petit résultat par carreau
+    — ce cache permet à views/accessibilite.py de sauter ce chargement
+    quand le notebook a déjà calculé ce résultat précis pour ce réseau."""
+    suffixe = f"_{resolution_m}m" if resolution_m else ""
+    return f"accessibilite_{nom_reseau_str}{suffixe}_{opportunity}_{cutoff}min.csv"
+
+
+def charger_cumulative_cutoff_cache(nom_reseau_str, opportunity, cutoff, resolution_m=None):
+    """Charge depuis le cache (local, puis dataset Hugging Face partagé) un
+    résultat cumulative_cutoff déjà calculé pour (réseau, opportunité,
+    cutoff) — cf. nom_fichier_cumulative_cutoff. DataFrame [id, opportunity]
+    si trouvé, None sinon (à calculer alors via cumulative_cutoff, à partir
+    d'une TTM chargée avec charger_ttm_reseau)."""
+    from src.hf_cache import recuperer_depuis_hf
+
+    nom_fichier = nom_fichier_cumulative_cutoff(nom_reseau_str, opportunity, cutoff, resolution_m)
+    chemin_cache = os.path.join("data", "memory_accessibilite", nom_fichier)
+    recuperer_depuis_hf(f"memory_accessibilite/{nom_fichier}", chemin_cache)
+    if not os.path.exists(chemin_cache):
+        return None
+    return pd.read_csv(chemin_cache)
+
+
+def envoyer_cumulative_cutoff_cache(resultat, nom_reseau_str, opportunity, cutoff, resolution_m=None):
+    """Sauvegarde localement puis envoie vers Hugging Face un résultat
+    cumulative_cutoff pour (réseau, opportunité, cutoff) — cf.
+    nom_fichier_cumulative_cutoff. À appeler juste après l'avoir calculé,
+    pour que le prochain chargement (notebook ou app) passe par
+    charger_cumulative_cutoff_cache plutôt que de recalculer."""
+    from src.hf_cache import envoyer_vers_hf
+
+    nom_fichier = nom_fichier_cumulative_cutoff(nom_reseau_str, opportunity, cutoff, resolution_m)
+    chemin_cache = os.path.join("data", "memory_accessibilite", nom_fichier)
+    os.makedirs(os.path.dirname(chemin_cache), exist_ok=True)
+    resultat.to_csv(chemin_cache, index=False)
+    envoyer_vers_hf(chemin_cache, f"memory_accessibilite/{nom_fichier}")
+
+
 def charger_ttm(ttm_path):
     """Charge une matrice de temps de trajet depuis un parquet (ttm_path)
     avec des dtypes compacts : from_id/to_id (identifiants de carreau INSEE,

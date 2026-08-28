@@ -73,6 +73,13 @@ data/equipements_osm/
 # src.worldpop.charger_ou_construire_grille_population_reseau).
 data/memory_gpkg/
 
+# Cache local des résultats cumulative_cutoff déjà calculés (par réseau,
+# opportunité, seuil) — repeuplé au besoin depuis le dataset HF partagé
+# (memory_accessibilite/, cf.
+# src.utilitaires_matrix.charger_cumulative_cutoff_cache) : évite à
+# views/accessibilite.py de recharger toute la TTM juste pour ce résultat.
+data/memory_accessibilite/
+
 # Logs de run locaux (ex: scripts/run_notebook_afrique.py en arrière-plan)
 *.log
 
