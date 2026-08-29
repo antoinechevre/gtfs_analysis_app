@@ -86,20 +86,23 @@ def equipements_page(lang="fr"):
     )
 
     m = folium.Map(location=[centre.y, centre.x], zoom_start=11, **fond_carte_kwargs("CartoDB positron"))
-    # Triés par pondération croissante : chaque CircleMarker est ajouté au-dessus
-    # des précédents (ordre du DOM Leaflet), donc les équipements les plus
-    # pondérés sont dessinés en dernier et ressortent devant les autres.
-    for _, row in gdf.sort_values("ponderation").iterrows():
+    # Ne garde que les équipements pondérés (les autres n'apportent rien à la
+    # lecture de la carte), triés par pondération croissante : chaque
+    # CircleMarker est ajouté au-dessus des précédents (ordre du DOM
+    # Leaflet), donc les plus pondérés sont dessinés en dernier et ressortent
+    # devant les autres.
+    gdf_carte = gdf[gdf["ponderation"] > 0].sort_values("ponderation")
+    for _, row in gdf_carte.iterrows():
         ponderation = row["ponderation"]
         couleur = colormap(ponderation)
         libelle = row.get("name") or row.get("amenity") or nom_reseau
         folium.CircleMarker(
             location=[row.geometry.y, row.geometry.x],
-            radius=4 if ponderation > 0 else 2,
+            radius=4,
             color=couleur,
             fill=True,
             fill_color=couleur,
-            fill_opacity=0.85 if ponderation > 0 else 0.4,
+            fill_opacity=0.85,
             tooltip=f"{libelle} — pondération {ponderation:.0f}",
         ).add_to(m)
     colormap.add_to(m)
