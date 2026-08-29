@@ -227,12 +227,20 @@ def troncons_page(lang="fr"):
         if st.session_state.indicateurs_par_mode is None:
 
             # Progression par mode (info puis succès) : affichée pendant le
-            # calcul, effacée d'un coup une fois les indicateurs prêts —
-            # pas d'intérêt à la garder une fois les résultats affichés.
-            zone_progression = st.container()
-            placeholders_progression = {
-                nom_mode: zone_progression.empty() for _, nom_mode, _, _ in MODES
-            }
+            # calcul, effacée d'un coup une fois les indicateurs prêts — pas
+            # d'intérêt à la garder une fois les résultats affichés.
+            # st.empty() à la racine (pas st.container().empty(), qui ne vide
+            # rien : ça insère juste un emplacement vide de plus DANS le
+            # conteneur, sans effet sur ce qui y est déjà affiché) : le même
+            # objet zone_progression sert à la fois de conteneur (via
+            # .container() ci-dessous, pour y placer un emplacement par mode)
+            # et de poignée d'effacement global (zone_progression.empty(),
+            # plus bas, qui réinitialise bien tout ce qui a été écrit dedans).
+            zone_progression = st.empty()
+            with zone_progression.container():
+                placeholders_progression = {
+                    nom_mode: st.empty() for _, nom_mode, _, _ in MODES
+                }
 
             with st.spinner(t("troncons.spinner_reference", lang)):
                 troncons_par_mode = {
