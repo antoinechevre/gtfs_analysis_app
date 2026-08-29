@@ -7,8 +7,11 @@ autres en bleu.
 
 Repris du même principe que l'onglet Benchmark de l'app sœur
 "accessibility" (views/benchmark_reseaux.py, antoinechevre/
-Accessibility_analysis), avec des métriques transit (véhicules.km,
-nombre d'arrêts) à la place des métriques d'accessibilité aux équipements.
+Accessibility_analysis) : sur l'onglet standard, métriques transit
+(véhicules.km, nombre d'arrêts) — l'app sœur a un deuxième graphique
+identique. Sur l'onglet Afrique, un seul graphique (équivalent du premier
+et seul retenu de l'app sœur, "Accessibilité aux équipements") : colonnes
+véhicules.km/arrêts masquées pour ce tableau, cf. _afficher_benchmark.
 """
 
 import os
@@ -124,6 +127,20 @@ def _afficher_benchmark(lang, africain):
     if tableau_benchmark is None or tableau_benchmark.empty:
         st.info(t("benchmark.index_vide", lang))
         return
+
+    if africain:
+        # Un seul graphique, indicateurs d'accessibilité uniquement (comme
+        # le premier des deux graphiques de l'app sœur, "Accessibilité aux
+        # équipements") : masque les colonnes véhicules.km/arrêts plutôt que
+        # de les mélanger dans le même menu Y que population_accessible_60min/
+        # equipements_accessibles_60min — generer_html_str (options_y) ne
+        # propose de toute façon que les colonnes présentes dans le tableau.
+        colonnes_a_garder = [
+            c for c in tableau_benchmark.columns
+            if c in ("reseau", "ville_principale", "population_totale",
+                      "population_accessible_60min", "equipements_accessibles_60min")
+        ]
+        tableau_benchmark = tableau_benchmark[colonnes_a_garder]
 
     html_benchmark = generer_html_str(
         tableau_benchmark, reseau_actuel=reseau_actuel if reseau_correspond else None
