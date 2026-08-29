@@ -8,7 +8,12 @@ import tempfile
 import streamlit as st
 import streamlit.components.v1 as components
 
-from src.cartographie import create_carte_arrets
+from src.cartographie import (
+    chemin_cache_carte_reseau,
+    charger_carte_reseau_cache,
+    create_carte_arrets,
+    envoyer_carte_reseau_cache,
+)
 from src.info_reseau import charger_ou_calculer_dates_service, date_str, nom_reseau_str
 from src.arrets import calculer_indicateurs_arrets
 from src.export_html import exporter_statistiques_html
@@ -135,26 +140,42 @@ def arrets_page(lang="fr"):
                 with open(output_stats, "r", encoding="utf-8") as f:
                     components.html(f.read(), height=600, scrolling=True)
 
-            # Carte
+            # Carte : tente d'abord une carte déjà rendue en cache (par le
+            # notebook, qui la pousse vers HF après son propre calcul, ou un
+            # run précédent de cette page) — évite le coût du rendu Folium
+            # (jointure population + tracé des lignes depuis le GTFS).
             st.header(t("arrets.header_carte", lang))
-            output_map = os.path.join(tempfile.gettempdir(), "stops_map_streamlit.html")
-            m = create_carte_arrets(
-                indicateurs,
-                st.session_state.nom_reseau_str,
-                t("commun.analyse_du", lang, date=st.session_state.date_str),
-                st.session_state.date_str,
-                st.session_state.zip_path,
-                output_map,
-                chemin_logo=st.session_state.chemin_logo,
-                lang=lang,
-                grille_population=st.session_state.grille_population,
-            )
-            # get_root().render() (le HTML complet, celui écrit par .save())
-            # plutôt que _repr_html_() : cette dernière enveloppe la carte
-            # dans un wrapper "responsive" (padding-bottom en %) pensé pour
-            # Jupyter, qui impose son propre ratio hauteur/largeur et ignore
-            # le height/width demandés ici.
-            components.html(m.get_root().render(), height=1000, width=1000)
+            chemin_carte_cache = charger_carte_reseau_cache(st.session_state.nom_reseau_str, "arrets")
+            if chemin_carte_cache is not None:
+                with open(chemin_carte_cache, "r", encoding="utf-8") as f:
+                    components.html(f.read(), height=1000, width=1000)
+            else:
+                output_map = os.path.join(tempfile.gettempdir(), "stops_map_streamlit.html")
+                m = create_carte_arrets(
+                    indicateurs,
+                    st.session_state.nom_reseau_str,
+                    t("commun.analyse_du", lang, date=st.session_state.date_str),
+                    st.session_state.date_str,
+                    st.session_state.zip_path,
+                    output_map,
+                    chemin_logo=st.session_state.chemin_logo,
+                    lang=lang,
+                    grille_population=st.session_state.grille_population,
+                )
+                # get_root().render() (le HTML complet, celui écrit par
+                # .save()) plutôt que _repr_html_() : cette dernière
+                # enveloppe la carte dans un wrapper "responsive"
+                # (padding-bottom en %) pensé pour Jupyter, qui impose son
+                # propre ratio hauteur/largeur et ignore le height/width
+                # demandés ici.
+                html_carte = m.get_root().render()
+                components.html(html_carte, height=1000, width=1000)
+
+                chemin_carte = chemin_cache_carte_reseau(st.session_state.nom_reseau_str, "arrets")
+                os.makedirs(os.path.dirname(chemin_carte), exist_ok=True)
+                with open(chemin_carte, "w", encoding="utf-8") as f:
+                    f.write(html_carte)
+                envoyer_carte_reseau_cache(chemin_carte, st.session_state.nom_reseau_str, "arrets")
 
             # Télécharger les résultats
             st.header(t("commun.header_telechargement", lang))

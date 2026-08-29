@@ -9,7 +9,12 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 from src.indicateurs_troncons import calculer_frequentation_troncons
-from src.cartographie import creer_carte_troncons
+from src.cartographie import (
+    chemin_cache_carte_reseau,
+    charger_carte_reseau_cache,
+    creer_carte_troncons,
+    envoyer_carte_reseau_cache,
+)
 from src.create_troncons_uniques import creer_troncons_uniques
 from src.utils import km_par_ligne_plage
 from src.hf_cache import charger_ou_calculer_avec_cache_hf
@@ -376,52 +381,68 @@ def troncons_page(lang="fr"):
                     else:
                         st.info(t("troncons.aucun_actif", lang, mode=nom_mode.lower()))
 
-            # Carte interactive : creer_carte_troncons attend 6 couches fixes
-            # (bus/tram/metro/trolley/ferry/train) + des couches
-            # supplémentaires génériques pour tout le reste (ex: RER pour
-            # IDFM, à la place du "Train" générique — Transilien et TER
-            # exclus, cf. MODES_IDFM ci-dessus. Voir couches_supplementaires,
-            # cartographie.py).
+            # Carte interactive : tente d'abord une carte déjà rendue en
+            # cache (par le notebook, qui la pousse vers HF après son propre
+            # calcul, ou un run précédent de cette page) — évite le coût du
+            # rendu Folium (une couche par mode + population). creer_carte_troncons
+            # attend 6 couches fixes (bus/tram/metro/trolley/ferry/train) +
+            # des couches supplémentaires génériques pour tout le reste (ex:
+            # RER pour IDFM, à la place du "Train" générique — Transilien et
+            # TER exclus, cf. MODES_IDFM ci-dessus. Voir
+            # couches_supplementaires, cartographie.py).
             st.header(t("troncons.header_carte", lang))
-            output_map = os.path.join(tempfile.gettempdir(), "troncons_map_streamlit.html")
-            noms_couches_fixes = {"Bus", "Tram", "Metro", "Trolley", "Ferry", "Train"}
-            gdf_train = indicateurs_par_mode.get("Train")
-            if gdf_train is None:
-                # Mode "Train" éclaté (ex: IDFM) : pas de couche générique,
-                # les sous-catégories partent en couches_supplementaires.
-                gdf_train = indicateurs_par_mode["Bus"].iloc[0:0]
-            couches_supplementaires = [
-                (
-                    indicateurs_par_mode[nom_mode],
-                    nom_mode,
-                    emoji,
-                    PALETTES_MODES_SUPPLEMENTAIRES.get(nom_mode, PALETTE_GRISE_DEFAUT),
-                    MULTIPLICATEUR_EPAISSEUR_MODES_SUPPLEMENTAIRES.get(nom_mode, 1),
+            chemin_carte_cache = charger_carte_reseau_cache(st.session_state.nom_reseau_str, "troncons")
+            if chemin_carte_cache is not None:
+                with open(chemin_carte_cache, "r", encoding="utf-8") as f:
+                    components.html(f.read(), height=1000, width=1000)
+            else:
+                output_map = os.path.join(tempfile.gettempdir(), "troncons_map_streamlit.html")
+                noms_couches_fixes = {"Bus", "Tram", "Metro", "Trolley", "Ferry", "Train"}
+                gdf_train = indicateurs_par_mode.get("Train")
+                if gdf_train is None:
+                    # Mode "Train" éclaté (ex: IDFM) : pas de couche générique,
+                    # les sous-catégories partent en couches_supplementaires.
+                    gdf_train = indicateurs_par_mode["Bus"].iloc[0:0]
+                couches_supplementaires = [
+                    (
+                        indicateurs_par_mode[nom_mode],
+                        nom_mode,
+                        emoji,
+                        PALETTES_MODES_SUPPLEMENTAIRES.get(nom_mode, PALETTE_GRISE_DEFAUT),
+                        MULTIPLICATEUR_EPAISSEUR_MODES_SUPPLEMENTAIRES.get(nom_mode, 1),
+                    )
+                    for _, nom_mode, emoji, _ in MODES
+                    if nom_mode not in noms_couches_fixes
+                ]
+                m = creer_carte_troncons(
+                    indicateurs_par_mode["Bus"],
+                    indicateurs_par_mode["Tram"],
+                    indicateurs_par_mode["Metro"],
+                    indicateurs_par_mode["Trolley"],
+                    indicateurs_par_mode["Ferry"],
+                    gdf_train,
+                    output_map,
+                    date_service_str,
+                    nom_reseau_str=st.session_state.nom_reseau_str,
+                    chemin_logo=st.session_state.chemin_logo,
+                    lang=lang,
+                    couches_supplementaires=couches_supplementaires,
+                    grille_population=st.session_state.grille_population,
                 )
-                for _, nom_mode, emoji, _ in MODES
-                if nom_mode not in noms_couches_fixes
-            ]
-            m = creer_carte_troncons(
-                indicateurs_par_mode["Bus"],
-                indicateurs_par_mode["Tram"],
-                indicateurs_par_mode["Metro"],
-                indicateurs_par_mode["Trolley"],
-                indicateurs_par_mode["Ferry"],
-                gdf_train,
-                output_map,
-                date_service_str,
-                nom_reseau_str=st.session_state.nom_reseau_str,
-                chemin_logo=st.session_state.chemin_logo,
-                lang=lang,
-                couches_supplementaires=couches_supplementaires,
-                grille_population=st.session_state.grille_population,
-            )
-            # get_root().render() (le HTML complet, celui écrit par .save())
-            # plutôt que _repr_html_() : cette dernière enveloppe la carte
-            # dans un wrapper "responsive" (padding-bottom en %) pensé pour
-            # Jupyter, qui impose son propre ratio hauteur/largeur et ignore
-            # le height/width demandés ici.
-            components.html(m.get_root().render(), height=1000, width=1000)
+                # get_root().render() (le HTML complet, celui écrit par
+                # .save()) plutôt que _repr_html_() : cette dernière
+                # enveloppe la carte dans un wrapper "responsive"
+                # (padding-bottom en %) pensé pour Jupyter, qui impose son
+                # propre ratio hauteur/largeur et ignore le height/width
+                # demandés ici.
+                html_carte = m.get_root().render()
+                components.html(html_carte, height=1000, width=1000)
+
+                chemin_carte = chemin_cache_carte_reseau(st.session_state.nom_reseau_str, "troncons")
+                os.makedirs(os.path.dirname(chemin_carte), exist_ok=True)
+                with open(chemin_carte, "w", encoding="utf-8") as f:
+                    f.write(html_carte)
+                envoyer_carte_reseau_cache(chemin_carte, st.session_state.nom_reseau_str, "troncons")
 
             # Télécharger les résultats
             st.header(t("commun.header_telechargement", lang))

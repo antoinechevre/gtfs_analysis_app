@@ -48,6 +48,35 @@ def tile_layer_cartodb(tiles, name, **kwargs):
     return folium.TileLayer(fond["tiles"], name=name, attr=fond.get("attr"), **kwargs)
 
 
+def chemin_cache_carte_reseau(nom_reseau_str, nom_carte):
+    """Chemin local du cache HTML pré-rendu pour une carte réseau (nom_carte:
+    "arrets" ou "troncons") — même dossier que les autres caches
+    memory_troncons/{nom_reseau_str}/ (indicateurs, tronçons...), pour que
+    le notebook (qui génère et pousse ces cartes vers HF) et l'app (qui les
+    relit) partagent la même clé de cache."""
+    return os.path.join("data", "memory_troncons", nom_reseau_str, f"carte_{nom_carte}.html")
+
+
+def charger_carte_reseau_cache(nom_reseau_str, nom_carte):
+    """Récupère la carte HTML déjà rendue (par le notebook ou un run
+    précédent de l'app) depuis le dataset HF partagé si pas déjà en local ;
+    None si absente des deux — l'appelant doit alors la rendre lui-même."""
+    from src.hf_cache import recuperer_depuis_hf
+
+    chemin_cache = chemin_cache_carte_reseau(nom_reseau_str, nom_carte)
+    recuperer_depuis_hf(f"memory_troncons/{nom_reseau_str}/carte_{nom_carte}.html", chemin_cache)
+    return chemin_cache if os.path.exists(chemin_cache) else None
+
+
+def envoyer_carte_reseau_cache(chemin_html, nom_reseau_str, nom_carte):
+    """Pousse une carte HTML déjà rendue (fichier chemin_html) vers le cache
+    HF partagé, pour que le prochain appelant (app ou notebook) n'ait plus à
+    la re-générer."""
+    from src.hf_cache import envoyer_vers_hf
+
+    envoyer_vers_hf(chemin_html, f"memory_troncons/{nom_reseau_str}/carte_{nom_carte}.html")
+
+
 def ajouter_couche_population(m, grille_population, lang="fr"):
     """
     Ajoute la grille de population (WorldPop, cf. src/worldpop.py) comme
