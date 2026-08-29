@@ -150,7 +150,7 @@ Où trouver un GTFS africain :
 
         # --- infos réseau, communes à Arrêts et Lignes ---
         "commun.reseau_info": "Le GTFS concerne le réseau {reseau}",
-        "commun.population_info": "Ce GTFS concerne la ville de {ville}, avec une agglomération de {population} k habitants ({annee})",
+        "commun.reseau_population_info": "Le GTFS concerne le réseau {reseau}, avec une métropole de {population} k habitants ({annee})",
         "commun.analyse_du": "Analyse du {date}",
         "commun.periode_service": "Période de service du {debut} au {fin}",
         "commun.plage_info": "Il est valide sur la plage {plage}, le JOB (mardi/jeudi le plus tardif de cette plage) est {job}",
@@ -273,7 +273,7 @@ Où trouver un GTFS africain :
         "benchmark.succes_enregistrement": "✓ {reseau} enregistré dans le benchmark",
         "benchmark.index_vide": "Aucun réseau n'a encore été enregistré dans l'index de benchmark.",
         "benchmark.header_afrique": "🌍📊 Benchmark inter-réseaux — villes africaines",
-        "benchmark.caption_afrique": "Index séparé du benchmark standard : population Wikidata et BPE indisponibles pour la plupart de ces réseaux — remplacées par la population et les équipements OSM accessibles en 60 min (cf. onglet Accessibilité).",
+        "benchmark.caption_afrique": "Index séparé du benchmark standard : population Wikidata et BPE indisponibles pour la plupart de ces réseaux — population de la ville en abscisse, équipements OSM accessibles en 60 min en ordonnée (cf. onglet Accessibilité).",
         "benchmark.avertissement_comparabilite": "⚠ Comparer deux villes ici, c'est aussi comparer deux niveaux de complétude de données OSM/GTFS très différents : un score plus bas peut venir d'un réseau réellement moins accessible, ou simplement d'une couverture de données plus pauvre pour cette ville. À interpréter avec cette réserve en tête.",
         "benchmark.accessibilite_manquante": "Indicateurs d'accessibilité (population/équipements en 60 min) pas encore calculés : visite l'onglet Accessibilité avant d'enregistrer, sinon ce réseau sera enregistré sans eux.",
         "benchmark.autre_type_reseau_afrique": "Le réseau chargé ({reseau}) n'a pas été sélectionné via la boîte de dialogue « Villes africaines » : rien à enregistrer ici. Le nuage de points ci-dessous reste consultable.",
@@ -516,7 +516,7 @@ Where to find an African GTFS:
         "app.erreur_grille_population": "Could not build the WorldPop population grid: {erreur}",
 
         "commun.reseau_info": "This GTFS covers the {reseau} network",
-        "commun.population_info": "This GTFS covers the city of {ville}, with an urban area of {population}k inhabitants ({annee})",
+        "commun.reseau_population_info": "This GTFS covers the {reseau} network, in a metropolitan area of {population}k inhabitants ({annee})",
         "commun.analyse_du": "Analysis of {date}",
         "commun.periode_service": "Service period from {debut} to {fin}",
         "commun.plage_info": "It is valid over the {plage} range, the Base Weekday (the latest Tuesday or Thursday in this range) is {job}",
@@ -639,7 +639,7 @@ Where to find an African GTFS:
         "benchmark.succes_enregistrement": "✓ {reseau} registered in the benchmark",
         "benchmark.index_vide": "No network has been registered in the benchmark index yet.",
         "benchmark.header_afrique": "🌍📊 Cross-network benchmark — African cities",
-        "benchmark.caption_afrique": "Separate index from the standard benchmark: Wikidata population and BPE facilities are unavailable for most of these networks — replaced by population and OSM facilities accessible within 60 min (cf. Accessibility tab).",
+        "benchmark.caption_afrique": "Separate index from the standard benchmark: Wikidata population and BPE facilities are unavailable for most of these networks — city population on the X axis, OSM facilities accessible within 60 min on the Y axis (cf. Accessibility tab).",
         "benchmark.avertissement_comparabilite": "⚠ Comparing two cities here also means comparing two very different levels of OSM/GTFS data completeness: a lower score can reflect a genuinely less accessible network, or simply poorer data coverage for that city. Read with this caveat in mind.",
         "benchmark.accessibilite_manquante": "Accessibility indicators (population/facilities within 60 min) not computed yet: visit the Accessibility tab before registering, otherwise this network will be registered without them.",
         "benchmark.autre_type_reseau_afrique": "The loaded network ({reseau}) wasn't selected via the \"African cities\" dialog: nothing to register here. The chart below stays available.",
