@@ -92,7 +92,19 @@ def fusionner_gtfs(chemins_zip, chemin_sortie, dist_units="km"):
             for feed in feeds_prefixes
             if getattr(feed, table) is not None
         ]
-        if dfs:
+        if not dfs:
+            continue
+        if table == "feed_info":
+            # feed_info décrit le feed dans son ensemble (0 ou 1 ligne selon
+            # la spec GTFS) : le concaténer comme les autres tables produit
+            # plusieurs lignes, rejetées par les lecteurs GTFS stricts (dont
+            # celui de r5py : "FeedInfo contains more than one record",
+            # qui casse alors tout le TransportNetwork malgré allow_errors=True
+            # — cf. l'incident Casablanca/Cairo TTM 100% NaN sauf diagonale).
+            # On ne garde que la première ligne rencontrée plutôt que de
+            # fusionner plusieurs feed_info entre eux.
+            tables_fusionnees[table] = dfs[0].iloc[[0]].reset_index(drop=True)
+        else:
             tables_fusionnees[table] = pd.concat(dfs, ignore_index=True, sort=False)
 
     feed_fusionne = gk.Feed(dist_units=dist_units, **tables_fusionnees)
