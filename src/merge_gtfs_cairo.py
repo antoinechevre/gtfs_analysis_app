@@ -1,5 +1,5 @@
 """
-Fusionne les deux GTFS Casablanca de data/GTFS_tomerge/ (bus + tram, deux
+Fusionne les deux GTFS Caire de data/GTFS_tomerge/ (bus + métro, deux
 feeds distincts non superposés) en un seul GTFS, prêt pour le catalogue
 data/GTFS_Africa/.
 
@@ -8,11 +8,11 @@ cf. https://github.com/google/transitfeed/wiki/Merge) : chaque feed garde
 toutes ses entités, avec ses identifiants (stop_id, route_id, trip_id,
 service_id, shape_id...) préfixés par feed pour garantir l'absence de
 collision avant concaténation table par table — adapté à deux réseaux
-distincts (bus/tram, pas de recouvrement géographique bord à bord), pas à
+distincts (bus/métro, pas de recouvrement géographique bord à bord), pas à
 la fusion de deux feeds décrivant le même réseau.
 
 Usage :
-    python3 -m src.merge_gtfs_casablanca
+    python3 -m src.merge_gtfs_cairo
 """
 
 import os
@@ -25,9 +25,9 @@ from src.utils import charger_gtfs
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-GTFS_ZIP_PATH_BUS = os.path.join(BASE_DIR, "data", "GTFS_tomerge", "Casablanca_bus.zip")
-GTFS_ZIP_PATH_TRAM = os.path.join(BASE_DIR, "data", "GTFS_tomerge", "Casablanca_tram_gtfs.zip")
-GTFS_ZIP_PATH_SORTIE = os.path.join(BASE_DIR, "data", "GTFS_Africa", "Casablanca_gtfs.zip")
+GTFS_ZIP_PATH_BUS = os.path.join(BASE_DIR, "data", "GTFS_tomerge", "Cairo_bus.zip")
+GTFS_ZIP_PATH_TRAM = os.path.join(BASE_DIR, "data", "GTFS_tomerge", "Cairo_metro.zip")
+GTFS_ZIP_PATH_SORTIE = os.path.join(BASE_DIR, "data", "GTFS_Africa", "Cairo_gtfs.zip")
 
 # Tables GTFS gérées par gtfs_kit.Feed
 TABLES_GTFS = [
