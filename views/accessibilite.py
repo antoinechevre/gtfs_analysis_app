@@ -178,7 +178,9 @@ def accessibilite_page(lang="fr"):
         carte_equip = grille_population[["id", "geometry"]].merge(cum_equipements, on="id")
         m_equip = carte_equip.explore(
             "equipements", cmap="magma", **fond_carte_kwargs("CartoDB positron"),
-            style_kwds={"style_function": lambda x: {"weight": 0, "fillOpacity": 0.7}},
+            style_kwds={"style_function": lambda x: {
+                "weight": 0, "fillOpacity": 0 if x["properties"]["equipements"] == 0 else 0.7,
+            }},
         )
         html_carte = m_equip.get_root().render()
         components.html(html_carte, height=650, width=1000)
