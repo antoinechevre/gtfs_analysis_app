@@ -136,6 +136,13 @@ def accessibilite_page(lang="fr"):
                     ttm, land_use_data=equipements_par_carreau, opportunity="equipements",
                     travel_cost="travel_time", cutoff=CUTOFF_MIN,
                 )
+                # Exprimé en % du score pondéré total de l'agglomération (pas
+                # en score brut, difficile à interpréter seul) : par carreau,
+                # part du stock total d'équipements pondérés de la ville
+                # atteignable en <= 60 min depuis ce carreau.
+                score_total_agglo = equipements_par_carreau["equipements"].sum()
+                if score_total_agglo:
+                    cum_equipements["equipements"] = cum_equipements["equipements"] / score_total_agglo * 100
                 envoyer_cumulative_cutoff_cache(
                     cum_equipements, st.session_state.nom_reseau_str, "equipements", CUTOFF_MIN,
                     resolution_m=RESOLUTION_M_AFRIQUE,
@@ -156,7 +163,7 @@ def accessibilite_page(lang="fr"):
         (cum_equipements.set_index("id")["equipements"] * poids).sum() / population_totale
         if population_totale else 0
     )
-    st.metric(t("accessibilite.metric_equipements", lang, cutoff=CUTOFF_MIN), f"{moyenne_equip:,.1f}")
+    st.metric(t("accessibilite.metric_equipements", lang, cutoff=CUTOFF_MIN), f"{moyenne_equip:,.1f} %")
 
     # Mis en session pour l'onglet Benchmark (index spécifique villes
     # africaines, cf. views/benchmark.py) : substitut aux métriques
