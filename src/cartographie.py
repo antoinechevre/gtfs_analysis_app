@@ -205,7 +205,12 @@ def create_carte_arrets(df, nom_reseau_str,date_service_str, date_analyse, zip_p
             ).add_to(m)
     # --- Fin ajout des lignes ---
 
-    for _, row in df.iterrows():
+    # Triés par nombre de passages croissant : chaque CircleMarker est
+    # ajouté au-dessus des précédents (ordre du DOM Leaflet), donc les
+    # arrêts les plus fréquentés sont dessinés en dernier et ressortent
+    # devant les autres (même principe que la carte équipements,
+    # views/equipements.py).
+    for _, row in df.sort_values("nombre_passages").iterrows():
         stop_id = row["stop_id"]
         lat = row["stop_lat"]
         lon = row["stop_lon"]
