@@ -46,10 +46,11 @@ def construire_ligne_benchmark():
 
     Pour un réseau africain (st.session_state.is_reseau_africain), ajoute
     les indicateurs de la page Accessibilité (population_accessible_60min /
-    equipements_accessibles_60min, cf. views/accessibilite.py) — None s'ils
-    n'y ont pas encore été calculés (page pas visitée, ou TTM pas encore
-    disponible pour ce réseau) : à l'appelant/au lecteur du CSV de gérer les
-    valeurs manquantes, pas de blocage ici.
+    equipements_accessibles_45min / equipements_accessibles_60min, cf.
+    views/accessibilite.py) — None s'ils n'y ont pas encore été calculés
+    (page pas visitée, ou TTM pas encore disponible pour ce réseau) : à
+    l'appelant/au lecteur du CSV de gérer les valeurs manquantes, pas de
+    blocage ici.
     """
     if st.session_state.feed is None or st.session_state.nom_reseau_str is None:
         return None
@@ -75,6 +76,7 @@ def construire_ligne_benchmark():
 
     if st.session_state.get("is_reseau_africain"):
         ligne["population_accessible_60min"] = st.session_state.get("accessibilite_population_60min")
+        ligne["equipements_accessibles_45min"] = st.session_state.get("accessibilite_equipements_45min")
         ligne["equipements_accessibles_60min"] = st.session_state.get("accessibilite_equipements_60min")
 
     return ligne
@@ -138,7 +140,8 @@ def _afficher_benchmark(lang, africain):
         colonnes_a_garder = [
             c for c in tableau_benchmark.columns
             if c in ("reseau", "ville_principale", "population_totale",
-                      "population_accessible_60min", "equipements_accessibles_60min")
+                      "population_accessible_60min", "equipements_accessibles_45min",
+                      "equipements_accessibles_60min")
         ]
         tableau_benchmark = tableau_benchmark[colonnes_a_garder]
 

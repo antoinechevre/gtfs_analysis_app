@@ -36,6 +36,7 @@ LIBELLES_Y = {
     # substituts aux métriques BPE-par-domaine du benchmark standard,
     # indisponibles hors de France — cf. views/accessibilite.py.
     "population_accessible_60min": "Population accessible en 60 min",
+    "equipements_accessibles_45min": "% équipements pondérés accessibles en 45 min",
     "equipements_accessibles_60min": "% équipements pondérés accessibles en 60 min",
 }
 

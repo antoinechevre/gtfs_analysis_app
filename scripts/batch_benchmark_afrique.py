@@ -12,11 +12,12 @@ réseau par réseau dans l'onglet Accessibilité de l'app.
 
 pas de population_accessible_60min ici (mesure retirée de l'app, cf.
 views/accessibilite.py — seule "équipements accessibles" y est encore
-calculée) : seule equipements_accessibles_60min est renseignée.
+calculée) : seules equipements_accessibles_45min/_60min sont renseignées.
 
-Un réseau sans résultat cumulative_cutoff équipements en cache (TTM pas
-encore calculée pour lui) est quand même enregistré, avec
-equipements_accessibles_60min=None — l'app/le graphique gèrent déjà les
+Un réseau sans résultat cumulative_cutoff équipements en cache pour un
+cutoff donné (TTM pas encore calculée pour lui, ou notebook pas encore
+relancé depuis l'ajout du cutoff 45 min) est quand même enregistré, avec
+la colonne correspondante à None — l'app/le graphique gèrent déjà les
 valeurs manquantes (cf. src/nuage_points_benchmark.py).
 
 Usage : (depuis la racine du repo, avec le venv activé)
@@ -45,7 +46,7 @@ from src.worldpop import RESOLUTION_M_AFRIQUE, charger_ou_construire_grille_popu
 GTFS_DIR = BASE_DIR / "data" / "GTFS_Africa"
 NOM_FICHIER_HF_BENCHMARK = "benchmark/index_benchmark_reseaux_afrique.csv"
 CHEMIN_LOCAL_BENCHMARK = BASE_DIR / "data" / "benchmark" / "index_benchmark_reseaux_afrique.csv"
-CUTOFF_MIN = 60
+CUTOFFS_MIN = [45, 60]
 
 
 def traiter_gtfs(chemin_zip):
@@ -83,31 +84,36 @@ def traiter_gtfs(chemin_zip):
     )
     vk_par_mode = total_vk_plage.groupby("mode")["total_km_plage"].sum()
 
-    # Équipements accessibles en 60 min : résultat déjà calculé par le
+    # Équipements accessibles en 45 et 60 min : résultat déjà calculé par le
     # notebook (memory_accessibilite/, cf. envoyer_cumulative_cutoff_cache
     # dans index_accessibility_notebook_africa_600m.ipynb) — jamais
     # recalculé ici (pas de TTM chargée, pas de JVM r5py).
-    cum_equipements = charger_cumulative_cutoff_cache(
-        reseau_str, "equipements", CUTOFF_MIN, resolution_m=RESOLUTION_M_AFRIQUE,
-    )
-    equipements_accessibles_60min = None
     population_totale = None
-    if cum_equipements is not None:
+    grille_population = None
+    equipements_accessibles_par_cutoff = {}
+    for cutoff in CUTOFFS_MIN:
+        cum_equipements = charger_cumulative_cutoff_cache(
+            reseau_str, "equipements", cutoff, resolution_m=RESOLUTION_M_AFRIQUE,
+        )
+        if cum_equipements is None:
+            print(f"  (pas de TTM/résultat équipements {cutoff} min en cache pour {reseau_str} — colonne laissée vide)")
+            equipements_accessibles_par_cutoff[cutoff] = None
+            continue
         # Moyenne pondérée par la population du carreau d'origine (même
         # calcul que views/accessibilite.py) : nécessite la grille de
         # population (WorldPop), reconstruite depuis le cache
-        # memory_gpkg/ si absente, sans jamais recalculer la TTM.
-        grille_population = charger_ou_construire_grille_population_reseau(
-            feed, reseau_str, resolution_m=RESOLUTION_M_AFRIQUE,
-        )
-        poids = grille_population.set_index("id")["population"]
-        population_totale = float(poids.sum())
-        if population_totale:
-            equipements_accessibles_60min = float(
-                (cum_equipements.set_index("id")["equipements"] * poids).sum() / population_totale
+        # memory_gpkg/ si absente, sans jamais recalculer la TTM — une
+        # seule fois, réutilisée pour les deux cutoffs.
+        if grille_population is None:
+            grille_population = charger_ou_construire_grille_population_reseau(
+                feed, reseau_str, resolution_m=RESOLUTION_M_AFRIQUE,
             )
-    else:
-        print(f"  (pas de TTM/résultat équipements en cache pour {reseau_str} — colonne laissée vide)")
+            poids = grille_population.set_index("id")["population"]
+            population_totale = float(poids.sum())
+        equipements_accessibles_par_cutoff[cutoff] = (
+            float((cum_equipements.set_index("id")["equipements"] * poids).sum() / population_totale)
+            if population_totale else None
+        )
 
     ligne_benchmark = pd.DataFrame(
         [
@@ -121,7 +127,8 @@ def traiter_gtfs(chemin_zip):
                 "vehicules_km_bus": float(vk_par_mode.get("Bus", 0)),
                 "vehicules_km_metro": float(vk_par_mode.get("Métro", 0)),
                 "vehicules_km_tram": float(vk_par_mode.get("Tram", 0)),
-                "equipements_accessibles_60min": equipements_accessibles_60min,
+                "equipements_accessibles_45min": equipements_accessibles_par_cutoff[45],
+                "equipements_accessibles_60min": equipements_accessibles_par_cutoff[60],
             }
         ]
     )
@@ -132,7 +139,8 @@ def traiter_gtfs(chemin_zip):
         colonne_cle="reseau",
         valeur_cle=reseau_str,
     )
-    print(f"✓ {reseau_str} enregistré dans le benchmark Afrique (equipements_accessibles_60min={equipements_accessibles_60min})")
+    print(f"✓ {reseau_str} enregistré dans le benchmark Afrique (equipements_accessibles_45min={equipements_accessibles_par_cutoff[45]}, "
+          f"equipements_accessibles_60min={equipements_accessibles_par_cutoff[60]})")
 
 
 if __name__ == "__main__":
