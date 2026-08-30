@@ -20,25 +20,63 @@ def nom_fichier_ttm(nom_reseau_str, resolution_m=None):
     return f"ttm_{nom_reseau_str}{suffixe}.parquet"
 
 
-def charger_ttm_reseau(nom_reseau_str, resolution_m=None):
-    """Charge la TTM carreau->carreau de nom_reseau_str (à resolution_m,
-    cf. nom_fichier_ttm) depuis le cache local, ou la récupère depuis le
-    dataset Hugging Face partagé (calculée en amont par un notebook,
-    jamais ici — cf. charger_ttm). None si absente des deux.
-
-    Utilisée par tout onglet qui a besoin d'une TTM déjà calculée pour un
-    réseau donné (Accessibilité, Isochrone carreaux) : centralisée ici
-    plutôt que dupliquée par onglet, pour ne garder qu'un seul endroit qui
-    connaisse la convention de nommage memory_ttm/ttm_<reseau>.parquet.
-    """
+def chemin_ttm_reseau(nom_reseau_str, resolution_m=None):
+    """Chemin local de la TTM de nom_reseau_str (cf. nom_fichier_ttm),
+    récupérée depuis le dataset Hugging Face partagé si absente localement.
+    None si introuvable des deux côtés. Partagé par charger_ttm_reseau (lit
+    la TTM entière) et charger_ttm_pour_origine (lit une seule origine) :
+    seule la lecture du fichier diffère, sa résolution est identique."""
     from src.hf_cache import recuperer_depuis_hf
 
     nom_fichier = nom_fichier_ttm(nom_reseau_str, resolution_m)
     chemin_cache = os.path.join("data", "memory_ttm", nom_fichier)
     recuperer_depuis_hf(f"memory_ttm/{nom_fichier}", chemin_cache)
-    if not os.path.exists(chemin_cache):
+    return chemin_cache if os.path.exists(chemin_cache) else None
+
+
+def charger_ttm_reseau(nom_reseau_str, resolution_m=None):
+    """Charge la TTM carreau->carreau ENTIÈRE de nom_reseau_str (à
+    resolution_m, cf. nom_fichier_ttm) depuis le cache local, ou la
+    récupère depuis le dataset Hugging Face partagé (calculée en amont par
+    un notebook, jamais ici — cf. charger_ttm). None si absente des deux.
+
+    Coûteux en mémoire pour un réseau volumineux (cf. charger_ttm) —
+    n'utiliser que si un calcul a réellement besoin de TOUTES les origines
+    (ex: cumulative_cutoff sur la page Accessibilité). Pour ne consulter
+    qu'une seule origine (ex: page Isochrone carreaux), préférer
+    charger_ttm_pour_origine, qui ne lit que les lignes concernées."""
+    chemin_cache = chemin_ttm_reseau(nom_reseau_str, resolution_m)
+    if chemin_cache is None:
         return None
     return charger_ttm(chemin_cache)
+
+
+def charger_ttm_pour_origine(nom_reseau_str, origin_id, resolution_m=None):
+    """Charge uniquement les lignes de la TTM de nom_reseau_str dont
+    from_id == origin_id (DataFrame [from_id, to_id, travel_time]) — None
+    si la TTM est introuvable (local ou HF).
+
+    Le fichier est écrit par calculer_ttm_par_lots un lot d'origines
+    (~1500) à la fois, un row group Parquet par lot : les valeurs de
+    from_id y sont donc contiguës et croissantes d'un row group à l'autre.
+    Un filtre pyarrow (predicate pushdown) élague alors la quasi-totalité
+    des row groups grâce à leurs statistiques min/max, sans jamais
+    matérialiser la table entière en mémoire — mesuré sur Abidjan (706M
+    lignes, 691 row groups) : ~26 000 lignes lues en 0.03s au lieu de
+    charger_ttm_reseau (plusieurs Go, cf. son docstring), qui rejouée à
+    chaque interaction Streamlit (slider, sélection d'arrêt...) a fait
+    dépasser la limite mémoire du Space en usage réel sur ce réseau."""
+    import pyarrow.dataset as ds
+
+    chemin_cache = chemin_ttm_reseau(nom_reseau_str, resolution_m)
+    if chemin_cache is None:
+        return None
+
+    dataset = ds.dataset(chemin_cache, format="parquet")
+    table = dataset.to_table(filter=(ds.field("from_id") == origin_id))
+    index_travel_time = table.column_names.index("travel_time")
+    table = table.set_column(index_travel_time, "travel_time", table.column("travel_time").cast("float32"))
+    return table.to_pandas()
 
 
 def nom_fichier_cumulative_cutoff(nom_reseau_str, opportunity, cutoff, resolution_m=None):
