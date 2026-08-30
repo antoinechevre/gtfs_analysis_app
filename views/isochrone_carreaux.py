@@ -40,7 +40,24 @@ def isochrone_carreaux_page(lang="fr"):
         st.warning(t("accessibilite.pas_de_grille", lang, erreur=t("accessibilite.grille_vide", lang)))
         return
 
-    ttm = charger_ttm_reseau(st.session_state.nom_reseau_str, resolution_m=RESOLUTION_M_AFRIQUE)
+    # Mise en cache session (pas juste sur disque/HF, cf. charger_ttm_reseau) :
+    # sans ça, chaque interaction (slider, selectbox...) fait rejouer tout le
+    # script Streamlit et donc redécompresser l'intégralité du parquet en un
+    # nouveau DataFrame — pour un réseau volumineux (ex: Abidjan, 706M lignes)
+    # la coexistence brève de l'ancienne et de la nouvelle copie en mémoire
+    # pendant le rechargement suffit à dépasser la limite mémoire du Space
+    # (16 Go, observé en usage réel), même si chaque copie prise seule tient
+    # dedans. Chargée une seule fois par réseau, invalidée si l'utilisateur
+    # change de réseau (cf. app_africa.py, ttm_isochrone_reseau).
+    if (
+        st.session_state.get("ttm_isochrone") is None
+        or st.session_state.get("ttm_isochrone_reseau") != st.session_state.nom_reseau_str
+    ):
+        st.session_state.ttm_isochrone = charger_ttm_reseau(
+            st.session_state.nom_reseau_str, resolution_m=RESOLUTION_M_AFRIQUE,
+        )
+        st.session_state.ttm_isochrone_reseau = st.session_state.nom_reseau_str
+    ttm = st.session_state.ttm_isochrone
     if ttm is None:
         st.warning(t("accessibilite.pas_de_ttm", lang, reseau=st.session_state.nom_reseau_str))
         return

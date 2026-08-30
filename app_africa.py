@@ -228,7 +228,8 @@ for cle in (
     "feed", "active_service_ids", "date_str", "indicateurs_arrets", "indicateurs_par_mode",
     "total_vk_plage", "modes_disponibles", "last_date_str", "nom_reseau_str", "zip_path",
     "chemin_logo", "last_uploaded_name", "population_agglo", "annee_population",
-    "grille_population", "accessibilite_population_60min", "accessibilite_equipements_60min",
+    "grille_population", "accessibilite_population_60min", "accessibilite_equipements_45min",
+    "accessibilite_equipements_60min", "ttm_isochrone", "ttm_isochrone_reseau",
 ):
     if cle not in st.session_state:
         st.session_state[cle] = None
@@ -332,8 +333,11 @@ def charger_donnees_gtfs():
         st.session_state.modes_disponibles = None
         st.session_state.grille_population = None
         st.session_state.accessibilite_population_60min = None
+        st.session_state.accessibilite_equipements_45min = None
         st.session_state.accessibilite_equipements_60min = None
         st.session_state.isochrone_carreaux_resultats = None
+        st.session_state.ttm_isochrone = None
+        st.session_state.ttm_isochrone_reseau = None
 
         # GTFS uploadé et jamais vu : renvoyé vers le dossier HF dédié
         # (PREFIXE_HF), jamais vers "GTFS/" (catalogue standard, app.py).
