@@ -1,8 +1,5 @@
-import csv
-import io
 import os
 import pathlib
-import zipfile
 
 import gtfs_kit as gk
 import pandas as pd
@@ -456,21 +453,33 @@ def dir_tree(path, prefix=""):
             dir_tree(entry, prefix + extension)
 
 
-# r5py (contrairement à gtfs_kit) distingue "fichier absent" de "fichier
-# présent mais vide" et rejette le second cas avec une EmptyTableError au
-# lieu de l'ignorer — cf. preparer_gtfs_pour_r5py ci-dessous. Tables
-# optionnelles du GTFS déjà vues vides mais présentes sur des GTFS réels.
-TABLES_OPTIONNELLES_VIDABLES_R5PY = [
-    "calendar.txt", "transfers.txt", "frequencies.txt", "fare_rules.txt", "shapes.txt",
-]
-
-
 def preparer_gtfs_pour_r5py(zip_path, output_path=None):
     """
-    Retire du GTFS les tables de TABLES_OPTIONNELLES_VIDABLES_R5PY présentes
-    mais vides (cf. commentaire ci-dessus).
+    Prépare un GTFS pour r5py.TransportNetwork :
+    1. Étale (expand_frequencies) un frequencies.txt non vide en trips/
+       stop_times explicites. R5 (com.conveyal.r5.analyst.TravelTimeComputer)
+       plante par endroits sur certains GTFS à fréquences denses avec une
+       java.lang.ArrayIndexOutOfBoundsException (observé sur Freetown et
+       Harare, tous deux avec de nombreuses entrées frequencies.txt) —
+       expand_frequencies fait disparaître le plantage ET donne une
+       couverture de service plus fidèle qu'un simple retrait de
+       frequencies.txt (366/400 vs 161/400 sur un échantillon de test
+       Freetown), retrait qui viderait purement et simplement le service
+       fréquentiel plutôt que le représenter.
+    2. Retire (passage à None avant écriture — gtfs_kit Feed.to_file omet
+       les tables None, cf. gtfs_kit.feed.Feed.to_file) les tables
+       optionnelles présentes mais vides (calendar, transfers, frequencies,
+       fare_rules, shapes) : r5py (contrairement à gtfs_kit) distingue
+       "fichier absent" de "fichier présent mais vide" et rejette le second
+       cas avec une EmptyTableError au lieu de l'ignorer.
 
-    Si aucune de ces tables n'est présente-mais-vide, le zip d'origine est
+    Passe par le Feed gtfs_kit déjà chargé (pas une inspection du zip brut) :
+    certains GTFS réels (ex. Freetown_gtfs.zip) empaquettent leurs tables
+    dans un sous-dossier du zip plutôt qu'à la racine — gtfs_kit/R5 lisent
+    ce cas sans broncher, mais une inspection zipfile au nom de fichier
+    littéral ("frequencies.txt" à la racine) le manquerait silencieusement.
+
+    Si aucune des deux étapes n'a rien à faire, le zip d'origine est
     renvoyé tel quel (aucune copie créée).
 
     zip_path: chemin vers le GTFS à préparer.
@@ -478,29 +487,32 @@ def preparer_gtfs_pour_r5py(zip_path, output_path=None):
     Returns: chemin du GTFS à utiliser avec r5py.TransportNetwork(gtfs=...).
     """
     zip_path = pathlib.Path(zip_path)
-    with zipfile.ZipFile(zip_path) as z:
-        noms_presents = set(z.namelist())
-        a_retirer = []
-        for nom in TABLES_OPTIONNELLES_VIDABLES_R5PY:
-            if nom not in noms_presents:
-                continue
-            with z.open(nom) as f:
-                nb_lignes = sum(1 for _ in csv.reader(io.TextIOWrapper(f, "utf-8"))) - 1
-            if nb_lignes <= 0:
-                a_retirer.append(nom)
+    if output_path is None:
+        output_path = zip_path.with_name(f"{zip_path.stem}_r5py.zip")
 
-        if not a_retirer:
-            return zip_path
+    feed = charger_gtfs(zip_path)
+    a_modifier = False
 
-        for nom in a_retirer:
-            print(f"{nom} vide dans {zip_path.name} : retrait avant chargement r5py")
-        if output_path is None:
-            output_path = zip_path.with_name(f"{zip_path.stem}_r5py.zip")
-        with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zout:
-            for item in z.infolist():
-                if item.filename in a_retirer:
-                    continue
-                zout.writestr(item, z.read(item.filename))
+    if feed.frequencies is not None and not feed.frequencies.empty:
+        print(f"frequencies.txt non vide dans {zip_path.name} : étalement (expand_frequencies) avant chargement r5py")
+        feed = feed.expand_frequencies()
+        a_modifier = True
+
+    noms_fichiers = {
+        "calendar": "calendar.txt", "transfers": "transfers.txt", "frequencies": "frequencies.txt",
+        "fare_rules": "fare_rules.txt", "shapes": "shapes.txt",
+    }
+    for attr, nom_fichier in noms_fichiers.items():
+        table = getattr(feed, attr)
+        if table is not None and table.empty:
+            setattr(feed, attr, None)
+            a_modifier = True
+            print(f"{nom_fichier} vide dans {zip_path.name} : retrait avant chargement r5py")
+
+    if not a_modifier:
+        return zip_path
+
+    feed.to_file(output_path)
     print(f"✓ GTFS nettoyé écrit dans {output_path}")
     return output_path
 
