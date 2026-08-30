@@ -53,6 +53,13 @@ data/GTFS_Africa_deprecated/
 # jetables, jamais le PBF final (mis en cache sur HF, memory_pbf/).
 data/osm_extract/
 
+# GTFS nettoyés/étalés pour r5py (cf. src.utils.preparer_gtfs_pour_r5py) —
+# régénérés à chaque appel, jamais mis en cache/poussés sur HF. Dossier dédié
+# distinct de data/GTFS_Africa/ (le catalogue que l'app liste tel quel dans
+# son menu déroulant de réseaux) pour ne jamais y apparaître comme un réseau
+# sélectionnable à part entière.
+data/gtfs_r5py_prepared/
+
 # Cache local des extraits pays Geofabrik (plusieurs dizaines à centaines
 # de Mo pièce) et de l'index de son catalogue — cf.
 # src/osm_extract.osm_pbf_creator_depuis_geofabrik.

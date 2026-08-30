@@ -483,12 +483,19 @@ def preparer_gtfs_pour_r5py(zip_path, output_path=None):
     renvoyé tel quel (aucune copie créée).
 
     zip_path: chemin vers le GTFS à préparer.
-    output_path: chemin du GTFS nettoyé (par défaut : "<zip_path stem>_r5py.zip").
+    output_path: chemin du GTFS nettoyé (par défaut : data/gtfs_r5py_prepared/
+        "<zip_path stem>_r5py.zip" — jamais à côté de zip_path lui-même :
+        zip_path vit typiquement dans data/GTFS_Africa/, le dossier catalogue
+        dont l'app liste tout .zip présent (cf. app_africa.py) pour son menu
+        déroulant de réseaux ; y écrire ce dérivé le ferait apparaître comme
+        un réseau sélectionnable à part entière).
     Returns: chemin du GTFS à utiliser avec r5py.TransportNetwork(gtfs=...).
     """
     zip_path = pathlib.Path(zip_path)
     if output_path is None:
-        output_path = zip_path.with_name(f"{zip_path.stem}_r5py.zip")
+        dossier_prepares = pathlib.Path("data") / "gtfs_r5py_prepared"
+        dossier_prepares.mkdir(parents=True, exist_ok=True)
+        output_path = dossier_prepares / f"{zip_path.stem}_r5py.zip"
 
     feed = charger_gtfs(zip_path)
     a_modifier = False
