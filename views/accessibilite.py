@@ -94,6 +94,12 @@ def accessibilite_page(lang="fr"):
         st.warning(t("accessibilite.pas_de_grille", lang, erreur=t("accessibilite.grille_vide", lang)))
         return
 
+    st.info(t(
+        "accessibilite.info_grille", lang,
+        nb_carreaux=f"{len(grille_population):,}".replace(",", " "),
+        population=f"{grille_population['population'].sum():,.0f}".replace(",", " "),
+    ))
+
     nom_reseau_str = st.session_state.nom_reseau_str
 
     # Résultat cumulative_cutoff déjà mis en cache, par seuil (par un run
