@@ -342,7 +342,7 @@ Où trouver un GTFS africain :
         "equipements.pas_de_grille": "Grille de population indisponible : {erreur}",
 
         # --- views/accessibilite.py ---
-        "accessibilite.description": "Version simplifiée de l'accessibilité : un seul seuil ({cutoff} min), équipements accessibles (tous types confondus, cf. onglet Équipements) sans distinction de domaine ni de niveau de vie.",
+        "accessibilite.description": "Version simplifiée de l'accessibilité : deux seuils (45 et 60 min), équipements accessibles (tous types confondus, cf. onglet Équipements) sans distinction de domaine ni de niveau de vie.",
         "accessibilite.avertissement_donnees": "⚠ Chaîne complète construite sur des données incertaines : grille de population WorldPop (modélisée), réseau routier OSM potentiellement incomplet (affecte le calcul des temps de trajet), équipements OSM à couverture inégale, pondération par type d'équipement définie subjectivement sur Abidjan puis réutilisée telle quelle pour toutes les villes. À interpréter comme des ordres de grandeur relatifs (comparaison entre carreaux d'une même ville), pas des valeurs absolues.",
         "accessibilite.pas_de_grille": "Grille de population WorldPop indisponible pour ce réseau : {erreur}",
         "accessibilite.grille_vide": "grille vide (zone hors couverture WorldPop ?)",
@@ -353,14 +353,14 @@ Où trouver un GTFS africain :
         "accessibilite.status_termine": "✓ Calcul terminé",
         "accessibilite.erreur_calcul": "Erreur pendant le calcul : {erreur}",
         "accessibilite.spinner_calcul": "Calcul de l'accessibilité...",
-        "accessibilite.header_stats": "Accessibilité moyenne (pondérée par la population), en {cutoff} min",
+        "accessibilite.header_stats": "Accessibilité moyenne (pondérée par la population)",
         "accessibilite.metric_population": "Population accessible (≤{cutoff} min)",
         "accessibilite.metric_equipements": "% des équipements pondérés de l'agglomération accessibles (≤{cutoff} min)",
         "accessibilite.pas_equipements": "Aucun fichier dans data/equipements_osm/ : cf. onglet Équipements.",
         "accessibilite.header_carte_population": "Carte — population accessible en ≤{cutoff} min",
         "accessibilite.header_carte_equipements": "Carte — équipements accessibles en ≤{cutoff} min",
         "accessibilite.telecharger_population": "📥 Population accessible (CSV)",
-        "accessibilite.telecharger_equipements": "📥 Équipements accessibles (CSV)",
+        "accessibilite.telecharger_equipements": "📥 Équipements accessibles ≤{cutoff} min (CSV)",
 
         # --- isochrone_carreaux.py ---
         "app.nav_isochrone_carreaux": "🗺️ Isochrone carreaux",
@@ -708,7 +708,7 @@ Where to find an African GTFS:
         "equipements.pas_de_grille": "Population grid unavailable: {erreur}",
 
         # --- views/accessibilite.py ---
-        "accessibilite.description": "Simplified accessibility view: a single threshold ({cutoff} min), accessible facilities (all types combined, cf. Facilities tab), no breakdown by facility type or income level.",
+        "accessibilite.description": "Simplified accessibility view: two thresholds (45 and 60 min), accessible facilities (all types combined, cf. Facilities tab), no breakdown by facility type or income level.",
         "accessibilite.avertissement_donnees": "⚠ This whole chain rests on uncertain data: modeled WorldPop population grid, potentially incomplete OSM road network (affects travel-time computation), unevenly covered OSM facilities, and a facility-type weighting scheme defined subjectively on Abidjan and reused as-is for every city. Read these as relative orders of magnitude (comparing cells within one city), not absolute values.",
         "accessibilite.pas_de_grille": "WorldPop population grid unavailable for this network: {erreur}",
         "accessibilite.grille_vide": "empty grid (zone outside WorldPop coverage?)",
@@ -719,14 +719,14 @@ Where to find an African GTFS:
         "accessibilite.status_termine": "✓ Computation complete",
         "accessibilite.erreur_calcul": "Error during computation: {erreur}",
         "accessibilite.spinner_calcul": "Computing accessibility...",
-        "accessibilite.header_stats": "Average accessibility (population-weighted), at {cutoff} min",
+        "accessibilite.header_stats": "Average accessibility (population-weighted)",
         "accessibilite.metric_population": "Accessible population (≤{cutoff} min)",
         "accessibilite.metric_equipements": "% of the metro area's weighted facilities accessible (≤{cutoff} min)",
         "accessibilite.pas_equipements": "No file in data/equipements_osm/: cf. Facilities tab.",
         "accessibilite.header_carte_population": "Map — population accessible within ≤{cutoff} min",
         "accessibilite.header_carte_equipements": "Map — facilities accessible within ≤{cutoff} min",
         "accessibilite.telecharger_population": "📥 Accessible population (CSV)",
-        "accessibilite.telecharger_equipements": "📥 Accessible facilities (CSV)",
+        "accessibilite.telecharger_equipements": "📥 Accessible facilities ≤{cutoff} min (CSV)",
 
         # --- isochrone_carreaux.py ---
         "app.nav_isochrone_carreaux": "🗺️ Grid isochrone",

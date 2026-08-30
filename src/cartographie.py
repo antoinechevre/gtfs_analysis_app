@@ -4,6 +4,7 @@ import numpy as np
 import branca.colormap as cm
 import gtfs_kit as gk
 import base64
+import json
 import os
 import mimetypes
 
@@ -988,3 +989,91 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, gd
     m.save(output_path)
 
     return m
+
+
+def script_reajuster_si_masque(m, bounds):
+    """<script> qui réajuste une carte Leaflet (invalidateSize + fitBounds)
+    une fois son conteneur stabilisé en taille — Streamlit (st.components.v1.html)
+    ne fixe pas la largeur de l'iframe, elle dépend de la mise en page qui se
+    stabilise en plusieurs passes après le premier paint : sans ce correctif,
+    fitBounds() se calcule sur un conteneur pas encore à sa taille finale.
+    Repris de src/cartographie.py du projet sœur Accessibility_analysis
+    (github.com/antoinechevre/Accessibility_analysis), même correctif.
+
+    carte._reajustementEnCours (posé pendant l'appel) : lu par
+    script_synchroniser_zoom pour ne pas rediffuser ce recadrage correctif
+    aux cartes synchronisées avec elle (sans ce signal, deux cartes
+    synchronisées se renvoient chacune leur recadrage correctif au
+    chargement, chacune écrasant le cadrage tout juste reçu de l'autre).
+
+    m: objet folium.Map.
+    bounds: [[miny, minx], [maxy, maxx]].
+    """
+    nom_carte = m.get_name()
+    bounds_json = json.dumps([[float(lat), float(lon)] for lat, lon in bounds])
+    return f"""
+    <script>
+    window.addEventListener("load", function() {{
+        var carte = {nom_carte};
+        var DEBOUNCE_MS = 250;
+        var minuteur = null;
+        var observer = new ResizeObserver(function(entries) {{
+            for (var entree of entries) {{
+                if (entree.contentRect.width > 0 && entree.contentRect.height > 0) {{
+                    clearTimeout(minuteur);
+                    minuteur = setTimeout(function() {{
+                        carte._reajustementEnCours = true;
+                        carte.invalidateSize({{animate: false}});
+                        carte.fitBounds({bounds_json}, {{animate: false}});
+                        setTimeout(function() {{ carte._reajustementEnCours = false; }}, 0);
+                        observer.disconnect();
+                    }}, DEBOUNCE_MS);
+                    return;
+                }}
+            }}
+        }});
+        observer.observe(carte.getContainer());
+    }});
+    </script>
+    """
+
+
+def script_synchroniser_zoom(m, canal):
+    """<script> qui synchronise le zoom/centre de cette carte Leaflet avec
+    une (ou plusieurs) autre(s) carte(s) partageant le même `canal`, via
+    BroadcastChannel — nécessaire quand les deux cartes à synchroniser sont
+    deux documents HTML distincts, chacun dans sa propre iframe
+    (st.components.v1.html), contrairement à folium.plugins.DualMap qui ne
+    synchronise que deux panneaux d'un même document. Repris de
+    src/cartographie.py du projet sœur Accessibility_analysis.
+
+    m: objet folium.Map à synchroniser.
+    canal: nom de canal BroadcastChannel commun aux cartes à synchroniser
+        entre elles — doit être unique à la paire (BroadcastChannel est
+        visible par tout document same-origin, y compris d'autres onglets du
+        navigateur : un canal partagé entre cartes qui ne devraient pas être
+        liées les synchroniserait par erreur).
+    """
+    nom_carte = m.get_name()
+    canal_json = json.dumps(canal)
+    return f"""
+    <script>
+    window.addEventListener("load", function() {{
+        var carte = {nom_carte};
+        var canal = new BroadcastChannel({canal_json});
+        var enSynchronisation = false;
+
+        carte.on("moveend", function() {{
+            if (enSynchronisation || carte._reajustementEnCours) return;
+            var centre = carte.getCenter();
+            canal.postMessage({{lat: centre.lat, lng: centre.lng, zoom: carte.getZoom()}});
+        }});
+
+        canal.onmessage = function(evenement) {{
+            enSynchronisation = true;
+            carte.setView([evenement.data.lat, evenement.data.lng], evenement.data.zoom, {{animate: false}});
+            enSynchronisation = false;
+        }};
+    }});
+    </script>
+    """
