@@ -1,5 +1,6 @@
 import os
 import pathlib
+import zipfile
 
 import gtfs_kit as gk
 import pandas as pd
@@ -472,14 +473,28 @@ def preparer_gtfs_pour_r5py(zip_path, output_path=None):
        fare_rules, shapes) : r5py (contrairement à gtfs_kit) distingue
        "fichier absent" de "fichier présent mais vide" et rejette le second
        cas avec une EmptyTableError au lieu de l'ignorer.
+    3. Aplatit (réécrit via feed.to_file, qui écrit toujours à la racine du
+       zip) un GTFS dont les fichiers sont empaquetés dans un sous-dossier
+       du zip (ex. Kumasi_gtfs.zip, "TEST GTFS/*.txt") plutôt qu'à la
+       racine : gtfs_kit lit ce cas sans broncher et R5 ne remonte qu'un
+       avertissement (TableInSubdirectoryError, absorbé par allow_errors=True
+       en amont), mais son TransportNetwork construit à partir d'un zip
+       imbriqué produit ensuite un java.lang.ArrayIndexOutOfBoundsException
+       ("Index N out of bounds for length N") au moment du calcul des temps
+       de trajet pour certaines origines (observé sur Kumasi_gtfs.zip,
+       reproduit et isolé par bissection sur une seule origine et un seul
+       trajet — cause interne à R5, pas à ce GTFS-ci en particulier) ;
+       aplatir le zip fait disparaître le plantage.
 
-    Passe par le Feed gtfs_kit déjà chargé (pas une inspection du zip brut) :
-    certains GTFS réels (ex. Freetown_gtfs.zip) empaquettent leurs tables
-    dans un sous-dossier du zip plutôt qu'à la racine — gtfs_kit/R5 lisent
-    ce cas sans broncher, mais une inspection zipfile au nom de fichier
-    littéral ("frequencies.txt" à la racine) le manquerait silencieusement.
+    Passe par le Feed gtfs_kit déjà chargé (pas une inspection du zip brut
+    pour les étapes 1 et 2) : certains GTFS réels (ex. Freetown_gtfs.zip)
+    empaquettent leurs tables dans un sous-dossier du zip plutôt qu'à la
+    racine — gtfs_kit/R5 lisent ce cas sans broncher, mais une inspection
+    zipfile au nom de fichier littéral ("frequencies.txt" à la racine) le
+    manquerait silencieusement. La détection de l'imbrication elle-même
+    (étape 3) inspecte le zip brut, justement pour la détecter.
 
-    Si aucune des deux étapes n'a rien à faire, le zip d'origine est
+    Si aucune des trois étapes n'a rien à faire, le zip d'origine est
     renvoyé tel quel (aucune copie créée).
 
     zip_path: chemin vers le GTFS à préparer.
@@ -515,6 +530,12 @@ def preparer_gtfs_pour_r5py(zip_path, output_path=None):
             setattr(feed, attr, None)
             a_modifier = True
             print(f"{nom_fichier} vide dans {zip_path.name} : retrait avant chargement r5py")
+
+    with zipfile.ZipFile(zip_path) as z:
+        imbrique = any("/" in nom for nom in z.namelist())
+    if imbrique:
+        print(f"Fichiers GTFS imbriqués dans un sous-dossier de {zip_path.name} : aplatissement avant chargement r5py")
+        a_modifier = True
 
     if not a_modifier:
         return zip_path
