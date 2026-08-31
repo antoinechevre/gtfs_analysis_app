@@ -48,6 +48,40 @@ TABLES_GTFS = [
 ]
 
 
+def _etendre_calendrier_si_disjoint(feed_reference, feed):
+    """Si le calendar.txt de `feed` ne chevauche pas du tout celui de
+    `feed_reference` (aucune date de validité en commun), étend ses
+    start_date/end_date pour couvrir la même plage — préserve le motif
+    hebdomadaire (colonnes monday..sunday), ne touche qu'aux bornes de
+    validité.
+
+    Cas rencontré sur la fusion Cairo bus (calendrier 2025) + métro
+    (calendrier 2020-09 à 2021-09, obsolète dans la source
+    Cairo_metro.zip) : sans ce recalage, le métro n'est jamais actif le
+    jour analysé (date_JOB, choisi dans la plage du feed bus) et
+    n'apparaît jamais sur les cartes Arrêts/Lignes ni dans le routage
+    r5py, malgré une fusion par ailleurs correcte (les 3 lignes de métro
+    sont bien présentes dans routes.txt/trips.txt du GTFS fusionné)."""
+    if feed_reference.calendar is None or feed.calendar is None:
+        return feed
+
+    ref_min = feed_reference.calendar["start_date"].min()
+    ref_max = feed_reference.calendar["end_date"].max()
+    feed_min = feed.calendar["start_date"].min()
+    feed_max = feed.calendar["end_date"].max()
+
+    if feed_min <= ref_max and feed_max >= ref_min:
+        return feed  # chevauchement déjà présent, rien à faire
+
+    print(
+        f"  → calendrier disjoint de la référence ({feed_min}-{feed_max} vs "
+        f"{ref_min}-{ref_max}) : étendu à {ref_min}-{ref_max}"
+    )
+    feed.calendar["start_date"] = ref_min
+    feed.calendar["end_date"] = ref_max
+    return feed
+
+
 def fusionner_gtfs(chemins_zip, chemin_sortie, dist_units="km"):
     """
     Fusionne plusieurs GTFS (fichiers zip) en un seul GTFS.
@@ -84,6 +118,9 @@ def fusionner_gtfs(chemins_zip, chemin_sortie, dist_units="km"):
         prefixe = f"{i}_"
         print(f"  → préfixage des identifiants avec '{prefixe}'")
         feeds_prefixes.append(gk.prefix_feed_ids(feed, prefixe))
+
+    for i in range(1, len(feeds_prefixes)):
+        feeds_prefixes[i] = _etendre_calendrier_si_disjoint(feeds_prefixes[0], feeds_prefixes[i])
 
     tables_fusionnees = {}
     for table in TABLES_GTFS:
