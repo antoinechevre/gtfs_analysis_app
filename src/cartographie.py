@@ -49,6 +49,20 @@ def tile_layer_cartodb(tiles, name, **kwargs):
     return folium.TileLayer(fond["tiles"], name=name, attr=fond.get("attr"), **kwargs)
 
 
+def _poids_trait_proportionnel(freq, vmin, vmax, poids_base, amplitude):
+    """Épaisseur de PolyLine proportionnelle à la fréquence, entre poids_base
+    et poids_base + amplitude. Repli sur le milieu de la plage quand
+    vmin == vmax (fréquence identique sur tous les tronçons de la couche,
+    ex. métro du Caire avec 142/142 tronçons à 2 passages) : la division
+    (freq - vmin) / (vmax - vmin) vaudrait alors 0/0 (NaN), ce qui rend le
+    PolyLine invisible (poids de trait invalide côté Leaflet) sans aucune
+    erreur — la couche existe bien dans le contrôle des calques mais ne
+    dessine rien."""
+    if vmax == vmin:
+        return poids_base + amplitude / 2
+    return poids_base + (freq - vmin) / (vmax - vmin) * amplitude
+
+
 def chemin_cache_carte_reseau(nom_reseau_str, nom_carte):
     """Chemin local du cache HTML pré-rendu pour une carte réseau (nom_carte:
     "arrets" ou "troncons") — même dossier que les autres caches
@@ -414,7 +428,7 @@ def _ajouter_couche_troncons_generique(
         </div>
         """
 
-        weight = weight_base + (freq - vmin) / (vmax - vmin) * weight_amplitude
+        weight = _poids_trait_proportionnel(freq, vmin, vmax, weight_base, weight_amplitude)
 
         folium.PolyLine(
             coords,
@@ -572,7 +586,7 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, gd
                 """
 
                 # Épaisseur proportionnelle à la fréquence
-                weight = 2 + (freq - vmin_bus) / (vmax_bus - vmin_bus) * 6
+                weight = _poids_trait_proportionnel(freq, vmin_bus, vmax_bus, 2, 6)
 
                 folium.PolyLine(
                     coords,
@@ -638,7 +652,7 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, gd
                 """
 
                 # Épaisseur proportionnelle à la fréquence
-                weight = 2 + (freq - vmin_tram) / (vmax_tram - vmin_tram) * 6
+                weight = _poids_trait_proportionnel(freq, vmin_tram, vmax_tram, 2, 6)
 
                 folium.PolyLine(
                     coords,
@@ -709,7 +723,7 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, gd
                 # Épaisseur de base plus élevée que bus/tram : le métro reste
                 # visuellement au moins aussi épais même quand sa fréquence
                 # (comparée aux autres tronçons métro) est la plus faible.
-                weight = 12 + (freq - vmin_metro) / (vmax_metro - vmin_metro) * 2
+                weight = _poids_trait_proportionnel(freq, vmin_metro, vmax_metro, 12, 2)
 
                 folium.PolyLine(
                     coords,
@@ -780,7 +794,7 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, gd
                 # Épaisseur de base plus élevée que bus/tram : le trolley reste
                 # visuellement au moins aussi épais même quand sa fréquence
                 # (comparée aux autres tronçons métro) est la plus faible.
-                weight = 4 + (freq - vmin_trolley) / (vmax_trolley - vmin_trolley) * 2
+                weight = _poids_trait_proportionnel(freq, vmin_trolley, vmax_trolley, 4, 2)
 
                 folium.PolyLine(
                     coords,
@@ -847,7 +861,7 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, gd
                 """
 
                 # Épaisseur proportionnelle à la fréquence
-                weight = 2 + (freq - vmin_ferry) / (vmax_ferry - vmin_ferry) * 6
+                weight = _poids_trait_proportionnel(freq, vmin_ferry, vmax_ferry, 2, 6)
 
                 folium.PolyLine(
                     coords,
@@ -913,7 +927,7 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, gd
                 """
 
                 # Épaisseur proportionnelle à la fréquence
-                weight = 2 + (freq - vmin_train) / (vmax_train - vmin_train) * 6
+                weight = _poids_trait_proportionnel(freq, vmin_train, vmax_train, 2, 6)
 
                 folium.PolyLine(
                     coords,
