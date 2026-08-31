@@ -198,6 +198,7 @@ def charger_ou_calculer_indicateurs(feed, route_type, nom_mode, nom_reseau_str, 
 
 def troncons_page(lang="fr"):
     st.markdown("---")
+    st.warning(t("africa.avertissement_general", lang))
 
     # Vérifier si les données sont chargées
     if (

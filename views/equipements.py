@@ -35,6 +35,7 @@ DOSSIER_EQUIPEMENTS = os.path.join("data", "equipements_osm")
 
 def equipements_page(lang="fr"):
     st.markdown("---")
+    st.warning(t("africa.avertissement_general", lang))
     st.warning(t("equipements.avertissement_couverture", lang))
 
     if st.session_state.feed is None:

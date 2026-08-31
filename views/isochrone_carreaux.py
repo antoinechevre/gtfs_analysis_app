@@ -19,6 +19,7 @@ BUDGET_MIN_DEFAUT = 30
 
 def isochrone_carreaux_page(lang="fr"):
     st.markdown("---")
+    st.warning(t("africa.avertissement_general", lang))
     st.info(t("isochrone_carreaux.intro", lang))
 
     if st.session_state.feed is None:

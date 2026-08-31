@@ -51,6 +51,7 @@ def obtenir_indicateurs_arrets(lang="fr"):
 
 def arrets_page(lang="fr"):
     st.markdown("---")
+    st.warning(t("africa.avertissement_general", lang))
 
     # Vérifier si les données sont chargées
     if (
