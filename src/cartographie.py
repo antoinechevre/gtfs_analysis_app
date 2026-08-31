@@ -86,8 +86,14 @@ def ajouter_couche_population(m, grille_population, lang="fr"):
     rouge par population, carreaux vides transparents), mais en couche
     superposable plutôt qu'en carte autonome, pour rester sélectionnable
     (dé-cochable) via le LayerControl aux côtés des arrêts/tronçons.
-    Ajoutée à la carte AVANT les arrêts/tronçons par l'appelant (ordre
-    d'ajout Folium = z-order), pour ne jamais les recouvrir.
+    Placée dans un pane Leaflet dédié, de z-index inférieur au pane
+    "overlayPane" (400) où vivent par défaut les CircleMarker/PolyLine des
+    arrêts/tronçons — garantit qu'elle reste en dessous quel que soit
+    l'ordre d'ajout Folium ou les interactions ultérieures avec le
+    LayerControl (décocher/recocher un calque réinsère son DOM en fin de
+    pane, ce qui rendait l'ordre d'ajout seul insuffisant en pratique).
+    pointer_events=True sur le pane : sans ça, les tooltips au survol des
+    carreaux ne se déclenchent plus.
 
     Ne fait rien si grille_population est None ou vide (population WorldPop
     pas encore chargée/calculée pour ce réseau, cf. app.py/app_africa.py).
@@ -107,12 +113,15 @@ def ajouter_couche_population(m, grille_population, lang="fr"):
         caption=t("carto.caption_population", lang),
     )
 
+    folium.map.CustomPane("population_pane", z_index=350, pointer_events=True).add_to(m)
+
     feature_group = folium.FeatureGroup(name=t("carto.couche_population", lang), show=True)
     for _, row in grille_active.iterrows():
         folium.GeoJson(
             row["geometry"],
             style_function=lambda _feature, couleur=colormap(row["population"]): {
                 "fillColor": couleur, "color": couleur, "weight": 0, "fillOpacity": 0.6,
+                "pane": "population_pane",
             },
             tooltip=f"{row['population']:,.0f} hab.",
         ).add_to(feature_group)
@@ -146,9 +155,13 @@ def create_carte_arrets(df, nom_reseau_str,date_service_str, date_analyse, zip_p
         height="1000px",
         **fond_carte_kwargs("CartoDB positron"),
     )
+    # Ajouter des fonds de carte alternatifs (même choix que creer_carte_troncons)
+    folium.TileLayer("OpenStreetMap", name="OpenStreetMap").add_to(m)
+    tile_layer_cartodb("CartoDB dark_matter", "Carto Dark").add_to(m)
 
-    # Sous les lignes/arrêts (z-order = ordre d'ajout à la carte Folium) :
-    # ajoutée avant plutôt qu'après, pour ne jamais recouvrir les marqueurs.
+    # Placée dans un pane dédié de z-index inférieur (cf. ajouter_couche_
+    # population) : reste sous les lignes/arrêts quel que soit l'ordre
+    # d'ajout ou les interactions avec le LayerControl.
     ajouter_couche_population(m, grille_population, lang=lang)
 
     # --- Ajout des lignes GTFS sur la même carte ---
@@ -470,8 +483,9 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, gd
     folium.TileLayer("OpenStreetMap", name="OpenStreetMap").add_to(m)
     tile_layer_cartodb("CartoDB dark_matter", "Carto Dark").add_to(m)
 
-    # Sous les lignes/tronçons (z-order = ordre d'ajout à la carte Folium) :
-    # ajoutée avant plutôt qu'après, pour ne jamais recouvrir les tracés.
+    # Placée dans un pane dédié de z-index inférieur (cf. ajouter_couche_
+    # population) : reste sous les lignes/tronçons quel que soit l'ordre
+    # d'ajout ou les interactions avec le LayerControl.
     ajouter_couche_population(m, grille_population, lang=lang)
 
     # Légende des échelles de couleur (construite au fil des blocs bus/tram
