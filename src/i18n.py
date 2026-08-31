@@ -56,7 +56,7 @@ TRANSLATIONS = {
 Cette application a vocation à analyser les réseaux de transports des villes africaines et l'accessibilité urbaine associée. C'est une déclinaison africaine de l'[application sœur France métropolitaine](https://github.com/antoinechevre/Accessibility_analysis).
 
 Les données utilisées sont :
-- Les jeux de données GTFS en provenance de l'initiative [Digital Transport 4 Africa](https://digitaltransport4africa.org/fr/), ceux produits par TransportforCairo
+- Les jeux de données GTFS en provenance de l'initiative [Digital Transport 4 Africa](https://digitaltransport4africa.org/fr/), ceux produits par [TransportforCairo](https://transportforcairo.com)
 - Les [données de population WorldPop](https://hub.worldpop.org)
 - Les données des équipements recensés dans [OpenStreetMap](https://www.openstreetmap.org)
 """,
@@ -435,7 +435,7 @@ Où trouver un GTFS africain :
 This app aims to analyze African cities' transport networks and the associated urban accessibility. It's an African take on the [sister app for metropolitan France](https://github.com/antoinechevre/Accessibility_analysis).
 
 The data used is:
-- GTFS datasets from the [Digital Transport 4 Africa](https://digitaltransport4africa.org/fr/) initiative, and those produced by TransportforCairo
+- GTFS datasets from the [Digital Transport 4 Africa](https://digitaltransport4africa.org/fr/) initiative, and those produced by [TransportforCairo](https://transportforcairo.com)
 - [WorldPop population data](https://hub.worldpop.org)
 - Facility data recorded in [OpenStreetMap](https://www.openstreetmap.org)
 """,
