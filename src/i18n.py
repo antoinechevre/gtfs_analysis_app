@@ -347,6 +347,11 @@ Où trouver un GTFS africain :
         "equipements.legende_ponderation": "Pondération",
         "equipements.header_carte_grille": "Carte grille — densité pondérée d'équipements",
         "equipements.pas_de_grille": "Grille de population indisponible : {erreur}",
+        "equipements.header_ponderation": "Référentiel de pondération",
+        "equipements.caption_ponderation": "Pondération par type d'équipement (OSM `amenity=*`), définie à la main sur Abidjan et réutilisée telle quelle pour toutes les villes — seuls les types à pondération non nulle sont listés.",
+        "equipements.colonne_type": "Type d'équipement (amenity)",
+        "equipements.colonne_ponderation": "Pondération",
+        "equipements.pas_de_ponderation": "Référentiel de pondération indisponible : {erreur}",
 
         # --- views/accessibilite.py ---
         "accessibilite.description": "Version simplifiée de l'accessibilité : deux seuils (45 et 60 min), équipements accessibles (tous types confondus, cf. onglet Équipements) sans distinction de domaine ni de niveau de vie.",
@@ -720,6 +725,11 @@ Where to find an African GTFS:
         "equipements.legende_ponderation": "Weight",
         "equipements.header_carte_grille": "Grid map — weighted facility density",
         "equipements.pas_de_grille": "Population grid unavailable: {erreur}",
+        "equipements.header_ponderation": "Weighting reference table",
+        "equipements.caption_ponderation": "Weight per facility type (OSM `amenity=*`), defined by hand on Abidjan and reused as-is for every city — only types with a non-zero weight are listed.",
+        "equipements.colonne_type": "Facility type (amenity)",
+        "equipements.colonne_ponderation": "Weight",
+        "equipements.pas_de_ponderation": "Weighting reference table unavailable: {erreur}",
 
         # --- views/accessibilite.py ---
         "accessibilite.description": "Simplified accessibility view: two thresholds (45 and 60 min), accessible facilities (all types combined, cf. Facilities tab), no breakdown by facility type or income level.",

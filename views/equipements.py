@@ -21,6 +21,7 @@ import tempfile
 import branca.colormap as cm
 import folium
 import geopandas as gpd
+import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 
@@ -31,6 +32,19 @@ from src.i18n import t
 from src.worldpop import charger_ou_construire_grille_population_reseau, RESOLUTION_M_AFRIQUE
 
 DOSSIER_EQUIPEMENTS = os.path.join("data", "equipements_osm")
+NOM_PONDERATION_XLSX = "Abidjan_amenities.xlsx"
+
+
+def charger_table_ponderation():
+    """Référentiel de pondération par type d'équipement (feuille
+    "resume_par_type" de Abidjan_amenities.xlsx, cf. src.pipeline_
+    accessibilite_afrique.PONDERATION_XLSX) : défini à la main sur Abidjan
+    et réutilisé tel quel pour toutes les villes — un seul fichier partagé,
+    pas un fichier par ville."""
+    chemin_xlsx = os.path.join(DOSSIER_EQUIPEMENTS, NOM_PONDERATION_XLSX)
+    if not os.path.exists(chemin_xlsx):
+        recuperer_depuis_hf(f"equipements_osm/{NOM_PONDERATION_XLSX}", chemin_xlsx)
+    return pd.read_excel(chemin_xlsx, sheet_name="resume_par_type")
 
 
 def equipements_page(lang="fr"):
@@ -154,3 +168,22 @@ def equipements_page(lang="fr"):
         file_name=f"{nom_reseau.lower()}.geojson",
         mime="application/geo+json",
     )
+
+    # Référentiel de pondération (même table pour toutes les villes) :
+    # affiché en fin de page, après la carte/le téléchargement propres à ce
+    # réseau, comme rappel de la méthode utilisée pour calculer "ponderation".
+    st.header(t("equipements.header_ponderation", lang))
+    st.caption(t("equipements.caption_ponderation", lang))
+    try:
+        table_ponderation = charger_table_ponderation()
+        ponderation_non_nulle = (
+            table_ponderation[table_ponderation["Ponderation"] > 0]
+            .sort_values("Ponderation", ascending=False)[["amenity", "Ponderation"]]
+            .rename(columns={
+                "amenity": t("equipements.colonne_type", lang),
+                "Ponderation": t("equipements.colonne_ponderation", lang),
+            })
+        )
+        st.dataframe(ponderation_non_nulle, hide_index=True, use_container_width=True)
+    except Exception as e:
+        st.warning(t("equipements.pas_de_ponderation", lang, erreur=e))
