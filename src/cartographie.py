@@ -358,6 +358,13 @@ def _ajouter_couche_troncons_generique(
     if len(gdf_actif) == 0:
         return legende_items_html
 
+    # Triés par fréquence croissante : chaque PolyLine est ajoutée
+    # au-dessus des précédentes (ordre du DOM Leaflet), donc les tronçons
+    # les plus fréquentés (les plus rouges) sont dessinés en dernier et
+    # ressortent devant les autres — même logique que create_carte_arrets/
+    # views/equipements.py.
+    gdf_actif = gdf_actif.sort_values(colonne_frequence)
+
     vmin = gdf_actif[colonne_frequence].min()
     vmax = gdf_actif[colonne_frequence].max()
     popup_color = popup_color or colors[-1]
@@ -502,8 +509,10 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, gd
 
     # ===== TRONÇONS BUS =====
     if len(gdf_bus) > 0 and colonne_frequence in gdf_bus.columns:
-        # Filtrer les tronçons avec passages
-        gdf_bus_actif = gdf_bus[gdf_bus[colonne_frequence] > 0].copy()
+        # Filtrer les tronçons avec passages, triés par fréquence croissante
+        # (les plus rouges dessinés en dernier, cf. _ajouter_couche_troncons_
+        # generique) — même logique pour tram/metro/trolley/ferry/train ci-dessous.
+        gdf_bus_actif = gdf_bus[gdf_bus[colonne_frequence] > 0].copy().sort_values(colonne_frequence)
 
         if len(gdf_bus_actif) > 0:
             # Créer la palette de couleurs pour les bus
@@ -569,7 +578,7 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, gd
     # ===== TRONÇONS TRAM =====
     if len(gdf_tram) > 0 and colonne_frequence in gdf_tram.columns:
         # Filtrer les tronçons avec passages
-        gdf_tram_actif = gdf_tram[gdf_tram[colonne_frequence] > 0].copy()
+        gdf_tram_actif = gdf_tram[gdf_tram[colonne_frequence] > 0].copy().sort_values(colonne_frequence)
 
         if len(gdf_tram_actif) > 0:
             # Créer la palette de couleurs pour les trams
@@ -637,7 +646,7 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, gd
     # ===== TRONÇONS METRO =====
     if len(gdf_metro) > 0 and colonne_frequence in gdf_metro.columns:
         # Filtrer les tronçons avec passages
-        gdf_metro_actif = gdf_metro[gdf_metro[colonne_frequence] > 0].copy()
+        gdf_metro_actif = gdf_metro[gdf_metro[colonne_frequence] > 0].copy().sort_values(colonne_frequence)
 
         if len(gdf_metro_actif) > 0:
             # Créer la palette de couleurs pour les trams
@@ -708,7 +717,7 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, gd
     # ===== TRONÇONS TROLLEY =====
     if len(gdf_trolley) > 0 and colonne_frequence in gdf_trolley.columns:
         # Filtrer les tronçons avec passages
-        gdf_trolley_actif = gdf_trolley[gdf_trolley[colonne_frequence] > 0].copy()
+        gdf_trolley_actif = gdf_trolley[gdf_trolley[colonne_frequence] > 0].copy().sort_values(colonne_frequence)
 
         if len(gdf_trolley_actif) > 0:
             # Créer la palette de couleurs pour les trams
@@ -778,7 +787,7 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, gd
     # ===== TRONÇONS FERRY =====
     if len(gdf_ferry) > 0 and colonne_frequence in gdf_ferry.columns:
         # Filtrer les tronçons avec passages
-        gdf_ferry_actif = gdf_ferry[gdf_ferry[colonne_frequence] > 0].copy()
+        gdf_ferry_actif = gdf_ferry[gdf_ferry[colonne_frequence] > 0].copy().sort_values(colonne_frequence)
 
         if len(gdf_ferry_actif) > 0:
             # Créer la palette de couleurs pour les ferry
@@ -844,7 +853,7 @@ def creer_carte_troncons(gdf_bus, gdf_tram,gdf_metro, gdf_trolley, gdf_ferry, gd
     # ===== TRONÇONS TRAIN (RER, Transilien, TER...) =====
     if len(gdf_train) > 0 and colonne_frequence in gdf_train.columns:
         # Filtrer les tronçons avec passages
-        gdf_train_actif = gdf_train[gdf_train[colonne_frequence] > 0].copy()
+        gdf_train_actif = gdf_train[gdf_train[colonne_frequence] > 0].copy().sort_values(colonne_frequence)
 
         if len(gdf_train_actif) > 0:
             # Créer la palette de couleurs pour les trains
