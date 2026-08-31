@@ -60,13 +60,32 @@ def chemin_cache_carte_reseau(nom_reseau_str, nom_carte):
 
 def charger_carte_reseau_cache(nom_reseau_str, nom_carte):
     """Récupère la carte HTML déjà rendue (par le notebook ou un run
-    précédent de l'app) depuis le dataset HF partagé si pas déjà en local ;
-    None si absente des deux — l'appelant doit alors la rendre lui-même."""
-    from src.hf_cache import recuperer_depuis_hf
+    précédent de l'app) depuis le dataset HF partagé ; None si absente.
 
-    chemin_cache = chemin_cache_carte_reseau(nom_reseau_str, nom_carte)
-    recuperer_depuis_hf(f"memory_troncons/{nom_reseau_str}/carte_{nom_carte}.html", chemin_cache)
-    return chemin_cache if os.path.exists(chemin_cache) else None
+    Passe directement par hf_hub_download plutôt que par
+    src.hf_cache.recuperer_depuis_hf : ce dernier ne télécharge que si
+    chemin_cache_carte_reseau n'existe pas encore en local, donc ne
+    reprendrait jamais une carte mise à jour sur HF après une première
+    récupération (observé sur Cairo : la carte lignes régénérée avec le
+    métro sur HF restait invisible tant que le process de l'app tournait
+    déjà, l'ancienne version étant restée sur le disque local du Space).
+    hf_hub_download a son propre cache par révision (ETag) : content-aware,
+    jamais périmé, sans le coût d'un re-téléchargement quand rien n'a
+    changé."""
+    from huggingface_hub import hf_hub_download
+
+    from src.hf_cache import _repos_pour_chemin
+
+    nom_fichier_hf = f"memory_troncons/{nom_reseau_str}/carte_{nom_carte}.html"
+    for repo_id in _repos_pour_chemin(nom_fichier_hf):
+        try:
+            return hf_hub_download(
+                repo_id=repo_id, repo_type="dataset", filename=nom_fichier_hf,
+                token=os.environ.get("HF_TOKEN"),
+            )
+        except Exception:
+            continue
+    return None
 
 
 def envoyer_carte_reseau_cache(chemin_html, nom_reseau_str, nom_carte):
