@@ -76,15 +76,6 @@ lang = st.session_state.lang
 
 st.title(t("africa.title", lang))
 
-# Avertissement permanent sur la qualité/fraîcheur des données : contexte
-# structurellement différent de la France (pas de recensement fiable à
-# l'échelle infracommunale, couverture OSM très inégale selon les villes/
-# quartiers, GTFS parfois figés depuis plusieurs années — cf. data/GTFS_Africa/
-# _provenance.json, certains fichiers datent de 2018-2019). Répété (pas
-# seulement ici) sur les onglets Équipements/Accessibilité/Benchmark, là où
-# ces limites pèsent le plus directement sur l'interprétation des résultats.
-st.warning(t("africa.avertissement_general", lang))
-
 st.markdown(
     """
 <style>
