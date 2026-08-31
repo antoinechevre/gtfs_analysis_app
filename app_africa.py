@@ -81,9 +81,10 @@ st.markdown(
 <style>
 /* Remonte le titre et le menu : Streamlit laisse par défaut ~6rem de vide
    au-dessus du contenu (place réservée à la barre d'outils qui n'est pas
-   utilisée ici). */
+   utilisée ici). 2rem coupait le haut de l'emoji 🌍 du titre (line-height
+   de st.title trop juste) : 3rem laisse assez de marge. */
 .block-container {
-    padding-top: 2rem !important;
+    padding-top: 3rem !important;
 }
 .stButton button {
     width: 100% !important;
