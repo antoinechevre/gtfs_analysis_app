@@ -31,7 +31,7 @@ from src.utils import (
 )
 from src.info_reseau import charger_ou_calculer_dates_service, recuperer_logo_reseau
 from src.population import population_agglomeration, deviner_ville_depuis_nom_fichier
-from src.hf_cache import envoyer_vers_hf, lister_fichiers_hf, recuperer_depuis_hf
+from src.hf_cache import envoyer_vers_hf, lister_fichiers_hf, recuperer_depuis_hf, recuperer_depuis_hf_a_jour
 from src.worldpop import charger_ou_construire_grille_population_reseau, RESOLUTION_M_AFRIQUE
 from src.i18n import t, LANGUES
 from views.home_afrique import home_page_afrique
@@ -261,11 +261,21 @@ def charger_donnees_gtfs():
     elif gtfs_local_choisi != AUCUN_GTFS_LOCAL:
         nom_gtfs = gtfs_local_choisi
         chemin_gtfs_local = os.path.join(GTFS_DATA_DIR, gtfs_local_choisi)
-        if not os.path.exists(chemin_gtfs_local):
+        # recuperer_depuis_hf_a_jour (pas recuperer_depuis_hf) une fois par
+        # session pour ce fichier (pas à chaque rerun, coût réseau sinon
+        # payé à chaque interaction) : le catalogue GTFS_Africa/ peut être
+        # corrigé/mis à jour sur HF alors qu'un Space tourne déjà (ex.
+        # calendrier Cairo métro) — une copie locale déjà présente ne doit
+        # pas rester figée sur une version périmée pour toute la durée de
+        # vie du process, seulement pour le reste de la session utilisateur
+        # en cours au moment de la mise à jour.
+        cle_verifie_frais = f"_gtfs_verifie_frais_{gtfs_local_choisi}"
+        if not st.session_state.get(cle_verifie_frais):
             with st.spinner(t("app.spinner_recuperation_hf", lang, nom=gtfs_local_choisi)):
-                if not recuperer_depuis_hf(f"{PREFIXE_HF}/{gtfs_local_choisi}", chemin_gtfs_local):
+                if not recuperer_depuis_hf_a_jour(f"{PREFIXE_HF}/{gtfs_local_choisi}", chemin_gtfs_local):
                     st.error(t("app.erreur_recuperation_hf", lang, nom=gtfs_local_choisi))
                     return False
+            st.session_state[cle_verifie_frais] = True
         lire_gtfs = lambda: open(chemin_gtfs_local, "rb").read()
     else:
         return False

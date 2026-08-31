@@ -78,6 +78,55 @@ def recuperer_depuis_hf(nom_fichier_hf, destination_locale):
     return True
 
 
+def recuperer_depuis_hf_a_jour(nom_fichier_hf, destination_locale):
+    """Comme recuperer_depuis_hf, mais qui ne reste jamais figée sur une
+    version périmée : recuperer_depuis_hf ne télécharge que si
+    destination_locale n'existe pas encore, donc un Space déjà démarré qui
+    a une première fois récupéré un fichier ne le rafraîchit plus jamais,
+    même après une mise à jour sur HF (observé sur GTFS_Africa/Cairo_gtfs.zip
+    : le calendrier métro corrigé et repoussé sur HF restait invisible sur
+    un Space déjà en cours d'exécution, qui continuait à charger sa copie
+    locale d'avant le correctif).
+
+    Passe par hf_hub_download (cache HF natif par révision/ETag — ne
+    re-télécharge que si le contenu a changé) puis copie vers
+    destination_locale, qui reste le chemin stable utilisé par le reste du
+    code. Coût : une vérification réseau (HEAD/ETag, pas un téléchargement
+    complet si le contenu n'a pas changé) à chaque appel plutôt qu'un
+    simple os.path.exists — à réserver aux fichiers pouvant réellement être
+    mis à jour en cours de vie d'un Space (le catalogue GTFS), pas aux gros
+    fichiers rarement modifiés (PBF, TTM) où le coût réseau répété ne se
+    justifie pas.
+
+    Retourne True si destination_locale est disponible après l'appel
+    (fraîchement copiée, ou repli sur une copie locale déjà là si HF est
+    injoignable), False sinon."""
+    try:
+        from huggingface_hub import hf_hub_download
+    except ImportError:
+        return os.path.exists(destination_locale)
+
+    chemin_telecharge = None
+    for repo_id in _repos_pour_chemin(nom_fichier_hf):
+        try:
+            chemin_telecharge = hf_hub_download(
+                repo_id=repo_id,
+                repo_type="dataset",
+                filename=nom_fichier_hf,
+                token=os.environ.get("HF_TOKEN"),
+            )
+            break
+        except Exception as e:
+            print(f"[hf_cache] recuperer_depuis_hf_a_jour({nom_fichier_hf!r}) absent de {repo_id} : {e!r}")
+
+    if chemin_telecharge is None:
+        return os.path.exists(destination_locale)  # HF injoignable : repli sur une éventuelle copie locale
+
+    os.makedirs(os.path.dirname(destination_locale), exist_ok=True)
+    shutil.copy(chemin_telecharge, destination_locale)
+    return True
+
+
 def envoyer_vers_hf(chemin_local, nom_fichier_hf):
     """Envoie chemin_local vers le dataset HF sous nom_fichier_hf (chemin
     relatif, ex: "GTFS/reseau.zip"). Best-effort : échec silencieux (retourne
