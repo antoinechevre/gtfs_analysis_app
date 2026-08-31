@@ -15,6 +15,8 @@ from src.i18n import t
 
 def home_page_afrique(lang="fr"):
     st.markdown(t("home_afrique.intro_md", lang))
+    st.warning(t("africa.avertissement_general", lang))
+    st.markdown(t("home_afrique.resultats_2_volets_md", lang))
 
     st.markdown("---")
     st.markdown(t("home_afrique.titre_section_md", lang))
@@ -23,10 +25,15 @@ def home_page_afrique(lang="fr"):
         [t("home_afrique.onglet_objectifs", lang), t("home_afrique.onglet_fonctionnalites", lang), t("home_afrique.onglet_liens", lang)]
     )
 
+    # Avertissement répété en premier dans chaque sous-onglet (pas juste une
+    # fois en tête de page) : un onglet donné peut être consulté seul, sans
+    # avoir vu l'intro générale au-dessus des onglets.
     with onglet_objectifs:
+        st.warning(t("africa.avertissement_general", lang))
         st.markdown(t("home_afrique.objectifs_md", lang))
 
     with onglet_fonctionnalites:
+        st.warning(t("africa.avertissement_general", lang))
         st.markdown(t("home_afrique.fonctionnalites_md", lang))
         with st.expander(t("home_afrique.expander_equipements_titre", lang)):
             st.markdown(t("home_afrique.expander_equipements_md", lang))
@@ -34,8 +41,8 @@ def home_page_afrique(lang="fr"):
             st.markdown(t("home_afrique.expander_indicateurs_md", lang))
 
     with onglet_liens:
-        st.markdown(t("home_afrique.liens_md", lang))
         st.warning(t("africa.avertissement_general", lang))
+        st.markdown(t("home_afrique.liens_md", lang))
 
     st.markdown("---")
     _explications_analyse_gtfs_afrique(lang)
@@ -58,7 +65,9 @@ def _explications_analyse_gtfs_afrique(lang="fr"):
     )
 
     with onglet_fonctionnalites_gtfs:
+        st.warning(t("africa.avertissement_general", lang))
         st.markdown(t("home_afrique.gtfs_fonctionnalites_md", lang))
 
     with onglet_liens_gtfs:
+        st.warning(t("africa.avertissement_general", lang))
         st.markdown(t("home_afrique.gtfs_liens_md", lang))

@@ -47,29 +47,33 @@ TRANSLATIONS = {
         "app.transitland_erreur_telechargement": "Erreur lors du téléchargement : {erreur}",
         "app.nav_villes_africaines": "🌍 Villes africaines",
         "africa.title": "🌍 GTFS Analysis Africa",
-        "africa.avertissement_general": "⚠ Données et résultats à manier avec précaution : il n'existe pas de recensement fiable à l'échelle infracommunale pour la plupart de ces villes (les données de population WorldPop sont une estimation modélisée, pas un comptage), la couverture OpenStreetMap des équipements est très inégale selon les villes et les quartiers, et plusieurs GTFS de ce catalogue datent de 2018-2020 et ne sont plus maintenus (cf. data/GTFS_Africa/_provenance.json). Les résultats (grille de population, équipements, accessibilité) sont des ordres de grandeur, pas des chiffres de référence.",
+        "africa.avertissement_general": "⚠ Les données et résultats sont à manier avec précaution : il n'existe pas de recensement fiable à l'échelle infracommunale pour la plupart de ces villes (les données de population WorldPop sont une estimation modélisée, pas un recensement), la couverture OpenStreetMap des équipements est très inégale selon les villes et les quartiers. Une pondération arbitraire a été proposée pour les équipements (cf. onglet Équipements dans Accessibilité urbaine). Concernant les données GTFS, il s'agit de données partielles (lignes et arrêts fiables, mais pas la fréquence de passage) et souvent datées / non maintenues (les dates de validité du GTFS sont affichées). Les résultats (grille de population, équipements, accessibilité) sont ainsi des ordres de grandeur, pas des chiffres de référence. De plus, beaucoup de villes ont des projets en cours et les villes africaines évoluent vite.",
 
         # --- views/home_afrique.py --- (même modèle que le projet sœur
         # Accessibility_analysis, views/home.py : intro + onglets Objectifs/
         # Fonctionnalités/Liens avec expanders)
         "home_afrique.intro_md": """
-Cette application analyse des réseaux de transport africains à partir de GTFS, en s'inspirant des travaux du livre *Introduction to urban accessibility* (Rafael H. M. Pereira et Daniel Herszenhut, Ipea - Institute for Applied Economic Research), notamment le chapitre [Calculating accessibility estimates in R](https://ipeagit.github.io/intro_access_book/3_calculando_acesso.en.html) — réadaptés en Python pour un contexte hors de France, où la Base Permanente des Équipements (BPE, INSEE) et le carroyage population INSEE 200x200 m n'existent pas.
+Cette application a vocation à analyser les réseaux de transports des villes africaines et l'accessibilité urbaine associée. C'est une déclinaison africaine de l'[application sœur France métropolitaine](https://github.com/antoinechevre/Accessibility_analysis).
 
-**Concepteur :** Antoine Chèvre 🐐 (et claude.ai....)
-
-Cette application regroupe deux types d'analyses se basant sur le même jeu de données GTFS : l'analyse d'accessibilité urbaine aux équipements en transport collectif / piéton, et l'analyse du réseau de transport collectif en lui-même — cf. le projet sœur [Accessibility_analysis](https://github.com/antoinechevre/Accessibility_analysis) (contexte France) dont ce volet Afrique est dérivé.
+Les données utilisées sont :
+- Les jeux de données GTFS en provenance de l'initiative Digital Transport 4 Africa, ceux produits par TransportforCairo
+- Les [données de population WorldPop](https://hub.worldpop.org)
+- Les données des équipements recensés dans [OpenStreetMap](https://www.openstreetmap.org)
 """,
+        "home_afrique.resultats_2_volets_md": "Les résultats sont présentés en 2 volets.",
         "home_afrique.titre_section_md": "## 📍 Analyse accessibilité urbaine",
         "home_afrique.onglet_objectifs": "🎯 Objectifs",
         "home_afrique.onglet_fonctionnalites": "⚙️ Fonctionnalités",
         "home_afrique.onglet_liens": "🔗 Liens & Instructions",
         "home_afrique.objectifs_md": """
-- **Offrir une chaîne de traitement** pour passer d'un jeu GTFS brut à l'analyse d'accessibilité du réseau concerné, sans dépendre de données INSEE :
+Cette analyse s'inspire des travaux du livre *Introduction to urban accessibility* (Rafael H. M. Pereira et Daniel Herszenhut, Ipea - Institute for Applied Economic Research), notamment le chapitre [Calculating accessibility estimates in R](https://ipeagit.github.io/intro_access_book/3_calculando_acesso.en.html) — réadaptés en Python pour un contexte africain.
+
+- **Offrir une chaîne de traitement** pour passer d'un jeu GTFS brut à l'analyse d'accessibilité du réseau concerné selon un carroyage de 600x600 m :
     - en mode piéton/transports collectifs en JOB à l'heure de pointe
     - des équipements OpenStreetMap pondérés (substitut à la BPE) à 60 min du réseau
     - selon une grille de population WorldPop 600x600 m (substitut au carroyage INSEE)
-- **Proposer un calcul directement depuis l'app** si aucune matrice de temps de trajet n'est déjà en cache, sans passer par le notebook
-- **Proposer un benchmark entre villes africaines** en comparant les indicateurs d'accessibilité aux équipements, séparé du benchmark standard (population Wikidata/BPE peu fiables hors de France)
+- **Proposer un calcul directement depuis l'app** si aucune matrice de temps de trajet n'est déjà en cache
+- **Proposer un benchmark entre villes africaines** en comparant les indicateurs d'accessibilité aux équipements
 """,
         "home_afrique.fonctionnalites_md": """
 À partir d'un GTFS africain du catalogue (ou uploadé) :
@@ -118,7 +122,7 @@ L'analyse GTFS (indépendante de l'accessibilité ci-dessus) a été développé
 **Équipe Cerema :** Patrick Gendre, Hugo De Luca et Maxence Liogier
 """,
         "home_afrique.gtfs_fonctionnalites_md": """
-Analyse des données GTFS (General Transit Feed Specification) pour extraire des indicateurs clés sur les transports en commun — indépendamment de l'analyse d'accessibilité ci-dessus. Détermine la plage temporelle sur laquelle le GTFS est actif et identifie un JOB (jour ouvré de base, mardi ou jeudi le plus loin dans le temps sur cette plage).
+Analyse des données GTFS (General Transit Feed Specification) pour extraire des indicateurs clés sur les transports en commun.
 
 #### 📍 Analyse par arrêts
 - Nombre de passages par arrêt
@@ -130,7 +134,10 @@ Fonctionne avec n'importe quel GTFS, même sans `shapes.txt`.
 #### 🛤️ Analyse par lignes
 - Nombre de passages par ligne, par mode (bus, tram, métro, trolley, ferry...)
 - Calcul des vitesses moyennes
-- Carte interactive des lignes
+- Carte interactive des lignes cumulées
+
+#### 🔀 Isochrone carreaux 600x600 m
+- Carte interactive des isochrones de carreaux 600x600 m à partir d'un arrêt sélectionné, selon le temps de trajet souhaité (ex : 15 min, 30 min, 45 min)
 """,
         "home_afrique.gtfs_liens_md": """
 - **📓 Hackathon Cerema** : [Notebook Google Colab](https://colab.research.google.com/github/CEREMA/hackathon-gtfs/blob/main/gtfs_notebook.ipynb) — prendre en main le code, exécuter les cellules et regarder les cartographies dynamiques
@@ -343,7 +350,6 @@ Où trouver un GTFS africain :
 
         # --- views/accessibilite.py ---
         "accessibilite.description": "Version simplifiée de l'accessibilité : deux seuils (45 et 60 min), équipements accessibles (tous types confondus, cf. onglet Équipements) sans distinction de domaine ni de niveau de vie.",
-        "accessibilite.avertissement_donnees": "⚠ Chaîne complète construite sur des données incertaines : grille de population WorldPop (modélisée), réseau routier OSM potentiellement incomplet (affecte le calcul des temps de trajet), équipements OSM à couverture inégale, pondération par type d'équipement définie subjectivement sur Abidjan puis réutilisée telle quelle pour toutes les villes. À interpréter comme des ordres de grandeur relatifs (comparaison entre carreaux d'une même ville), pas des valeurs absolues.",
         "accessibilite.pas_de_grille": "Grille de population WorldPop indisponible pour ce réseau : {erreur}",
         "accessibilite.grille_vide": "grille vide (zone hors couverture WorldPop ?)",
         "accessibilite.pas_de_ttm": "Pas de matrice de temps de trajet calculée pour {reseau}.",
@@ -417,27 +423,31 @@ Où trouver un GTFS africain :
         "app.transitland_erreur_telechargement": "Error while downloading: {erreur}",
         "app.nav_villes_africaines": "🌍 African cities",
         "africa.title": "🌍 GTFS Analysis Africa",
-        "africa.avertissement_general": "⚠ Handle data and results with caution: there is no reliable sub-municipal census for most of these cities (WorldPop population data is a modeled estimate, not a headcount), OpenStreetMap facility coverage varies a lot between cities and neighborhoods, and several GTFS files in this catalog date back to 2018-2020 and are no longer maintained (cf. data/GTFS_Africa/_provenance.json). Results (population grid, facilities, accessibility) are orders of magnitude, not reference figures.",
+        "africa.avertissement_general": "⚠ Handle data and results with caution: there is no reliable sub-municipal census for most of these cities (WorldPop population data is a modeled estimate, not a census), OpenStreetMap facility coverage varies a lot between cities and neighborhoods. An arbitrary weighting was proposed for facilities (cf. the Facilities tab under Urban accessibility). As for GTFS data, it is partial (stops and lines are reliable, but not service frequency) and often outdated / no longer maintained (GTFS validity dates are shown). Results (population grid, facilities, accessibility) are thus orders of magnitude, not reference figures. Moreover, many cities have ongoing projects and African cities are changing fast.",
 
         # --- views/home_afrique.py ---
         "home_afrique.intro_md": """
-This app analyzes African transport networks from GTFS data, inspired by the book *Introduction to urban accessibility* (Rafael H. M. Pereira and Daniel Herszenhut, Ipea - Institute for Applied Economic Research), specifically the chapter [Calculating accessibility estimates in R](https://ipeagit.github.io/intro_access_book/3_calculando_acesso.en.html) — adapted to Python for a context outside France, where the French national facilities database (BPE, INSEE) and 200x200m population grid don't exist.
+This app aims to analyze African cities' transport networks and the associated urban accessibility. It's an African take on the [sister app for metropolitan France](https://github.com/antoinechevre/Accessibility_analysis).
 
-**Designer:** Antoine Chèvre 🐐 (with claude.ai....)
-
-This app combines two types of analysis based on the same GTFS dataset: urban accessibility to facilities by public transit / walking, and the public transit network analysis itself — cf. the sister project [Accessibility_analysis](https://github.com/antoinechevre/Accessibility_analysis) (France) this Africa branch is derived from.
+The data used is:
+- GTFS datasets from the Digital Transport 4 Africa initiative, and those produced by TransportforCairo
+- [WorldPop population data](https://hub.worldpop.org)
+- Facility data recorded in [OpenStreetMap](https://www.openstreetmap.org)
 """,
+        "home_afrique.resultats_2_volets_md": "Results are presented in 2 sections.",
         "home_afrique.titre_section_md": "## 📍 Urban accessibility analysis",
         "home_afrique.onglet_objectifs": "🎯 Goals",
         "home_afrique.onglet_fonctionnalites": "⚙️ Features",
         "home_afrique.onglet_liens": "🔗 Links & Instructions",
         "home_afrique.objectifs_md": """
-- **Offer a processing chain** to go from a raw GTFS to accessibility analysis of the network, without relying on French national datasets:
+This analysis is inspired by the book *Introduction to urban accessibility* (Rafael H. M. Pereira and Daniel Herszenhut, Ipea - Institute for Applied Economic Research), specifically the chapter [Calculating accessibility estimates in R](https://ipeagit.github.io/intro_access_book/3_calculando_acesso.en.html) — adapted to Python for an African context.
+
+- **Offer a processing chain** to go from a raw GTFS to accessibility analysis of the network, on a 600x600m grid:
     - walking/public transit mode, on a base weekday at peak hour
     - weighted OpenStreetMap facilities (substitute for the BPE) within 60 min of the network
     - on a WorldPop 600x600m population grid (substitute for the INSEE grid)
-- **Offer a computation directly from the app** when no travel-time matrix is cached yet, without going through the notebook
-- **Offer a benchmark across African cities**, comparing facility-accessibility indicators, separate from the standard benchmark (Wikidata/BPE population is unreliable outside France)
+- **Offer a computation directly from the app** when no travel-time matrix is cached yet
+- **Offer a benchmark across African cities**, comparing facility-accessibility indicators
 """,
         "home_afrique.fonctionnalites_md": """
 From an African GTFS in the catalog (or uploaded):
@@ -486,7 +496,7 @@ The GTFS analysis (independent from the accessibility analysis above) was develo
 **Cerema team:** Patrick Gendre, Hugo De Luca and Maxence Liogier
 """,
         "home_afrique.gtfs_fonctionnalites_md": """
-Analysis of GTFS (General Transit Feed Specification) data to extract key public transit indicators — independent of the accessibility analysis above. Determines the date range over which the GTFS is active and identifies a base weekday (JOB, the latest Tuesday or Thursday in that range).
+Analysis of GTFS (General Transit Feed Specification) data to extract key public transit indicators.
 
 #### 📍 Stops analysis
 - Number of passages per stop
@@ -498,7 +508,10 @@ Works with any GTFS, even without `shapes.txt`.
 #### 🛤️ Lines analysis
 - Number of passages per line, by mode (bus, tram, metro, trolley, ferry...)
 - Average speed computation
-- Interactive line map
+- Interactive cumulative line map
+
+#### 🔀 Grid-cell isochrone (600x600m)
+- Interactive map of 600x600m grid-cell isochrones from a selected stop, with a chosen travel-time budget (e.g. 15 min, 30 min, 45 min)
 """,
         "home_afrique.gtfs_liens_md": """
 - **📓 Cerema Hackathon**: [Google Colab Notebook](https://colab.research.google.com/github/CEREMA/hackathon-gtfs/blob/main/gtfs_notebook.ipynb) — get familiar with the code, run the cells and look at the dynamic maps
@@ -710,7 +723,6 @@ Where to find an African GTFS:
 
         # --- views/accessibilite.py ---
         "accessibilite.description": "Simplified accessibility view: two thresholds (45 and 60 min), accessible facilities (all types combined, cf. Facilities tab), no breakdown by facility type or income level.",
-        "accessibilite.avertissement_donnees": "⚠ This whole chain rests on uncertain data: modeled WorldPop population grid, potentially incomplete OSM road network (affects travel-time computation), unevenly covered OSM facilities, and a facility-type weighting scheme defined subjectively on Abidjan and reused as-is for every city. Read these as relative orders of magnitude (comparing cells within one city), not absolute values.",
         "accessibilite.pas_de_grille": "WorldPop population grid unavailable for this network: {erreur}",
         "accessibilite.grille_vide": "empty grid (zone outside WorldPop coverage?)",
         "accessibilite.pas_de_ttm": "No travel time matrix computed for {reseau}.",

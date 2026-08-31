@@ -88,6 +88,12 @@ st.warning(t("africa.avertissement_general", lang))
 st.markdown(
     """
 <style>
+/* Remonte le titre et le menu : Streamlit laisse par défaut ~6rem de vide
+   au-dessus du contenu (place réservée à la barre d'outils qui n'est pas
+   utilisée ici). */
+.block-container {
+    padding-top: 2rem !important;
+}
 .stButton button {
     width: 100% !important;
     margin: 0 !important;

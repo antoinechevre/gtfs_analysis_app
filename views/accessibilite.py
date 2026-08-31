@@ -67,7 +67,7 @@ CUTOFFS_MIN = [45, 60]
 
 def accessibilite_page(lang="fr"):
     st.markdown("---")
-    st.warning(t("accessibilite.avertissement_donnees", lang))
+    st.warning(t("africa.avertissement_general", lang))
 
     if st.session_state.feed is None:
         st.info(t("commun.veuillez_charger_gtfs", lang))
