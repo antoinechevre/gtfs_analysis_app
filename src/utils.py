@@ -43,6 +43,9 @@ PLAGES_ROUTE_TYPE_ETENDU = [
     (800, 801, 11),  # Trolleybus Service -> Trolleybus
     (900, 907, 0),   # Tram Service -> Tram
     (1000, 1001, 4),  # Water Transport Service -> Ferry
+    (1500, 1507, 3),  # Miscellaneous Service (demand-responsive, share-taxi,
+                       # ex: 1501 sur le paratransit "Yellow Taxi" de Douala,
+                       # publié par WhereIsMyTransport) -> Bus
 ]
 
 
