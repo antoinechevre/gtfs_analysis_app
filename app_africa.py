@@ -32,6 +32,7 @@ from src.utils import (
 from src.info_reseau import charger_ou_calculer_dates_service, recuperer_logo_reseau
 from src.population import population_agglomeration, deviner_ville_depuis_nom_fichier
 from src.hf_cache import envoyer_vers_hf, lister_fichiers_hf, recuperer_depuis_hf, recuperer_depuis_hf_a_jour
+from src.analytics import charger_visites, enregistrer_visite
 from src.worldpop import charger_ou_construire_grille_population_reseau, RESOLUTION_M_AFRIQUE
 from src.i18n import t, LANGUES
 from views.home_afrique import home_page_afrique
@@ -73,6 +74,21 @@ else:
         key="lang",
     )
 lang = st.session_state.lang
+
+# Compteur de visites (une fois par session, pas à chaque rerun — le CSV
+# partagé est retéléchargé en entier à chaque lecture, cf. charger_visites/
+# _telecharger_dernier_csv, inutile de payer ce coût à chaque interaction
+# pour un simple compteur indicatif) — cf. src/analytics.py pour les
+# limites (pas d'identité visiteur, juste un comptage de sessions).
+if not st.session_state.get("_visite_enregistree"):
+    enregistrer_visite(lang)
+    st.session_state["_visite_enregistree"] = True
+    visites = charger_visites()
+    st.session_state["_nb_visites"] = len(visites) if visites is not None else None
+
+nb_visites = st.session_state.get("_nb_visites")
+if nb_visites:
+    st.sidebar.caption(t("africa.compteur_visites", lang, n=f"{nb_visites:,}".replace(",", " ")))
 
 st.title(t("africa.title", lang))
 
