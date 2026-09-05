@@ -48,7 +48,6 @@ TRANSLATIONS = {
         "app.nav_villes_africaines": "🌍 Villes africaines",
         "africa.title": "🌍🐐 GTFS Analysis Africa",
         "africa.avertissement_general": "⚠ Les données et résultats sont à manier avec précaution : il n'existe pas de recensement fiable à l'échelle infracommunale pour la plupart de ces villes (les données de population WorldPop sont une estimation modélisée, pas un recensement), la couverture OpenStreetMap des équipements est très inégale selon les villes et les quartiers. Une pondération arbitraire a été proposée pour les équipements (cf. onglet Équipements dans Accessibilité urbaine). Concernant les données GTFS, il s'agit de données partielles (lignes et arrêts fiables, mais pas la fréquence de passage) et souvent datées / non maintenues (les dates de validité du GTFS sont affichées). Les résultats (grille de population, équipements, accessibilité) sont ainsi des ordres de grandeur, pas des chiffres de référence. De plus, beaucoup de villes ont des projets en cours et les villes africaines évoluent vite.",
-        "africa.compteur_visites": "👥 {n} visites enregistrées",
 
         # --- views/home_afrique.py --- (même modèle que le projet sœur
         # Accessibility_analysis, views/home.py : intro + onglets Objectifs/
@@ -430,7 +429,6 @@ Où trouver un GTFS africain :
         "app.nav_villes_africaines": "🌍 African cities",
         "africa.title": "🌍🐐 GTFS Analysis Africa",
         "africa.avertissement_general": "⚠ Handle data and results with caution: there is no reliable sub-municipal census for most of these cities (WorldPop population data is a modeled estimate, not a census), OpenStreetMap facility coverage varies a lot between cities and neighborhoods. An arbitrary weighting was proposed for facilities (cf. the Facilities tab under Urban accessibility). As for GTFS data, it is partial (stops and lines are reliable, but not service frequency) and often outdated / no longer maintained (GTFS validity dates are shown). Results (population grid, facilities, accessibility) are thus orders of magnitude, not reference figures. Moreover, many cities have ongoing projects and African cities are changing fast.",
-        "africa.compteur_visites": "👥 {n} visits recorded",
 
         # --- views/home_afrique.py ---
         "home_afrique.intro_md": """
